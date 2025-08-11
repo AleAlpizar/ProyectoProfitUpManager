@@ -1,3 +1,9 @@
+# How to run it.
+1. npm i
+2. npm run dev
+3. open the browser from console
+
+
 # NextJS and NextUI Dashboard Sample
 
 You can deploy here directly to vercel [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/import/project?template=https://github.com/chris-trapstar/nextui-dashboard)

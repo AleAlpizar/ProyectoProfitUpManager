@@ -2,11 +2,12 @@
   "ExpandedNodes": [
     "",
     "\\components",
+    "\\components\\sidebar",
     "\\pages",
-    "\\pages\\compras",
-    "\\pages\\ventas",
+    "\\pages\\inventario",
+    "\\pages\\reportes",
     "\\styles"
   ],
-  "SelectedNode": "\\pages\\ventas\\registrar.tsx",
+  "SelectedNode": "\\pages\\reportes\\ventas.tsx",
   "PreviewInSolutionExplorer": false
 }

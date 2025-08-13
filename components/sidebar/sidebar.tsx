@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Box } from '../styles/box';
 import { Sidebar } from './sidebar.styles';
 import { Avatar, Tooltip } from '@nextui-org/react';
@@ -104,6 +104,42 @@ export const SidebarWrapper = () => {
                                 icon={<PaymentsIcon />}
                                 href="/ventas/registrar"
                             />
+                            <SidebarMenu title="Inventario">
+                                <SidebarItem
+                                    isActive={router.pathname.startsWith('/inventario')}
+                                    title="Descuentos"
+                                    icon={<ProductsIcon />}
+                                    href="/inventario/descuentos"
+                                />
+                            </SidebarMenu>
+
+                            <SidebarMenu title="Reportes">
+                                <SidebarItem
+                                    isActive={router.pathname === '/reportes/ventas'}
+                                    title="Ventas"
+                                    icon={<ReportsIcon />}
+                                    href="/reportes/ventas"
+                                />
+                                <SidebarItem
+                                    isActive={router.pathname === '/reportes/inventario'}
+                                    title="Inventario"
+                                    icon={<ReportsIcon />}
+                                    href="/reportes/inventario"
+                                />
+                                <SidebarItem
+                                    isActive={router.pathname === '/reportes/ordenes'}
+                                    title="Órdenes de compra"
+                                    icon={<ReportsIcon />}
+                                    href="/reportes/ordenes"
+                                />
+                                <SidebarItem
+                                    isActive={router.pathname === '/reportes/historial'}
+                                    title="Historial"
+                                    icon={<ChangeLogIcon />}
+                                    href="/reportes/historial"
+                                />
+                            </SidebarMenu>
+
                         </SidebarMenu>
 
                         <SidebarMenu title="General">

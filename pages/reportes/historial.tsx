@@ -53,7 +53,7 @@ export default function HistorialReportesPage() {
                                 <td style={td}>2025-08-21 12:45</td>
                                 <td style={td}>admin@empresa.com</td>
                                 <td style={td}>Ventas</td>
-                                <td style={td}>Producto: Shampoo; Fechas: 01–31 Ago</td>
+                                <td style={td}>Producto: Vino ; Fechas: 01–31 Ago</td>
                                 <td style={tdStrong}>PDF</td>
                             </tr>
                         </tbody>

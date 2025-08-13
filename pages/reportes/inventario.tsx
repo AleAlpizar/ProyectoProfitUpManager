@@ -66,7 +66,7 @@ export default function ReporteInventarioPage() {
                         <tbody>
                             <tr style={tr}>
                                 <td style={td}>Central</td>
-                                <td style={td}>Shampoo 500ml</td>
+                                <td style={td}>Malbec Gran Cosecha 750ml</td>
                                 <td style={td}>SH500</td>
                                 <td style={tdStrong}>420</td>
                                 <td style={td}>2025-08-21</td>

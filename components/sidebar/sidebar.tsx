@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+﻿import React from 'react';
 import { Box } from '../styles/box';
 import { Sidebar } from './sidebar.styles';
 import { Avatar, Tooltip } from '@nextui-org/react';
@@ -45,7 +45,7 @@ export const SidebarWrapper = () => {
 
                 <Flex direction={'column'} justify={'between'} css={{ height: '100%' }}>
                     <Sidebar.Body className="body sidebar">
-
+                     
                         <SidebarItem
                             title="Home"
                             icon={<HomeIcon />}
@@ -53,6 +53,7 @@ export const SidebarWrapper = () => {
                             href="/"
                         />
 
+             
                         <SidebarMenu title="Main Menu">
                             <SidebarItem
                                 isActive={router.pathname === '/accounts'}
@@ -78,7 +79,10 @@ export const SidebarWrapper = () => {
                                 href="/customers"
                             />
                             <SidebarItem
-                                isActive={router.pathname === '/products' || router.pathname === '/productos'}
+                                isActive={
+                                    router.pathname === '/products' ||
+                                    router.pathname === '/productos'
+                                }
                                 title="Productos"
                                 icon={<ProductsIcon />}
                                 href="/productos"
@@ -104,14 +108,44 @@ export const SidebarWrapper = () => {
                                 icon={<PaymentsIcon />}
                                 href="/ventas/registrar"
                             />
+
+     
                             <SidebarMenu title="Inventario">
                                 <SidebarItem
-                                    isActive={router.pathname.startsWith('/inventario')}
+                                    isActive={
+                                        router.pathname === '/inventario' ||
+                                        router.pathname.startsWith('/inventario/index')
+                                    }
+                                    title="Inicio"
+                                    icon={<ProductsIcon />}
+                                    href="/inventario"
+                                />
+                                <SidebarItem
+                                    isActive={router.pathname.startsWith('/inventario/productos')}
+                                    title="Productos"
+                                    icon={<ProductsIcon />}
+                                    href="/inventario/productos"
+                                />
+                                <SidebarItem
+                                    isActive={router.pathname.startsWith('/inventario/bodegas')}
+                                    title="Bodegas"
+                                    icon={<ProductsIcon />}
+                                    href="/inventario/bodegas"
+                                />
+                                <SidebarItem
+                                    isActive={router.pathname.startsWith('/inventario/existencias')}
+                                    title="Existencias"
+                                    icon={<ProductsIcon />}
+                                    href="/inventario/existencias"
+                                />
+                                <SidebarItem
+                                    isActive={router.pathname.startsWith('/inventario/descuentos')}
                                     title="Descuentos"
                                     icon={<ProductsIcon />}
                                     href="/inventario/descuentos"
                                 />
                             </SidebarMenu>
+
 
                             <SidebarMenu title="Reportes">
                                 <SidebarItem
@@ -139,8 +173,8 @@ export const SidebarWrapper = () => {
                                     href="/reportes/historial"
                                 />
                             </SidebarMenu>
-
                         </SidebarMenu>
+
 
                         <SidebarMenu title="General">
                             <SidebarItem

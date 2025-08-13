@@ -1,36 +1,7 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\",
-  "Documents": [
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\reportes\\ventas.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\reportes\\ventas.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\reportes\\ordenes.tsx||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\reportes\\ordenes.tsx||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\reportes\\inventario.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\reportes\\inventario.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\reportes\\historial.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\reportes\\historial.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\inventario\\descuentos.tsx||{8B382828-6202-11D1-8870-0000F87579D2}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\inventario\\descuentos.tsx||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\components\\sidebar\\sidebar.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:components\\sidebar\\sidebar.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\compras\\ordenes.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
-      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\compras\\ordenes.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
-    }
-  ],
+  "WorkspaceRootPath": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\",
+  "Documents": [],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -38,106 +9,15 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": -1,
           "Children": [
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
             },
             {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "sidebar.tsx",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\components\\sidebar\\sidebar.tsx",
-              "RelativeDocumentMoniker": "components\\sidebar\\sidebar.tsx",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\components\\sidebar\\sidebar.tsx",
-              "RelativeToolTip": "components\\sidebar\\sidebar.tsx",
-              "ViewState": "AgIAAHUAAAAAAAAAAAAiwKYAAAAoAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
-              "WhenOpened": "2025-08-13T19:22:07.44Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "historial.tsx",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\reportes\\historial.tsx",
-              "RelativeDocumentMoniker": "pages\\reportes\\historial.tsx",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\reportes\\historial.tsx",
-              "RelativeToolTip": "pages\\reportes\\historial.tsx",
-              "ViewState": "AgIAADIAAAAAAAAAAAAAwAgAAABTAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
-              "WhenOpened": "2025-08-13T19:19:14.99Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "ordenes.tsx",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\reportes\\ordenes.tsx",
-              "RelativeDocumentMoniker": "pages\\reportes\\ordenes.tsx",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\reportes\\ordenes.tsx",
-              "RelativeToolTip": "pages\\reportes\\ordenes.tsx",
-              "ViewState": "AgIAAFkAAAAAAAAAAAAAwDcAAABhAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
-              "WhenOpened": "2025-08-13T19:18:53.98Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "inventario.tsx",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\reportes\\inventario.tsx",
-              "RelativeDocumentMoniker": "pages\\reportes\\inventario.tsx",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\reportes\\inventario.tsx",
-              "RelativeToolTip": "pages\\reportes\\inventario.tsx",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAADEAAABhAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
-              "WhenOpened": "2025-08-13T19:18:24.916Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "ventas.tsx",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\reportes\\ventas.tsx",
-              "RelativeDocumentMoniker": "pages\\reportes\\ventas.tsx",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\reportes\\ventas.tsx",
-              "RelativeToolTip": "pages\\reportes\\ventas.tsx",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAC0AAABhAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
-              "WhenOpened": "2025-08-13T19:18:10.154Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "descuentos.tsx",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\inventario\\descuentos.tsx",
-              "RelativeDocumentMoniker": "pages\\inventario\\descuentos.tsx",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\inventario\\descuentos.tsx",
-              "RelativeToolTip": "pages\\inventario\\descuentos.tsx",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAACgAAABJAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
-              "WhenOpened": "2025-08-13T19:17:41.329Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "ordenes.tsx",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\compras\\ordenes.tsx",
-              "RelativeDocumentMoniker": "pages\\compras\\ordenes.tsx",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\compras\\ordenes.tsx",
-              "RelativeToolTip": "pages\\compras\\ordenes.tsx",
-              "ViewState": "AgIAABQAAAAAAAAAAAAAwCkAAABAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
-              "WhenOpened": "2025-08-13T17:39:24.812Z",
-              "EditorCaption": ""
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
             }
           ]
         }

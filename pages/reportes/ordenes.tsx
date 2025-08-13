@@ -74,7 +74,7 @@ export default function ReporteOrdenesPage() {
                             <tr style={tr}>
                                 <td style={tdStrong}>OC-0001</td>
                                 <td style={td}>Proveedor A</td>
-                                <td style={td}>Shampoo 500ml</td>
+                                <td style={td}>Malbec Gran Cosecha 750ml</td>
                                 <td style={td}>120</td>
                                 <td style={td}><span className="badge-success">Pendiente</span></td>
                                 <td style={td}>2025-08-21</td>

@@ -1,73 +1,154 @@
-﻿import React from "react";
+﻿import React, { useMemo, useState } from "react";
 import SectionHeader from "../../components/SectionHeader";
 
+type Discount = {
+    id: string;
+    producto: string;
+    sku: string;
+    tipo: "Porcentaje" | "Monto fijo";
+    valor: number; 
+    desde: string;
+    hasta: string;
+};
+
+const SEED: Discount[] = [
+    { id: "DSC-001", producto: "Cabernet Sauvignon Reserva 750ml", sku: "CAB-RES-750", tipo: "Porcentaje", valor: 10, desde: "2025-08-01", hasta: "2025-08-31" },
+    { id: "DSC-002", producto: "Malbec Gran Cosecha 750ml", sku: "MLB-GC-750", tipo: "Monto fijo", valor: 1200, desde: "2025-08-10", hasta: "2025-09-10" },
+];
+
 export default function DescuentosProductoPage() {
+    const [rows] = useState<Discount[]>(SEED);
+
+    const [producto, setProducto] = useState("");
+    const [sku, setSku] = useState("");
+    const [tipo, setTipo] = useState<"Porcentaje" | "Monto fijo">("Porcentaje");
+    const [valor, setValor] = useState<number | "">("");
+    const [desde, setDesde] = useState("");
+    const [hasta, setHasta] = useState("");
+
+    const [q, setQ] = useState("");
+
+    const filtered = useMemo(() => {
+        if (!q.trim()) return rows;
+        const t = q.trim().toLowerCase();
+        return rows.filter(r => (r.producto + " " + r.sku).toLowerCase().includes(t));
+    }, [q, rows]);
+
     return (
         <div className="p-6">
             <SectionHeader
                 title="Descuentos por producto"
-                subtitle="Crear descuentos específicos para artículos"
+   
             />
 
-            <div className="card" style={{ marginBottom: 16 }}>
-                <h2>Nueva regla de descuento</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 12 }}>
-                    <div>
-                        <label className="text-gray" style={{ fontSize: 12 }}>Producto</label>
-                        <input className="card" style={inputLike} placeholder="Ej: Shampoo 500ml" />
-                    </div>
-                    <div>
-                        <label className="text-gray" style={{ fontSize: 12 }}>Tipo</label>
-                        <select className="card" style={inputLike}>
-                            <option>Porcentaje (%)</option>
-                            <option>Monto fijo</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="text-gray" style={{ fontSize: 12 }}>Valor</label>
-                        <input type="number" className="card" style={inputLike} placeholder="Ej: 10" />
-                    </div>
-                    <div>
-                        <label className="text-gray" style={{ fontSize: 12 }}>Rango de fechas</label>
-                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                            <input type="date" className="card" style={inputLike} />
-                            <input type="date" className="card" style={inputLike} />
-                        </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                <Kpi label="Reglas activas" value={rows.length} />
+                <Kpi label="Con % aplicado" value={rows.filter(r => r.tipo === "Porcentaje").length} />
+                <Kpi label="Con monto fijo" value={rows.filter(r => r.tipo === "Monto fijo").length} />
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-5 mb-4">
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold">Nueva regla de descuento</h2>
+                    <div className="flex gap-2">
+                        <button
+                            className="rounded-xl border border-neutral-300 px-4 py-2 hover:bg-neutral-50"
+                            onClick={() => { setProducto(""); setSku(""); setTipo("Porcentaje"); setValor(""); setDesde(""); setHasta(""); }}
+                        >
+                            Limpiar
+                        </button>
+                        <button className="rounded-xl bg-emerald-700 text-white px-4 py-2 hover:bg-emerald-800">
+                            Guardar (visual)
+                        </button>
                     </div>
                 </div>
 
-                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 16 }}>
-                    <button className="btn btn-outline">Limpiar</button>
-                    <button className="btn btn-primary">Guardar descuento</button>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                    <Field label="Producto" placeholder="Ej: Cabernet Sauvignon 750ml" value={producto} onChange={setProducto} />
+                    <Field label="SKU" placeholder="Ej: CAB-RES-750" value={sku} onChange={setSku} />
+                    <Select
+                        label="Tipo"
+                        value={tipo}
+                        onChange={(v) => setTipo(v as any)}
+                        options={["Porcentaje", "Monto fijo"]}
+                    />
+                    <Field
+                        label={tipo === "Porcentaje" ? "Valor (%)" : "Valor (₡)"}
+                        type="number"
+                        placeholder={tipo === "Porcentaje" ? "Ej: 10" : "Ej: 1200"}
+                        value={valor as any}
+                        onChange={(v) => setValor(v as any)}
+                    />
+
+                    <div className="md:col-span-2">
+                        <label className="text-sm text-neutral-500">Rango de fechas</label>
+                        <div className="mt-1 grid grid-cols-2 gap-2">
+                            <input type="date" value={desde} onChange={(e) => setDesde(e.target.value)}
+                                className="w-full rounded-xl border border-neutral-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+                            <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)}
+                                className="w-full rounded-xl border border-neutral-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-600" />
+                        </div>
+                    </div>
+
+                    <div className="md:col-span-2">
+                        <label className="text-sm text-neutral-500">Notas (opcional)</label>
+                        <textarea
+                            placeholder="Descripción interna de la promoción…"
+                            className="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 h-24 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                        />
+                    </div>
                 </div>
             </div>
 
-            <div className="card">
-                <h2>Descuentos vigentes</h2>
-                <div style={{ overflowX: "auto", marginTop: 8 }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
+            <div className="bg-white rounded-2xl shadow-sm border border-neutral-200 p-5">
+                <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-semibold">Descuentos vigentes</h2>
+                    <div className="w-full sm:w-80">
+                        <label className="text-sm text-neutral-500">Buscar</label>
+                        <input
+                            className="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                            placeholder="Producto o SKU…"
+                            value={q}
+                            onChange={(e) => setQ(e.target.value)}
+                        />
+                    </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                    <table className="min-w-full text-sm">
                         <thead>
-                            <tr style={{ background: "#F5F5F5" }}>
-                                <th style={th}>Producto</th>
-                                <th style={th}>Tipo</th>
-                                <th style={th}>Valor</th>
-                                <th style={th}>Desde</th>
-                                <th style={th}>Hasta</th>
-                                <th style={{ ...th, textAlign: "right" }}>Acciones</th>
+                            <tr className="bg-neutral-50 text-neutral-600">
+                                {["Producto", "SKU", "Tipo", "Valor", "Desde", "Hasta", ""].map((h, i) => (
+                                    <th key={h} className={`px-3 py-2 font-semibold ${i === 6 ? "text-right" : "text-left"}`}>{h}</th>
+                                ))}
                             </tr>
                         </thead>
                         <tbody>
-                            <tr style={tr}>
-                                <td style={td}>Shampoo 500ml</td>
-                                <td style={td}>%</td>
-                                <td style={tdStrong}>10%</td>
-                                <td style={td}>2025-08-01</td>
-                                <td style={td}>2025-08-31</td>
-                                <td style={{ ...td, textAlign: "right" }}>
-                                    <button className="btn btn-outline">Editar</button>{" "}
-                                    <button className="btn" style={{ background: "#C62828", color: "#fff" }}>Eliminar</button>
-                                </td>
-                            </tr>
+                            {filtered.map((r) => (
+                                <tr key={r.id} className="border-t border-neutral-200">
+                                    <td className="px-3 py-2">{r.producto}</td>
+                                    <td className="px-3 py-2">{r.sku}</td>
+                                    <td className="px-3 py-2">{r.tipo === "Porcentaje" ? "Porcentaje (%)" : "Monto fijo"}</td>
+                                    <td className="px-3 py-2 font-semibold">
+                                        {r.tipo === "Porcentaje" ? `${r.valor}%` : `₡${r.valor.toLocaleString("es-CR")}`}
+                                    </td>
+                                    <td className="px-3 py-2">{r.desde}</td>
+                                    <td className="px-3 py-2">{r.hasta}</td>
+                                    <td className="px-3 py-2">
+                                        <div className="flex gap-2 justify-end">
+                                            <button className="rounded-xl border border-neutral-300 px-3 py-1.5 hover:bg-neutral-50">Editar</button>
+                                            <button className="rounded-xl bg-red-700 text-white px-3 py-1.5 hover:bg-red-800">Eliminar</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ))}
+                            {filtered.length === 0 && (
+                                <tr>
+                                    <td colSpan={7} className="px-3 py-6 text-center text-neutral-500">
+                                        No hay resultados con el criterio actual.
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
@@ -76,8 +157,56 @@ export default function DescuentosProductoPage() {
     );
 }
 
-const th: React.CSSProperties = { padding: "10px 12px", textAlign: "left", fontWeight: 600, fontSize: 14, color: "#333" };
-const tr: React.CSSProperties = { borderTop: "1px solid #EAEAEA" };
-const td: React.CSSProperties = { padding: "10px 12px", color: "#555", fontSize: 14 };
-const tdStrong: React.CSSProperties = { ...td, color: "#333", fontWeight: 600 };
-const inputLike: React.CSSProperties = { padding: 10, borderRadius: 8, border: "1px solid #E0E0E0", outline: "none", width: "100%" };
+function Kpi({ label, value }: { label: string; value: number | string }) {
+    return (
+        <div className="rounded-2xl ring-1 ring-neutral-200 bg-neutral-50 p-4">
+            <div className="text-sm text-neutral-500">{label}</div>
+            <div className="mt-1 text-2xl font-bold">{value}</div>
+        </div>
+    );
+}
+
+function Field({
+    label, value, onChange, placeholder, type = "text",
+}: {
+    label: string;
+    value: any;
+    onChange: (v: any) => void;
+    placeholder?: string;
+    type?: string;
+}) {
+    return (
+        <div>
+            <label className="text-sm text-neutral-500">{label}</label>
+            <input
+                type={type}
+                className="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                value={value}
+                onChange={(e) => onChange((type === "number" ? Number(e.target.value) : e.target.value) as any)}
+                placeholder={placeholder}
+            />
+        </div>
+    );
+}
+
+function Select({
+    label, value, onChange, options,
+}: {
+    label: string;
+    value: string;
+    onChange: (v: string) => void;
+    options: string[];
+}) {
+    return (
+        <div>
+            <label className="text-sm text-neutral-500">{label}</label>
+            <select
+                className="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+            >
+                {options.map((o) => (<option key={o} value={o}>{o}</option>))}
+            </select>
+        </div>
+    );
+}

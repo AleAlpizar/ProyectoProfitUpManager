@@ -16,7 +16,7 @@ export default function ReporteVentasPage() {
                         <label className="text-gray" style={{ fontSize: 12 }}>
                             Producto <span className="badge-success"></span>
                         </label>
-                        <input className="card" style={inputLike} placeholder="Ej: Shampoo 500ml" />
+                        <input className="card" style={inputLike} placeholder="Ej: Vino 100ml" />
                     </div>
                     <div>
                         <label className="text-gray" style={{ fontSize: 12 }}>
@@ -64,7 +64,7 @@ export default function ReporteVentasPage() {
                             <tr style={tr}>
                                 <td style={td}>2025-08-21</td>
                                 <td style={td}>Juan Pérez</td>
-                                <td style={td}>Shampoo 500ml</td>
+                                <td style={td}>Malbec Gran Cosecha 750mll</td>
                                 <td style={td}>3</td>
                                 <td style={td}>$10.00</td>
                                 <td style={tdStrong}>$30.00</td>

@@ -1,0 +1,113 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\ventas\\registrar.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\ventas\\registrar.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\compras\\ordenes.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\compras\\ordenes.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\styles\\globals.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:styles\\globals.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\components\\sidebar\\sidebar.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:components\\sidebar\\sidebar.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\_document.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\_document.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 5,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "globals.css",
+              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\styles\\globals.css",
+              "RelativeDocumentMoniker": "styles\\globals.css",
+              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\styles\\globals.css",
+              "RelativeToolTip": "styles\\globals.css",
+              "ViewState": "AgIAAEsAAAAAAAAAAAAAAGkAAAAWAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2025-08-13T18:05:02.084Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "_document.tsx",
+              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\_document.tsx",
+              "RelativeDocumentMoniker": "pages\\_document.tsx",
+              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\_document.tsx",
+              "RelativeToolTip": "pages\\_document.tsx",
+              "ViewState": "AgIAABEAAAAAAAAAAAAAwBoAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-13T18:02:29.724Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "sidebar.tsx",
+              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\components\\sidebar\\sidebar.tsx",
+              "RelativeDocumentMoniker": "components\\sidebar\\sidebar.tsx",
+              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\components\\sidebar\\sidebar.tsx",
+              "RelativeToolTip": "components\\sidebar\\sidebar.tsx",
+              "ViewState": "AgIAAE4AAAAAAAAAAAAAAEgAAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-13T17:44:16.793Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "registrar.tsx",
+              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\ventas\\registrar.tsx",
+              "RelativeDocumentMoniker": "pages\\ventas\\registrar.tsx",
+              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\ventas\\registrar.tsx",
+              "RelativeToolTip": "pages\\ventas\\registrar.tsx",
+              "ViewState": "AgIAAHoAAAAAAAAAAAAAwIYAAABHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-13T17:40:05.054Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ordenes.tsx",
+              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\compras\\ordenes.tsx",
+              "RelativeDocumentMoniker": "pages\\compras\\ordenes.tsx",
+              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\pages\\compras\\ordenes.tsx",
+              "RelativeToolTip": "pages\\compras\\ordenes.tsx",
+              "ViewState": "AgIAABQAAAAAAAAAAAAAwCkAAABAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-13T17:39:24.812Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -175,6 +175,14 @@ export const SidebarWrapper = () => {
                             </SidebarMenu>
                         </SidebarMenu>
 
+                        <SidebarMenu title="Vencimientos">
+                            <SidebarItem
+                                isActive={router.pathname === '/vencimientos/gestionar'}
+                                title="Gestionar"
+                                icon={<ReportsIcon />}
+                                href="/vencimientos/gestionar"
+                            />
+                        </SidebarMenu>
 
                         <SidebarMenu title="General">
                             <SidebarItem

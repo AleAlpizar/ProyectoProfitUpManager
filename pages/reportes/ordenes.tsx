@@ -16,7 +16,7 @@ export default function ReporteOrdenesPage() {
                         <label className="text-gray" style={{ fontSize: 12 }}>
                             Producto <span className="badge-success"></span>
                         </label>
-                        <input className="card" style={inputLike} placeholder="Ej: Shampoo 500ml" />
+                        <input className="card" style={inputLike} placeholder="Ej: Vino 100ml" />
                     </div>
                     <div>
                         <label className="text-gray" style={{ fontSize: 12 }}>

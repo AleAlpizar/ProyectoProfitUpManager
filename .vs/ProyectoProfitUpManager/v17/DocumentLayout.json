@@ -1,7 +1,68 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\",
-  "Documents": [],
+  "WorkspaceRootPath": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\vencimientos\\gestionar.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\vencimientos\\gestionar.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\inventario\\descuentos.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\inventario\\descuentos.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\reportes\\ordenes.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\reportes\\ordenes.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\reportes\\inventario.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\reportes\\inventario.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\inventario\\bodegas.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\inventario\\bodegas.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\reportes\\historial.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\reportes\\historial.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\icons\\sidebar\\chevron-up-icon.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:components\\icons\\sidebar\\chevron-up-icon.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\icons\\sidebar\\customers-icon.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:components\\icons\\sidebar\\customers-icon.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\icons\\sidebar\\reports-icon.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:components\\icons\\sidebar\\reports-icon.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\icons\\sidebar\\accounts-icon.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:components\\icons\\sidebar\\accounts-icon.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\sidebar\\sidebar.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:components\\sidebar\\sidebar.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\reportes\\ventas.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\reportes\\ventas.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\navbar\\notifications-dropdown.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:components\\navbar\\notifications-dropdown.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\layout\\layout.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:components\\layout\\layout.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\inventario\\productos.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:pages\\inventario\\productos.tsx||{0F2454B1-A556-402D-A7D0-1FDE7F99DEE0}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -9,7 +70,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": -1,
+          "SelectedChildIndex": 12,
           "Children": [
             {
               "$type": "Bookmark",
@@ -18,6 +79,197 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "descuentos.tsx",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\inventario\\descuentos.tsx",
+              "RelativeDocumentMoniker": "pages\\inventario\\descuentos.tsx",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\inventario\\descuentos.tsx",
+              "RelativeToolTip": "pages\\inventario\\descuentos.tsx",
+              "ViewState": "AgIAAEEAAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-16T19:13:53.086Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "bodegas.tsx",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\inventario\\bodegas.tsx",
+              "RelativeDocumentMoniker": "pages\\inventario\\bodegas.tsx",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\inventario\\bodegas.tsx",
+              "RelativeToolTip": "pages\\inventario\\bodegas.tsx",
+              "ViewState": "AgIAAFMAAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-16T18:55:21.841Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "historial.tsx",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\reportes\\historial.tsx",
+              "RelativeDocumentMoniker": "pages\\reportes\\historial.tsx",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\reportes\\historial.tsx",
+              "RelativeToolTip": "pages\\reportes\\historial.tsx",
+              "ViewState": "AgIAACMAAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-16T18:54:54.534Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "chevron-up-icon.tsx",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\icons\\sidebar\\chevron-up-icon.tsx",
+              "RelativeDocumentMoniker": "components\\icons\\sidebar\\chevron-up-icon.tsx",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\icons\\sidebar\\chevron-up-icon.tsx",
+              "RelativeToolTip": "components\\icons\\sidebar\\chevron-up-icon.tsx",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-16T18:46:58.055Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "customers-icon.tsx",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\icons\\sidebar\\customers-icon.tsx",
+              "RelativeDocumentMoniker": "components\\icons\\sidebar\\customers-icon.tsx",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\icons\\sidebar\\customers-icon.tsx",
+              "RelativeToolTip": "components\\icons\\sidebar\\customers-icon.tsx",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-16T18:46:52.471Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "reports-icon.tsx",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\icons\\sidebar\\reports-icon.tsx",
+              "RelativeDocumentMoniker": "components\\icons\\sidebar\\reports-icon.tsx",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\icons\\sidebar\\reports-icon.tsx",
+              "RelativeToolTip": "components\\icons\\sidebar\\reports-icon.tsx",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-16T18:45:33.265Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "accounts-icon.tsx",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\icons\\sidebar\\accounts-icon.tsx",
+              "RelativeDocumentMoniker": "components\\icons\\sidebar\\accounts-icon.tsx",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\icons\\sidebar\\accounts-icon.tsx",
+              "RelativeToolTip": "components\\icons\\sidebar\\accounts-icon.tsx",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-16T18:45:21.818Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "productos.tsx",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\inventario\\productos.tsx",
+              "RelativeDocumentMoniker": "pages\\inventario\\productos.tsx",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\inventario\\productos.tsx",
+              "RelativeToolTip": "pages\\inventario\\productos.tsx",
+              "ViewState": "AgIAAE0BAAAAAAAAAAAhwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-16T00:07:17.142Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "inventario.tsx",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\reportes\\inventario.tsx",
+              "RelativeDocumentMoniker": "pages\\reportes\\inventario.tsx",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\reportes\\inventario.tsx",
+              "RelativeToolTip": "pages\\reportes\\inventario.tsx",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-16T00:07:12.573Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "ordenes.tsx",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\reportes\\ordenes.tsx",
+              "RelativeDocumentMoniker": "pages\\reportes\\ordenes.tsx",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\reportes\\ordenes.tsx",
+              "RelativeToolTip": "pages\\reportes\\ordenes.tsx",
+              "ViewState": "AgIAAEQAAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-16T00:07:10.785Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "gestionar.tsx",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\vencimientos\\gestionar.tsx",
+              "RelativeDocumentMoniker": "pages\\vencimientos\\gestionar.tsx",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\vencimientos\\gestionar.tsx",
+              "RelativeToolTip": "pages\\vencimientos\\gestionar.tsx",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAIwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-14T00:53:11.771Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "notifications-dropdown.tsx",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\navbar\\notifications-dropdown.tsx",
+              "RelativeDocumentMoniker": "components\\navbar\\notifications-dropdown.tsx",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\navbar\\notifications-dropdown.tsx",
+              "RelativeToolTip": "components\\navbar\\notifications-dropdown.tsx",
+              "ViewState": "AgIAACcAAAAAAAAAAAAAABYAAAAeAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-16T00:53:06.716Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "layout.tsx",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\layout\\layout.tsx",
+              "RelativeDocumentMoniker": "components\\layout\\layout.tsx",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\layout\\layout.tsx",
+              "RelativeToolTip": "components\\layout\\layout.tsx",
+              "ViewState": "AgIAAAMAAAAAAAAAAAAAABcAAAAuAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-16T01:04:58.44Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "ventas.tsx",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\reportes\\ventas.tsx",
+              "RelativeDocumentMoniker": "pages\\reportes\\ventas.tsx",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\pages\\reportes\\ventas.tsx",
+              "RelativeToolTip": "pages\\reportes\\ventas.tsx",
+              "ViewState": "AgIAACYAAAAAAAAAAAAQwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-16T00:07:09.276Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "sidebar.tsx",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\sidebar\\sidebar.tsx",
+              "RelativeDocumentMoniker": "components\\sidebar\\sidebar.tsx",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\8 Cuatrimestre\\Proyecto Analisis\\ProyectoProfitUpManager\\components\\sidebar\\sidebar.tsx",
+              "RelativeToolTip": "components\\sidebar\\sidebar.tsx",
+              "ViewState": "AgIAAKIAAAAAAAAAAAAAAK4AAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003213|",
+              "WhenOpened": "2025-08-14T01:24:08.439Z",
+              "EditorCaption": ""
             }
           ]
         }

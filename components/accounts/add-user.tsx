@@ -25,7 +25,7 @@ export const AddUser = () => {
          >
             <Modal.Header css={{justifyContent: 'start'}}>
                <Text id="modal-title" h4>
-                  Add new user
+                  Crear usuario
                </Text>
             </Modal.Header>
             <Divider css={{my: '$5'}} />
@@ -46,20 +46,20 @@ export const AddUser = () => {
                      }}
                   >
                      <Input
-                        label="First Name"
+                        label="Primer nombre"
                         bordered
                         clearable
                         fullWidth
                         size="lg"
-                        placeholder="First Name"
+                        placeholder="Primer nombre"
                      />
                      <Input
-                        label="Last Name"
+                        label="Apellidos"
                         clearable
                         bordered
                         fullWidth
                         size="lg"
-                        placeholder="Last Name"
+                        placeholder="Apelldios"
                      />
                   </Flex>
 
@@ -79,12 +79,12 @@ export const AddUser = () => {
                         placeholder="Email"
                      />
                      <Input
-                        label="Phone Number"
+                        label="Telefono"
                         clearable
                         bordered
                         fullWidth
                         size="lg"
-                        placeholder="Phone Number"
+                        placeholder="Telefono"
                      />
                   </Flex>
                   <Flex
@@ -95,20 +95,20 @@ export const AddUser = () => {
                      }}
                   >
                      <Input
-                        label="Department"
+                        label="Departamento"
                         clearable
                         bordered
                         fullWidth
                         size="lg"
-                        placeholder="Department"
+                        placeholder="Departamento"
                      />
                      <Input
-                        label="Company"
+                        label="Rol"
                         clearable
                         bordered
                         fullWidth
                         size="lg"
-                        placeholder="Company"
+                        placeholder="Rol"
                      />
                   </Flex>
                </Flex>

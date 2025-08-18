@@ -53,7 +53,7 @@ const ClienteForm = ({
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
             placeholder="Nombre del cliente"
-            className="input"
+            className="border-b-2"
           />
         </Field>
         <Field label="Correo">
@@ -62,7 +62,7 @@ const ClienteForm = ({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="cliente@empresa.com"
-            className="input"
+            className="border-b-2"
           />
         </Field>
         <Field label="Estado">

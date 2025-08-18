@@ -235,7 +235,7 @@ export default function ClientesPage() {
                 <Td className="text-right">
                   <div className="inline-flex items-center gap-2">
                     <Button
-                      variant="primary"
+                      variant="outline-primary"
                       onClick={() => {
                         setDiscountTarget(r);
                         setDiscountOpen(true);

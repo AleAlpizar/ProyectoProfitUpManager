@@ -50,7 +50,7 @@ const DiscountForm = ({
             max={100}
             value={value}
             onChange={(e) => setValue(Number(e.target.value))}
-            className="input"
+            className="border-b-2"
           />
         </Field>
         <Field label="Notas (opcional)">

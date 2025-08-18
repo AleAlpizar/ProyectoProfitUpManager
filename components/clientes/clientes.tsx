@@ -1,325 +1,424 @@
-import React, { useEffect, useMemo, useState } from "react";
-import SectionHeader from "../../components/SectionHeader";
-import ConfirmDialog from "../../components/ConfirmDialog";
+import React from "react";
+import Button from "../buttons/button";
+import { Cliente, Estado } from "./types";
+import ClientForm from "./ClientForm";
+import DiscountForm from "./DiscountForm";
+import Modal from "../modals/Modal";
+import { formatMoney } from "../../helpers/ui-helpers";
 
-type Row = {
-    id: string;
-    proveedor: string;
-    fechaEstimada: string;
-    estado: "Pendiente" | "Anulada";
-    total: string;
-};
-
-const FAKE_ROWS: Row[] = [
-    { id: "OC-0001", proveedor: "Proveedor A", fechaEstimada: "2025-08-20", estado: "Pendiente", total: "$1,240" },
-    { id: "OC-0002", proveedor: "Proveedor B", fechaEstimada: "2025-08-22", estado: "Pendiente", total: "$980" },
+const FAKE: Cliente[] = [
+  {
+    id: "CL-0001",
+    nombre: "María Rodríguez",
+    email: "maria@acme.com",
+    estado: "Activo",
+    totalCompras: 1240,
+    descuento: 5,
+  },
+  {
+    id: "CL-0002",
+    nombre: "Juan Pérez",
+    email: "juan@beta.io",
+    estado: "Activo",
+    totalCompras: 980,
+  },
+  {
+    id: "CL-0003",
+    nombre: "Sofía García",
+    email: "sofia@delta.co",
+    estado: "Inactivo",
+    totalCompras: 210,
+  },
 ];
 
-export default function clientes() {
-    const [rows, setRows] = useState<Row[]>(FAKE_ROWS);
+export default function ClientesPage() {
+  const [rows, setRows] = React.useState<Cliente[]>(FAKE);
 
-    const [showCancel, setShowCancel] = useState(false);
-    const [targetId, setTargetId] = useState<string | null>(null);
+  const [q, setQ] = React.useState("");
+  const [filterEstado, setFilterEstado] = React.useState<"Todos" | Estado>(
+    "Todos"
+  );
+  const [page, setPage] = React.useState(1);
+  const pageSize = 8;
 
-    const [formOpen, setFormOpen] = useState(false);
-    const [editData, setEditData] = useState<Row | null>(null);
+  // Modales
+  const [formOpen, setFormOpen] = React.useState(false);
+  const [edit, setEdit] = React.useState<Cliente | null>(null);
 
-    useEffect(() => {
-        if (formOpen) document.body.classList.add("modal-open");
-        else document.body.classList.remove("modal-open");
-        return () => document.body.classList.remove("modal-open");
-    }, [formOpen]);
+  const [discountOpen, setDiscountOpen] = React.useState(false);
+  const [discountTarget, setDiscountTarget] = React.useState<Cliente | null>(
+    null
+  );
+  const [confirm, setConfirm] = React.useState<{
+    id: string;
+    to: Estado;
+  } | null>(null);
 
-    const title = useMemo(
-        () => (editData ? "Editar orden de compra" : "Registrar orden de compra"),
-        [editData]
+  // Bloquear scroll al abrir modales
+  React.useEffect(() => {
+    const any = formOpen || discountOpen || !!confirm;
+    document.body.classList.toggle("overflow-hidden", any);
+  }, [formOpen, discountOpen, confirm]);
+
+  // Derivados
+  const filtered = React.useMemo(() => {
+    const term = q.trim().toLowerCase();
+    return rows.filter((r) => {
+      const matchQ =
+        !term ||
+        r.nombre.toLowerCase().includes(term) ||
+        r.email.toLowerCase().includes(term);
+      const matchEstado =
+        filterEstado === "Todos" ? true : r.estado === filterEstado;
+      return matchQ && matchEstado;
+    });
+  }, [rows, q, filterEstado]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageRows = React.useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, page]);
+
+  React.useEffect(() => {
+    // si cambian filtros/búsqueda, vuelve a página 1
+    setPage(1);
+  }, [q, filterEstado]);
+
+  // Handlers
+  const onSaveCliente = (payload: Cliente) => {
+    if (edit) {
+      setRows((prev) =>
+        prev.map((c) =>
+          c.id === edit.id
+            ? {
+                ...c,
+                nombre: payload.nombre,
+                email: payload.email,
+                estado: payload.estado,
+              }
+            : c
+        )
+      );
+    } else {
+      // Generar id simple (visual)
+      const nextId =
+        "CL-" + (1000 + rows.length + 1).toString().padStart(4, "0");
+      setRows((prev) => [
+        {
+          id: nextId,
+          nombre: payload.nombre,
+          email: payload.email,
+          estado: payload.estado,
+          totalCompras: 0,
+        },
+        ...prev,
+      ]);
+    }
+    setFormOpen(false);
+    setEdit(null);
+  };
+
+  const onSaveDiscount = (value: number) => {
+    if (!discountTarget) return;
+    setRows((prev) =>
+      prev.map((c) =>
+        c.id === discountTarget.id ? { ...c, descuento: value } : c
+      )
     );
+    setDiscountOpen(false);
+    setDiscountTarget(null);
+  };
 
-    return (
-        <div className="p-6">
-            <SectionHeader
-                title="Órdenes de compra"
-                subtitle="Registrar, editar y anular solicitudes"
+  const onConfirmEstado = () => {
+    if (!confirm) return;
+    setRows((prev) =>
+      prev.map((c) => (c.id === confirm.id ? { ...c, estado: confirm.to } : c))
+    );
+    setConfirm(null);
+  };
+
+  return (
+    <div className="p-6">
+      <header className="mb-6">
+        <h1 className="text-2xl font-bold text-secondary">Clientes</h1>
+        <p className="text-sm text-secondary/70">
+          Registrar, editar, inactivar y administrar descuentos
+        </p>
+      </header>
+
+      {/* Toolbar */}
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-1 items-center gap-2">
+          <div className="relative w-full max-w-sm">
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Buscar por nombre, correo o #"
+              className="w-full rounded-md border border-gray-300 bg-white pl-9 pr-3 py-2 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-primary/30"
             />
+            <svg
+              className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="m21 21-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z"
+              />
+            </svg>
+          </div>
 
-            <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                <button
-                    className="btn btn-primary"
-                    onClick={() => {
-                        setEditData(null);
-                        setFormOpen(true);
-                    }}
-                >
-                    + Nueva orden
-                </button>
-            </div>
-
-            <div className="card">
-                <h2>Órdenes pendientes</h2>
-                <div style={{ overflowX: "auto", marginTop: 8 }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                        <thead>
-                            <tr style={{ background: "#F5F5F5" }}>
-                                <th style={th}>#</th>
-                                <th style={th}>Proveedor</th>
-                                <th style={th}>Fecha estimada</th>
-                                <th style={th}>Estado</th>
-                                <th style={th}>Total</th>
-                                <th style={{ ...th, textAlign: "right" }}>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows.map((r) => (
-                                <tr key={r.id} style={tr}>
-                                    <td style={tdStrong}>{r.id}</td>
-                                    <td style={td}>{r.proveedor}</td>
-                                    <td style={td}>{r.fechaEstimada}</td>
-                                    <td style={td}>
-                                        {r.estado === "Pendiente" ? (
-                                            <span className="badge-success">Pendiente</span>
-                                        ) : (
-                                            <span className="badge-alert">Anulada</span>
-                                        )}
-                                    </td>
-                                    <td style={td}>{r.total}</td>
-                                    <td style={{ ...td, textAlign: "right" }}>
-                                        <div style={{ display: "inline-flex", gap: 8 }}>
-                                            <button
-                                                className="btn btn-outline"
-                                                onClick={() => {
-                                                    setEditData(r);
-                                                    setFormOpen(true);
-                                                }}
-                                            >
-                                                Editar
-                                            </button>
-                                            <button
-                                                className="btn"
-                                                style={{ background: "#C62828", color: "#fff" }}
-                                                onClick={() => {
-                                                    setTargetId(r.id);
-                                                    setShowCancel(true);
-                                                }}
-                                            >
-                                                Anular
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
-                            {rows.length === 0 && (
-                                <tr>
-                                    <td style={td} colSpan={6}>
-                                        No hay órdenes pendientes.
-                                    </td>
-                                </tr>
-                            )}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {formOpen && (
-                <div className="modal-overlay" onClick={() => setFormOpen(false)}>
-                    <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-                        <div
-                            style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                            }}
-                        >
-                            <h2>{title}</h2>
-                            <button
-                                className="btn btn-primary"
-                                onClick={() => setFormOpen(false)}
-                            >
-                                Cerrar
-                            </button>
-                        </div>
-
-                        <div
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "repeat(3, 1fr)",
-                                gap: 12,
-                                marginTop: 16,
-                            }}
-                        >
-                            <div>
-                                <label className="text-gray" style={{ fontSize: 12 }}>
-                                    Proveedor
-                                </label>
-                                <select className="card" style={inputLike} defaultValue={editData?.proveedor ?? "Proveedor A"}>
-                                    <option>Proveedor A</option>
-                                    <option>Proveedor B</option>
-                                    <option>Proveedor C</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="text-gray" style={{ fontSize: 12 }}>
-                                    Fecha estimada
-                                </label>
-                                <input
-                                    type="date"
-                                    defaultValue={editData?.fechaEstimada}
-                                    className="card"
-                                    style={inputLike}
-                                />
-                            </div>
-                            <div>
-                                <label className="text-gray" style={{ fontSize: 12 }}>
-                                    Observaciones
-                                </label>
-                                <input
-                                    placeholder="Opcional"
-                                    className="card"
-                                    style={inputLike}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="card-alt" style={{ marginTop: 16 }}>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    justifyContent: "space-between",
-                                    alignItems: "center",
-                                }}
-                            >
-                                <h2>Productos solicitados</h2>
-                                <button className="btn btn-primary">+ Agregar producto</button>
-                            </div>
-
-                            <div style={{ overflowX: "auto", marginTop: 8 }}>
-                                <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                                    <thead>
-                                        <tr style={{ background: "#F5F5F5" }}>
-                                            <th style={th}>Producto</th>
-                                            <th style={th}>Cant.</th>
-                                            <th style={th}>Precio</th>
-                                            <th style={th}>Subtotal</th>
-                                            <th style={{ ...th, textAlign: "right" }}>—</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr style={tr}>
-                                            <td style={td}>
-                                                <input
-                                                    placeholder="Producto X"
-                                                    className="card"
-                                                    style={inputLike}
-                                                />
-                                            </td>
-                                            <td style={td}>
-                                                <input
-                                                    type="number"
-                                                    defaultValue={1}
-                                                    className="card"
-                                                    style={{ ...inputLike, width: 90 }}
-                                                />
-                                            </td>
-                                            <td style={td}>
-                                                <input
-                                                    type="number"
-                                                    defaultValue={100}
-                                                    className="card"
-                                                    style={{ ...inputLike, width: 120 }}
-                                                />
-                                            </td>
-                                            <td style={tdStrong}>$100.00</td>
-                                            <td style={{ ...td, textAlign: "right" }}>
-                                                <button
-                                                    className="btn"
-                                                    style={{ background: "#555", color: "#fff" }}
-                                                >
-                                                    Quitar
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div
-                                style={{
-                                    display: "flex",
-                                    gap: 24,
-                                    justifyContent: "flex-end",
-                                    marginTop: 12,
-                                }}
-                            >
-                                <div style={{ textAlign: "right" }}>
-                                    <div className="text-gray" style={{ fontSize: 13 }}>
-                                        Subtotal
-                                    </div>
-                                    <div style={{ fontWeight: 600 }}>$100.00</div>
-                                </div>
-                                <div style={{ textAlign: "right" }}>
-                                    <div className="text-gray" style={{ fontSize: 13 }}>
-                                        Impuestos
-                                    </div>
-                                    <div style={{ fontWeight: 600 }}>$13.00</div>
-                                </div>
-                                <div style={{ textAlign: "right" }}>
-                                    <div className="text-gray" style={{ fontSize: 13 }}>
-                                        Total
-                                    </div>
-                                    <div style={{ fontWeight: 700, fontSize: 18 }}>$113.00</div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div
-                            style={{
-                                display: "flex",
-                                gap: 8,
-                                justifyContent: "flex-end",
-                                marginTop: 16,
-                            }}
-                        >
-                            <button
-                                className="btn btn-outline"
-                                onClick={() => setFormOpen(false)}
-                            >
-                                Cancelar
-                            </button>
-                            <button className="btn btn-primary">Guardar (visual)</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <ConfirmDialog
-                open={showCancel}
-                title="Anular orden de compra"
-                message={`¿Confirmas anular la orden ${targetId}? ( visual)`}
-                onClose={() => setShowCancel(false)}
-                onConfirm={() => {
-                    setRows((prev) =>
-                        prev.map((r) => (r.id === targetId ? { ...r, estado: "Anulada" } : r))
-                    );
-                }}
-                confirmText="Anular"
-            />
+          <select
+            value={filterEstado}
+            onChange={(e) => setFilterEstado(e.target.value as any)}
+            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-primary/30"
+          >
+            <option value="Todos">Todos</option>
+            <option value="Activo">Activos</option>
+            <option value="Inactivo">Inactivos</option>
+          </select>
         </div>
-    );
+
+        <div className="flex justify-end">
+          <Button
+            variant="primary"
+            onClick={() => {
+              setEdit(null);
+              setFormOpen(true);
+            }}
+          >
+            + Nuevo cliente
+          </Button>
+        </div>
+      </div>
+
+      {/* Tabla */}
+      <div className="overflow-x-auto rounded-xl border border-black/5 bg-white shadow-sm">
+        <table className="min-w-full border-collapse">
+          <thead>
+            <tr className="bg-surface">
+              <Th>#</Th>
+              <Th>Cliente</Th>
+              <Th>Email</Th>
+              <Th>Estado</Th>
+              <Th className="text-right">Total compras</Th>
+              <Th className="text-right">Acciones</Th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {pageRows.map((r) => (
+              <tr key={r.id} className="hover:bg-gray-50">
+                <Td strong>{r.id}</Td>
+                <Td>
+                  <div className="font-medium text-secondary">{r.nombre}</div>
+                  {typeof r.descuento === "number" && (
+                    <div className="mt-0.5 text-xs text-secondary/60">
+                      Descuento actual:{" "}
+                      <span className="font-semibold">{r.descuento}%</span>
+                    </div>
+                  )}
+                </Td>
+                <Td className="text-secondary/80">{r.email}</Td>
+                <Td>
+                  <Badge tone={r.estado === "Activo" ? "success" : "danger"}>
+                    {r.estado}
+                  </Badge>
+                </Td>
+                <Td className="text-right font-semibold text-secondary">
+                  {formatMoney(r.totalCompras)}
+                </Td>
+                <Td className="text-right">
+                  <div className="inline-flex items-center gap-2">
+                    <Button
+                      variant="primary"
+                      onClick={() => {
+                        setDiscountTarget(r);
+                        setDiscountOpen(true);
+                      }}
+                    >
+                      Descuentos
+                    </Button>
+                    <Button
+                      variant="primary"
+                      onClick={() => {
+                        setEdit(r);
+                        setFormOpen(true);
+                      }}
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="danger"
+                      onClick={() =>
+                        setConfirm({
+                          id: r.id ?? "",
+                          to: r.estado === "Activo" ? "Inactivo" : "Activo",
+                        })
+                      }
+                    >
+                      {r.estado === "Activo" ? "Inactivar" : "Reactivar"}
+                    </Button>
+                  </div>
+                </Td>
+              </tr>
+            ))}
+
+            {pageRows.length === 0 && (
+              <tr>
+                <td
+                  colSpan={6}
+                  className="px-4 py-10 text-center text-sm text-secondary/70"
+                >
+                  No hay clientes para mostrar.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Paginación */}
+      <div className="mt-4 flex items-center justify-between text-sm text-secondary/70">
+        <span>
+          Mostrando{" "}
+          <b>
+            {pageRows.length === 0 ? 0 : (page - 1) * pageSize + 1}-
+            {(page - 1) * pageSize + pageRows.length}
+          </b>{" "}
+          de <b>{filtered.length}</b>
+        </span>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            Prev
+          </Button>
+          <span>
+            Página <b>{page}</b> de <b>{totalPages}</b>
+          </span>
+          <Button
+            variant="ghost"
+            disabled={page >= totalPages}
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          >
+            Next
+          </Button>
+        </div>
+      </div>
+
+      {formOpen && (
+        <Modal
+          onClose={() => {
+            setFormOpen(false);
+            setEdit(null);
+          }}
+        >
+          <ClientForm
+            initial={edit ?? undefined}
+            onCancel={() => {
+              setFormOpen(false);
+              setEdit(null);
+            }}
+            onSave={onSaveCliente}
+          />
+        </Modal>
+      )}
+
+      {discountOpen && discountTarget && (
+        <Modal
+          onClose={() => {
+            setDiscountOpen(false);
+            setDiscountTarget(null);
+          }}
+        >
+          <DiscountForm
+            cliente={discountTarget}
+            onCancel={() => {
+              setDiscountOpen(false);
+              setDiscountTarget(null);
+            }}
+            onSave={onSaveDiscount}
+          />
+        </Modal>
+      )}
+
+      {confirm && (
+        <Modal onClose={() => setConfirm(null)}>
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-secondary">
+              Cambiar estado
+            </h2>
+            <p className="text-sm text-secondary/80">
+              ¿Confirmas {confirm.to === "Activo" ? "reactivar" : "inactivar"}{" "}
+              al cliente <b>{confirm.id}</b>?
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setConfirm(null)}>
+                Cancelar
+              </Button>
+              <Button variant="primary" onClick={onConfirmEstado}>
+                Confirmar
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+    </div>
+  );
 }
 
-const th: React.CSSProperties = {
-    padding: "10px 12px",
-    textAlign: "left",
-    fontWeight: 600,
-    fontSize: 14,
-    color: "#333333",
+// TODO: hacer que esto sean components
+const Badge: React.FC<
+  React.PropsWithChildren<{ tone?: "success" | "danger" | "default" }>
+> = ({ tone = "default", children }) => {
+  const map: Record<string, string> = {
+    success: "bg-success text-white",
+    danger: "bg-danger text-white",
+    default: "bg-gray-200 text-gray-800",
+  };
+  return (
+    <span
+      className={[
+        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+        map[tone],
+      ].join(" ")}
+    >
+      {children}
+    </span>
+  );
 };
-const tr: React.CSSProperties = { borderTop: "1px solid #EAEAEA" };
-const td: React.CSSProperties = { padding: "10px 12px", color: "#555555", fontSize: 14 };
-const tdStrong: React.CSSProperties = { ...td, color: "#333333", fontWeight: 600 };
-const inputLike: React.CSSProperties = {
-    padding: 10,
-    borderRadius: 8,
-    border: "1px solid #E0E0E0",
-    outline: "none",
-    width: "100%",
-};
+
+const Th: React.FC<React.PropsWithChildren<{ className?: string }>> = ({
+  className = "",
+  children,
+}) => (
+  <th
+    className={[
+      "px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-secondary",
+      className,
+    ].join(" ")}
+  >
+    {children}
+  </th>
+);
+
+const Td: React.FC<
+  React.PropsWithChildren<{ className?: string; strong?: boolean }>
+> = ({ className = "", strong = false, children }) => (
+  <td
+    className={[
+      "px-3 py-2 text-sm",
+      strong ? "font-semibold text-secondary" : "text-secondary/80",
+      className,
+    ].join(" ")}
+  >
+    {children}
+  </td>
+);

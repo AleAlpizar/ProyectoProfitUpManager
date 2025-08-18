@@ -1,7 +1,6 @@
 import {Input, Link, Navbar, Text} from '@nextui-org/react';
 import React from 'react';
 import {FeedbackIcon} from '../icons/navbar/feedback-icon';
-import {GithubIcon} from '../icons/navbar/github-icon';
 import {SupportIcon} from '../icons/navbar/support-icon';
 import {SearchIcon} from '../icons/searchicon';
 import {Box} from '../styles/box';
@@ -95,10 +94,6 @@ export const NavbarWrapper = ({children}: Props) => {
             </Navbar.Content>
             <Navbar.Content>
                <Navbar.Content hideIn={'md'}>
-                  <Flex align={'center'} css={{gap: '$4'}}>
-                     <FeedbackIcon />
-                     <Text span>Feedback?</Text>
-                  </Flex>
                </Navbar.Content>
 
                <Navbar.Content>
@@ -107,14 +102,6 @@ export const NavbarWrapper = ({children}: Props) => {
 
                <Navbar.Content hideIn={'md'}>
                   <SupportIcon />
-               </Navbar.Content>
-               <Navbar.Content>
-                  <Link
-                     href="https://github.com/"
-                     target={'_blank'}
-                  >
-                     <GithubIcon />
-                  </Link>
                </Navbar.Content>
                <Navbar.Content>
                   <UserDropdown />

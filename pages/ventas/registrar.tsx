@@ -48,7 +48,7 @@ export default function RegistrarVentaPage() {
                             style={{ background: "#C62828", color: "#fff" }}
                             onClick={() => setShowCancel(true)}
                         >
-                            Anular venta (visual)
+                            Anular venta
                         </button>
                     </div>
                 </div>
@@ -139,7 +139,7 @@ export default function RegistrarVentaPage() {
             <ConfirmDialog
                 open={showCancel}
                 title="Anular venta"
-                message="¿Deseas anular esta venta? (solo visual) Se restauraría el inventario si aplica."
+                message="¿Deseas anular esta venta? Se restauraría el inventario si aplica."
                 onClose={() => setShowCancel(false)}
                 confirmText="Anular"
             />

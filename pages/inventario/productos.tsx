@@ -272,7 +272,7 @@ export default function ProductosInvPage() {
                             Cancelar
                         </button>
                         <button className="rounded-xl bg-emerald-700 text-white px-4 py-2 hover:bg-emerald-800">
-                            {editing ? "Guardar cambios (visual)" : "Registrar (visual)"}
+                            {editing ? "Guardar cambios" : "Registrar"}
                         </button>
                     </div>
                 </Modal>
@@ -293,7 +293,7 @@ export default function ProductosInvPage() {
                             Cerrar
                         </button>
                         <button className="rounded-xl bg-emerald-700 text-white px-4 py-2 hover:bg-emerald-800">
-                            Asignar (visual)
+                            Asignar 
                         </button>
                     </div>
                 </Modal>
@@ -313,7 +313,7 @@ export default function ProductosInvPage() {
                             Cancelar
                         </button>
                         <button className="rounded-xl bg-emerald-700 text-white px-4 py-2 hover:bg-emerald-800">
-                            Aplicar (visual)
+                            Aplicar
                         </button>
                     </div>
                 </Modal>
@@ -322,7 +322,7 @@ export default function ProductosInvPage() {
             <ConfirmDialog
                 open={!!openInactivate}
                 title="Cambio de estado"
-                message={`¿Deseas cambiar el estado del producto ${openInactivate}? (solo visual)`}
+                message={`¿Deseas cambiar el estado del producto ${openInactivate}?`}
                 onClose={() => setOpenInactivate(null)}
                 confirmText="Confirmar"
             />

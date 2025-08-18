@@ -86,7 +86,7 @@ export default function DescuentosProductoPage() {
               Limpiar
             </button>
             <button className="rounded-xl bg-emerald-700 text-white px-4 py-2 hover:bg-emerald-800">
-              Guardar (visual)
+              Guardar 
             </button>
           </div>
         </div>

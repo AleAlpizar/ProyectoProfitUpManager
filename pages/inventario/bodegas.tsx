@@ -102,7 +102,7 @@ export default function BodegasPage() {
                             Cancelar
                         </button>
                         <button className="rounded-xl bg-emerald-700 text-white px-4 py-2 hover:bg-emerald-800">
-                            Guardar (visual)
+                            Guardar 
                         </button>
                     </div>
                 </Modal>
@@ -111,7 +111,7 @@ export default function BodegasPage() {
             <ConfirmDialog
                 open={!!toToggle}
                 title="Cambiar estado de bodega"
-                message={`¿Confirmas cambiar el estado de ${toToggle}? (solo visual)`}
+                message={`¿Confirmas cambiar el estado de ${toToggle}?`}
                 confirmText="Confirmar"
                 onClose={() => setToToggle(null)}
             />

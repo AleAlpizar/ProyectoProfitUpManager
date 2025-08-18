@@ -24,7 +24,7 @@ const DiscountForm = ({
   };
 
   return (
-    <form onSubmit={submit} className="w-full max-w-lg">
+    <form onSubmit={submit} className="w-full max-w-2xl">
       <div className="mb-1 text-sm text-secondary/70">
         Cliente: <b className="text-secondary">{cliente.nombre}</b>
       </div>
@@ -54,12 +54,12 @@ const DiscountForm = ({
           />
         </Field>
         <Field label="Notas (opcional)">
-          <input placeholder="Motivo / alcance del descuento" className="input" />
+          <input placeholder="Escriba aca sus notas..." className="input" />
         </Field>
       </div>
 
       <p className="mt-1 text-xs text-secondary/60">
-        Este valor aplica de forma general al cliente. (visual)
+        Este valor aplica de forma general al cliente
       </p>
 
       <div className="mt-6 flex justify-end gap-2">

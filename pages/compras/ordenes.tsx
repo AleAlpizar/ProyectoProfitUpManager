@@ -284,7 +284,7 @@ export default function OrdenesComprasPage() {
                             >
                                 Cancelar
                             </button>
-                            <button className="btn btn-primary">Guardar (visual)</button>
+                            <button className="btn btn-primary">Guardar</button>
                         </div>
                     </div>
                 </div>
@@ -293,7 +293,7 @@ export default function OrdenesComprasPage() {
             <ConfirmDialog
                 open={showCancel}
                 title="Anular orden de compra"
-                message={`¿Confirmas anular la orden ${targetId}? ( visual)`}
+                message={`¿Confirmas anular la orden ${targetId}?`}
                 onClose={() => setShowCancel(false)}
                 onConfirm={() => {
                     setRows((prev) =>

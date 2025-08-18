@@ -53,7 +53,7 @@ import React from "react";
 
             {/* Alertas */}
             {error && (
-              <div className="mb-4 rounded-md bg-danger px-4 py-3 text-sm text-error text-danger">
+              <div className="mb-4 rounded-md bg-primary-foreground px-4 py-3 text-sm text-error text-danger ">
                 {error}
               </div>
             )}

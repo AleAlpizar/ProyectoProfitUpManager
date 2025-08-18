@@ -167,7 +167,6 @@ export default function Accounts() {
 
                 <Td className="text-right">
                   <div className="inline-flex items-center gap-2">
-
                     <Button
                     variant="outline-primary"
                        onClick={() => console.log("Editar", u.id)}

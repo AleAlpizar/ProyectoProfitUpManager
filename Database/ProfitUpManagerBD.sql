@@ -348,3 +348,191 @@ GO
 ALTER TABLE dbo.Venta ADD CONSTRAINT CHK_Venta_TotalNonNegative CHECK (Total >= 0);
 ALTER TABLE dbo.Inventario ADD CONSTRAINT CHK_Inventario_CantidadNonNegative CHECK (Cantidad >= 0);
 GO
+
+
+
+
+-------------------------------Usuario-------------------------------------------------------------
+-- Inserts 
+
+-- Roles base
+IF NOT EXISTS (SELECT 1 FROM dbo.Rol WHERE NombreRol = 'Administrador')
+    INSERT INTO dbo.Rol (NombreRol, Descripcion) VALUES ('Administrador','Acceso completo al sistema');
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Rol WHERE NombreRol = 'Empleado')
+    INSERT INTO dbo.Rol (NombreRol, Descripcion) VALUES ('Empleado','Acceso operativo limitado');
+
+-- Índices 
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Usuario_Correo' AND object_id = OBJECT_ID('dbo.Usuario'))
+    CREATE UNIQUE INDEX IX_Usuario_Correo ON dbo.Usuario(Correo);
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Sesion_Token' AND object_id = OBJECT_ID('dbo.Sesion'))
+    CREATE UNIQUE INDEX IX_Sesion_Token ON dbo.Sesion(Token);
+GO
+
+
+
+--crear usuario
+CREATE OR ALTER PROCEDURE dbo.usp_Usuario_Create
+  @Nombre        NVARCHAR(100),
+  @Apellido      NVARCHAR(100) = NULL,
+  @Correo        NVARCHAR(200),
+  @PasswordHash  NVARCHAR(512),
+  @Salt          NVARCHAR(100) = NULL,
+  @Telefono      NVARCHAR(50) = NULL,
+  @CreatedBy     INT = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  IF EXISTS (SELECT 1 FROM dbo.Usuario WHERE Correo = @Correo)
+  BEGIN
+    RAISERROR('EMAIL_DUPLICATE', 16, 1);
+    RETURN;
+  END
+
+  BEGIN TRY
+    INSERT INTO dbo.Usuario (Nombre, Apellido, Correo, PasswordHash, Salt, Telefono, CreatedBy)
+    VALUES (@Nombre, @Apellido, @Correo, @PasswordHash, @Salt, @Telefono, @CreatedBy);
+
+    SELECT SCOPE_IDENTITY() AS UsuarioID;
+  END TRY
+  BEGIN CATCH
+    IF ERROR_NUMBER() IN (2601, 2627)
+    BEGIN
+      RAISERROR('EMAIL_DUPLICATE', 16, 1);
+      RETURN;
+    END
+
+    DECLARE @ErrMsg NVARCHAR(2048) = ERROR_MESSAGE(),
+            @ErrState INT = ERROR_STATE();
+    RAISERROR(@ErrMsg, 16, @ErrState);
+    RETURN;
+  END CATCH
+END
+GO
+
+
+
+--asignar actualizar rol
+
+CREATE OR ALTER PROCEDURE dbo.usp_UsuarioRol_AssignOrUpdate
+  @UsuarioID INT,
+  @NombreRol NVARCHAR(50),
+  @AssignedBy INT = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  DECLARE @RolID INT = (SELECT RolID FROM dbo.Rol WHERE NombreRol = @NombreRol AND IsActive = 1);
+  IF @RolID IS NULL
+  BEGIN
+    ;THROW 51001, 'Rol no existe o inactivo.', 1;
+  END
+
+  IF EXISTS (SELECT 1 FROM dbo.UsuarioRol WHERE UsuarioID = @UsuarioID)
+  BEGIN
+    UPDATE ur
+      SET RolID = @RolID, AssignedAt = SYSUTCDATETIME(), AssignedBy = @AssignedBy
+    FROM dbo.UsuarioRol ur
+    WHERE ur.UsuarioID = @UsuarioID;
+  END
+  ELSE
+  BEGIN
+    INSERT INTO dbo.UsuarioRol (UsuarioID, RolID, AssignedBy)
+    VALUES (@UsuarioID, @RolID, @AssignedBy);
+  END
+
+  SELECT @UsuarioID AS UsuarioID, @RolID AS RolID;
+END
+GO
+
+
+--obtener usuario
+
+CREATE OR ALTER PROCEDURE dbo.usp_Usuario_GetByCorreo
+  @Correo NVARCHAR(200)
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SELECT TOP 1 u.*, r.NombreRol
+  FROM dbo.Usuario u
+  LEFT JOIN dbo.UsuarioRol ur ON ur.UsuarioID = u.UsuarioID
+  LEFT JOIN dbo.Rol r ON r.RolID = ur.RolID
+  WHERE u.Correo = @Correo AND u.IsActive = 1;
+END
+GO
+
+--sesiones
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sesion_Create
+  @UsuarioID INT,
+  @Token NVARCHAR(512),
+  @DeviceInfo NVARCHAR(500) = NULL,
+  @IP NVARCHAR(50) = NULL,
+  @ExpireAt DATETIME2
+AS
+BEGIN
+  SET NOCOUNT ON;
+  INSERT INTO dbo.Sesion (UsuarioID, Token, DeviceInfo, IP, ExpireAt)
+  VALUES (@UsuarioID, @Token, @DeviceInfo, @IP, @ExpireAt);
+
+  SELECT SesionID, UsuarioID, Token, ExpireAt FROM dbo.Sesion WHERE Token = @Token;
+END
+GO
+
+CREATE OR ALTER PROCEDURE dbo.usp_Sesion_Invalidate
+  @Token NVARCHAR(512)
+AS
+BEGIN
+  SET NOCOUNT ON;
+  UPDATE dbo.Sesion SET IsActive = 0 WHERE Token = @Token;
+  SELECT @@ROWCOUNT AS Affected;
+END
+GO
+
+--listar usuarios
+CREATE OR ALTER PROCEDURE dbo.usp_Usuario_List
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  SELECT
+    u.UsuarioID,
+    u.Nombre,
+    u.Apellido,
+    u.Correo,
+    Rol = ISNULL((
+      SELECT TOP (1) r.NombreRol
+      FROM dbo.UsuarioRol ur
+      JOIN dbo.Rol r ON r.RolID = ur.RolID
+      WHERE ur.UsuarioID = u.UsuarioID
+      ORDER BY ur.AssignedAt DESC
+    ), 'Empleado'),
+    u.IsActive
+  FROM dbo.Usuario u
+  WHERE u.IsActive = 1
+  ORDER BY u.UsuarioID DESC;
+END
+GO
+
+-------------------------------Usuario-------------------------------------------------------------
+
+--Usuario  Test
+
+
+-- Admin bootstrap contra Admin123!
+DECLARE @Salt NVARCHAR(100) = 'iuBtI7mI/8NdxJvTIvpL+Q==';
+DECLARE @Hash NVARCHAR(512) = 'iuBtI7mI/8NdxJvTIvpL+Q==:t+P/wEu2u9xYblIGzt7zjQu+RQXvA3SLz0o4qnKtmyo=';
+
+INSERT INTO dbo.Usuario (Nombre, Apellido, Correo, PasswordHash, Salt, Telefono, IsActive)
+VALUES ('Admin', 'Bootstrap', 'admin@profit.local', @Hash, @Salt, NULL, 1);
+
+DECLARE @UsuarioID INT = SCOPE_IDENTITY();
+
+-- Asigna rol Administrador
+EXEC dbo.usp_UsuarioRol_AssignOrUpdate
+  @UsuarioID = @UsuarioID,
+  @NombreRol = 'Administrador',
+  @AssignedBy = @UsuarioID; 
+GO

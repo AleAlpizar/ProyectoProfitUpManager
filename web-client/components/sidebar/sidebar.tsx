@@ -21,10 +21,20 @@ import { FilterIcon } from "../icons/sidebar/filter-icon";
 import { useSidebarContext } from "../layout/layout-context";
 import { ChangeLogIcon } from "../icons/sidebar/changelog-icon";
 import { useRouter } from "next/router";
+import { useSession } from "@/hooks/useSession";
 
 export const SidebarWrapper = () => {
   const router = useRouter();
   const { collapsed, setCollapsed } = useSidebarContext();
+  const { logout } = useSession();
+
+  const onLogout = async () => {
+    try {
+      await logout();             
+    } finally {
+      router.replace("/login");    
+    }
+  };
 
   return (
     <Box
@@ -59,12 +69,6 @@ export const SidebarWrapper = () => {
                 icon={<AccountsIcon />}
                 href="/accounts"
               />
-
-              {/* <CollapseItems
-                    icon={<BalanceIcon />}
-                    items={['Banks Accounts', 'Credit Cards', 'Loans']}
-                    title="Balances"
-              /> */}
             </SidebarMenu>
 
             <SidebarMenu title="Clientes">
@@ -74,12 +78,6 @@ export const SidebarWrapper = () => {
                 icon={<CustomersIcon />}
                 href="/customers"
               />
-
-              {/* <CollapseItems
-                  icon={<BalanceIcon />}
-                  items={['Banks Accounts', 'Credit Cards', 'Loans']}
-                  title="Balances"
-              /> */}
             </SidebarMenu>
 
             <SidebarMenu title="Operaciones">
@@ -98,10 +96,7 @@ export const SidebarWrapper = () => {
 
               <SidebarMenu title="Inventario">
                 <SidebarItem
-                  isActive={
-                    router.pathname === "/inventario" ||
-                    router.pathname.startsWith("/inventario/index")
-                  }
+                  isActive={router.pathname === "/inventario" || router.pathname.startsWith("/inventario/index")}
                   title="Inicio"
                   icon={<ProductsIcon />}
                   href="/inventario"
@@ -119,17 +114,13 @@ export const SidebarWrapper = () => {
                   href="/inventario/bodegas"
                 />
                 <SidebarItem
-                  isActive={router.pathname.startsWith(
-                    "/inventario/existencias"
-                  )}
+                  isActive={router.pathname.startsWith("/inventario/existencias")}
                   title="Existencias"
                   icon={<ProductsIcon />}
                   href="/inventario/existencias"
                 />
                 <SidebarItem
-                  isActive={router.pathname.startsWith(
-                    "/inventario/descuentos"
-                  )}
+                  isActive={router.pathname.startsWith("/inventario/descuentos")}
                   title="Descuentos"
                   icon={<ProductsIcon />}
                   href="/inventario/descuentos"
@@ -212,11 +203,16 @@ export const SidebarWrapper = () => {
               <FilterIcon />
             </Tooltip>
             <Tooltip content={"Profile"} rounded color="primary">
-              <Avatar
-                src="https://i.pravatar.cc/150?u=a042581f4e29026704d"
-                size={"sm"}
-              />
+              <Avatar src="https://i.pravatar.cc/150?u=a042581f4e29026704d" size={"sm"} />
             </Tooltip>
+
+            <button
+              onClick={onLogout}
+              className="ml-2 rounded-md px-2 py-1 text-xs bg-red-500 text-white hover:opacity-90"
+              title="Cerrar sesión"
+            >
+              Salir
+            </button>
           </Sidebar.Footer>
         </Flex>
       </Sidebar>

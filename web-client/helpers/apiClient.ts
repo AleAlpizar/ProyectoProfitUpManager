@@ -1,14 +1,29 @@
+export async function apiJson<T>(
+  url: string,
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE" = "GET",
+  body?: unknown,
+  extraHeaders?: Record<string, string>
+): Promise<T> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(extraHeaders || {}),
+  };
 
-export const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5240";
-
-export async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
-    ...init,
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: method === "GET" ? undefined : JSON.stringify(body ?? {}),
   });
 
-  const text = await res.text();
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${text || res.statusText}`);
-  return text ? (JSON.parse(text) as T) : ({} as T);
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try {
+      const data = await res.json();
+      if (data?.message) msg = data.message;
+    } catch {}
+    throw new Error(msg);
+  }
+
+  if (res.status === 204) return undefined as unknown as T;
+  return (await res.json()) as T;
 }

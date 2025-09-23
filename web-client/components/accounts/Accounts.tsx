@@ -1,4 +1,3 @@
-// components/accounts/Accounts.tsx
 import Link from "next/link";
 import React from "react";
 import { HouseIcon } from "../icons/breadcrumb/house-icon";
@@ -6,6 +5,8 @@ import { UsersIcon } from "../icons/breadcrumb/users-icon";
 import { ExportIcon } from "../icons/accounts/export-icon";
 import { AddUser } from "./add-user";
 import Button from "../buttons/button";
+import { useSession } from "@/hooks/useSession";
+import { listUsers, updateUserRole, type Role, type UserDto } from "./accounts.api";
 
 type Status = "ACTIVE" | "PAUSED" | "VACATION";
 type UserRow = {
@@ -13,26 +14,45 @@ type UserRow = {
   name: string;
   email: string;
   avatar?: string;
-  role: string;
+  role: Role | string;
   team: string;
   status: Status;
+  usuarioId?: number;
 };
 
-const FAKE_USERS: UserRow[] = [
-  { id: "U-0001", name: "Daniel Vega", email: "daniel.vega@example.com", avatar: "https://avatars.githubusercontent.com/u/11277637?s=400&u=24785105d48d77659a143c00a80454aa0d1b50dc&v=4", role: "Soyla", team: "Management", status: "ACTIVE" },
-  { id: "U-0002", name: "Alexandra Alpízar", email: "alexandra.alpizar@example.com", avatar: "https://avatars.githubusercontent.com/u/133933772?v=4", role: "Technical Lead", team: "Development", status: "PAUSED" },
-  { id: "U-0003", name: "Cesar Arroyo", email: "cesar.arroyo@example.com", avatar: "https://avatars.githubusercontent.com/u/133933772?v=4", role: "Senior Developer", team: "Development", status: "ACTIVE" },
-  { id: "U-0004", name: "Esteban Quesada", email: "esteban.quesada@example.com", avatar: "https://avatars.githubusercontent.com/u/133933772?v=4", role: "Community Manager", team: "Marketing", status: "VACATION" },
-];
-
-/* ========= Página ========= */
 export default function Accounts() {
-  const [rows, setRows] = React.useState<UserRow[]>(FAKE_USERS);
+  const [rows, setRows] = React.useState<UserRow[]>([]);
   const [q, setQ] = React.useState("");
   const [filter, setFilter] = React.useState<"Todos" | Status>("Todos");
-
   const [page, setPage] = React.useState(1);
+  const [loading, setLoading] = React.useState(false);
   const pageSize = 8;
+
+  const { isAuthenticated, hasRole, authHeader } = useSession();
+
+  const mapToRow = (u: UserDto): UserRow => ({
+    id: `U-${String(u.usuarioID).padStart(4, "0")}`,
+    usuarioId: u.usuarioID,
+    name: `${u.nombre}${u.apellido ? " " + u.apellido : ""}`,
+    email: u.correo,
+    role: u.rol,
+    team: "—",
+    status: u.isActive ? "ACTIVE" : "PAUSED",
+  });
+
+  const load = React.useCallback(async () => {
+    if (!isAuthenticated || !hasRole("Administrador")) return;
+    try {
+      setLoading(true);
+      const data = await listUsers(authHeader as any);
+      setRows(data.map(mapToRow));
+      setPage(1);
+    } finally {
+      setLoading(false);
+    }
+  }, [isAuthenticated, hasRole, authHeader]);
+
+  React.useEffect(() => { load(); }, [load]);
 
   const filtered = React.useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -41,7 +61,7 @@ export default function Accounts() {
         !term ||
         r.name.toLowerCase().includes(term) ||
         r.email.toLowerCase().includes(term) ||
-        r.role.toLowerCase().includes(term) ||
+        String(r.role).toLowerCase().includes(term) ||
         r.id.toLowerCase().includes(term);
       const matchF = filter === "Todos" ? true : r.status === filter;
       return matchQ && matchF;
@@ -56,9 +76,20 @@ export default function Accounts() {
 
   React.useEffect(() => setPage(1), [q, filter]);
 
+  const handleCreated = () => { load(); };
+
+  const onChangeRole = async (u: UserRow, newRole: Role) => {
+    if (!u.usuarioId) return;
+    try {
+      await updateUserRole(u.usuarioId, newRole, authHeader as any);
+      setRows((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: newRole } : x)));
+    } catch (e: any) {
+      alert(e?.message || "No se pudo cambiar el rol");
+    }
+  };
+
   return (
     <div className="p-6 sm:px-16">
-      {/* Breadcrumbs minimal */}
       <nav aria-label="Breadcrumb" className="mb-3">
         <ol className="flex items-center gap-2 text-sm text-secondary/70">
           <li className="flex items-center gap-2">
@@ -73,13 +104,11 @@ export default function Accounts() {
         </ol>
       </nav>
 
-      {/* Header como Clientes */}
       <header className="mb-6">
         <h1 className="text-2xl font-bold text-secondary">Cuentas</h1>
         <p className="text-sm text-secondary/70">Registrar, editar, inactivar y exportar cuentas</p>
       </header>
 
-      {/* Toolbar como Clientes */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 items-center gap-2">
           <div className="relative w-full max-w-sm">
@@ -104,12 +133,10 @@ export default function Accounts() {
             <option value="PAUSED">Pausados</option>
             <option value="VACATION">Vacaciones</option>
           </select>
-
-
         </div>
 
         <div className="flex items-center gap-3">
-          <AddUser />
+          {isAuthenticated && hasRole("Administrador") && <AddUser onCreated={handleCreated} />}
           <button
             type="button"
             className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary/30"
@@ -121,7 +148,6 @@ export default function Accounts() {
         </div>
       </div>
 
-      {/* Tabla en card, igual que Clientes */}
       <div className="overflow-x-auto rounded-xl border border-black/5 bg-white shadow-sm">
         <table className="min-w-full border-collapse">
           <thead>
@@ -132,138 +158,111 @@ export default function Accounts() {
               <Th className="text-right">ACCIONES</Th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
-            {pageRows.map((u) => (
-              <tr key={u.id} className="hover:bg-gray-50">
-                {/* NAME */}
-                <Td>
-                  <div className="flex items-center gap-3">
-                    {u.avatar ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={u.avatar} alt={u.name} className="h-10 w-10 rounded-full object-cover ring-1 ring-black/5" />
-                    ) : (
-                      <div className="grid h-10 w-10 place-items-center rounded-full bg-gray-200 text-sm font-semibold text-gray-600">
-                        {u.name.slice(0, 1).toUpperCase()}
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium text-secondary">{u.name}</div>
-                      <div className="truncate text-xs text-secondary/60">{u.email}</div>
-                    </div>
+        <tbody className="divide-y divide-gray-200">
+          {loading && (
+            <tr>
+              <td colSpan={4} className="px-4 py-10 text-center text-sm text-secondary/70">
+                Cargando usuarios…
+              </td>
+            </tr>
+          )}
+
+          {!loading && pageRows.map((u) => (
+            <tr key={u.id} className="hover:bg-gray-50">
+              <Td>
+                <div className="flex items-center gap-3">
+                  <div className="grid h-10 w-10 place-items-center rounded-full bg-gray-200 text-sm font-semibold text-gray-600">
+                    {u.name.slice(0, 1).toUpperCase()}
                   </div>
-                </Td>
-
-                <Td>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-semibold text-secondary">{u.role}</span>
-                    <span className="text-xs font-semibold text-secondary/60">{u.team}</span>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium text-secondary">{u.name}</div>
+                    <div className="truncate text-xs text-secondary/60">{u.email}</div>
                   </div>
-                </Td>
+                </div>
+              </Td>
 
-                {/* STATUS */}
-                <Td>
-                  <StatusBadge status={u.status} />
-                </Td>
-
-                <Td className="text-right">
-                  <div className="inline-flex items-center gap-2">
-                    <Button
-                    variant="outline-primary"
-                       onClick={() => console.log("Editar", u.id)}
+              <Td>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-secondary">{u.role}</span>
+                  {isAuthenticated && hasRole("Administrador") && (
+                    <select
+                      className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
+                      value={u.role === "Administrador" ? "Administrador" : "Empleado"}
+                      onChange={(e) => onChangeRole(u, e.target.value as Role)}
+                      title="Cambiar rol"
                     >
-                      Editar
-                    </Button>
-                    <Button
-                    variant="danger"
-                      onClick={() => console.log("Inactivar (visual)", u.id)}
-                    >
-                      Inactivar
-                    </Button>
-                  </div>
-                </Td>
-              </tr>
-            ))}
+                      <option value="Empleado">Empleado</option>
+                      <option value="Administrador">Administrador</option>
+                    </select>
+                  )}
+                </div>
+              </Td>
 
-            {pageRows.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-4 py-10 text-center text-sm text-secondary/70">
-                  No hay cuentas para mostrar.
-                </td>
-              </tr>
-            )}
-          </tbody>
+              <Td><StatusBadge status={u.status} /></Td>
+
+              <Td className="text-right">
+                <div className="inline-flex items-center gap-2">
+                  <Button variant="outline-primary" onClick={() => console.log("Editar", u.id)}>Editar</Button>
+                  <Button variant="danger" onClick={() => console.log("Inactivar (visual)", u.id)}>Inactivar</Button>
+                </div>
+              </Td>
+            </tr>
+          ))}
+
+          {!loading && pageRows.length === 0 && (
+            <tr>
+              <td colSpan={4} className="px-4 py-10 text-center text-sm text-secondary/70">
+                No hay cuentas para mostrar.
+              </td>
+            </tr>
+          )}
+        </tbody>
         </table>
       </div>
 
-      {/* Paginación estilo Clientes */}
       <div className="mt-4 flex items-center justify-between text-sm text-secondary/70">
         <span>
           Mostrando{" "}
-          <b>
-            {pageRows.length === 0 ? 0 : (page - 1) * pageSize + 1}-
-            {(page - 1) * pageSize + pageRows.length}
-          </b>{" "}
+          <b>{pageRows.length === 0 ? 0 : (page - 1) * pageSize + 1}-{(page - 1) * pageSize + pageRows.length}</b>{" "}
           de <b>{filtered.length}</b>
         </span>
         <div className="flex items-center gap-2">
-          <PageBtn disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-            Prev
-          </PageBtn>
-          <span>
-            Página <b>{page}</b> de <b>{totalPages}</b>
-          </span>
-          <PageBtn disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
-            Next
-          </PageBtn>
+          <PageBtn disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</PageBtn>
+          <span> Página <b>{page}</b> de <b>{totalPages}</b> </span>
+          <PageBtn disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next</PageBtn>
         </div>
       </div>
     </div>
   );
 }
 
-/* ========= UI helpers (mismo look que Clientes) ========= */
-
 const Th: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ className = "", children }) => (
   <th className={["px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-secondary", className].join(" ")}>
     {children}
   </th>
 );
-
 const Td: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ className = "", children }) => (
   <td className={["px-3 py-2 text-sm text-secondary/80", className].join(" ")}>
     {children}
   </td>
 );
-
 const PageBtn: React.FC<React.PropsWithChildren<React.ButtonHTMLAttributes<HTMLButtonElement>>> = ({
-  className = "",
-  children,
-  ...props
+  className = "", children, ...props
 }) => (
   <button
-    className={[
-      "rounded-md px-3 py-1 text-sm",
-      "bg-gray-200 text-secondary hover:bg-gray-300",
-      "disabled:cursor-not-allowed disabled:opacity-60",
-      className,
-    ].join(" ")}
+    className={["rounded-md px-3 py-1 text-sm","bg-gray-200 text-secondary hover:bg-gray-300","disabled:cursor-not-allowed disabled:opacity-60",className].join(" ")}
     {...props}
   >
     {children}
   </button>
 );
-
-const StatusBadge: React.FC<{ status: Status }> = ({ status }) => {
-  const map: Record<Status, string> = {
+const StatusBadge: React.FC<{ status: "ACTIVE" | "PAUSED" | "VACATION" }> = ({ status }) => {
+  const map: Record<"ACTIVE" | "PAUSED" | "VACATION", string> = {
     ACTIVE: "bg-green-100 text-green-800",
     PAUSED: "bg-pink-100 text-pink-800",
     VACATION: "bg-amber-200 text-amber-900",
   };
-  const label: Record<Status, string> = {
-    ACTIVE: "ACTIVE",
-    PAUSED: "PAUSED",
-    VACATION: "VACATION",
-  };
+  const label = { ACTIVE: "ACTIVE", PAUSED: "PAUSED", VACATION: "VACATION" } as const;
   return (
     <span className={["inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", map[status]].join(" ")}>
       {label[status]}

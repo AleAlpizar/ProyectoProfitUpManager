@@ -3,20 +3,24 @@
   "WorkspaceRootPath": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\estep\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\estep\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\service\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\service\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\estep\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\estep\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\controllers\\healthcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\controllers\\healthcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\estep\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\dtos\\authdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\dtos\\authdtos.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\estep\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\estep\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\estep\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\service\\jwttokenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\service\\jwttokenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -26,7 +30,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 8,
+          "SelectedChildIndex": 9,
           "Children": [
             {
               "$type": "Bookmark",
@@ -54,54 +58,67 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "HealthController.cs",
-              "DocumentMoniker": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\HealthController.cs",
-              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Controllers\\HealthController.cs",
-              "ToolTip": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\HealthController.cs",
-              "RelativeToolTip": "ProfitManagerApp.Api\\Controllers\\HealthController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB4AAAAFAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-23T01:17:46.257Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "launchSettings.json",
-              "DocumentMoniker": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Properties\\launchSettings.json",
-              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Properties\\launchSettings.json",
-              "ToolTip": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Properties\\launchSettings.json",
-              "RelativeToolTip": "ProfitManagerApp.Api\\Properties\\launchSettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-09-23T01:17:36.585Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Program.cs",
               "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Program.cs",
-              "ToolTip": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Program.cs*",
-              "RelativeToolTip": "ProfitManagerApp.Api\\Program.cs*",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB0AAAAAAAAAAAAAAA==",
+              "ToolTip": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Program.cs",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-23T01:17:18.457Z",
+              "WhenOpened": "2025-09-23T04:11:31.145Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 3,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\appsettings.json",
-              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\appsettings.json",
-              "ToolTip": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\appsettings.json",
-              "RelativeToolTip": "ProfitManagerApp.Api\\appsettings.json",
+              "Title": "AuthDtos.cs",
+              "DocumentMoniker": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\AuthDtos.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Dtos\\AuthDtos.cs",
+              "ToolTip": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\AuthDtos.cs",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Dtos\\AuthDtos.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-09-23T01:17:06.41Z",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T04:11:14.104Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "JwtTokenService.cs",
+              "DocumentMoniker": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Service\\JwtTokenService.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Service\\JwtTokenService.cs",
+              "ToolTip": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Service\\JwtTokenService.cs",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Service\\JwtTokenService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T04:10:59.224Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "AuthController.cs",
+              "DocumentMoniker": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\AuthController.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Controllers\\AuthController.cs",
+              "ToolTip": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\AuthController.cs*",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Controllers\\AuthController.cs*",
+              "ViewState": "AgIAAEcAAAAAAAAAAAA0wGEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T03:30:05.62Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "AuthService.cs",
+              "DocumentMoniker": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Service\\AuthService.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Service\\AuthService.cs",
+              "ToolTip": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Service\\AuthService.cs*",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Service\\AuthService.cs*",
+              "ViewState": "AgIAAF0AAAAAAAAAAAAmwHEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-23T03:30:00.07Z",
               "EditorCaption": ""
             }
           ]

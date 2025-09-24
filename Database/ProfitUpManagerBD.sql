@@ -536,3 +536,287 @@ EXEC dbo.usp_UsuarioRol_AssignOrUpdate
   @NombreRol = 'Administrador',
   @AssignedBy = @UsuarioID; 
 GO
+
+
+-----------------------Productosss------------------------------
+-- Módulos del sistema
+IF OBJECT_ID('dbo.Modulo','U') IS NULL
+CREATE TABLE dbo.Modulo (
+  ModuloID INT IDENTITY(1,1) PRIMARY KEY,
+  Nombre NVARCHAR(100) NOT NULL UNIQUE,
+  IsActive BIT NOT NULL DEFAULT 1
+);
+
+-- Permisos por Rol y Módulo
+IF OBJECT_ID('dbo.RolPermiso','U') IS NULL
+CREATE TABLE dbo.RolPermiso (
+  RolPermisoID INT IDENTITY(1,1) PRIMARY KEY,
+  RolID INT NOT NULL,
+  ModuloID INT NOT NULL,
+  PuedeLeer BIT NOT NULL DEFAULT 0,
+  PuedeEscribir BIT NOT NULL DEFAULT 0,
+  CONSTRAINT UQ_RolModulo UNIQUE(RolID, ModuloID),
+  CONSTRAINT FK_RolPermiso_Rol FOREIGN KEY (RolID) REFERENCES dbo.Rol(RolID),
+  CONSTRAINT FK_RolPermiso_Mod FOREIGN KEY (ModuloID) REFERENCES dbo.Modulo(ModuloID)
+);
+
+-- Seed del módulo Inventario y permisos base
+IF NOT EXISTS (SELECT 1 FROM dbo.Modulo WHERE Nombre='Inventario')
+  INSERT INTO dbo.Modulo (Nombre) VALUES ('Inventario');
+
+DECLARE @ModInv INT = (SELECT ModuloID FROM dbo.Modulo WHERE Nombre='Inventario');
+DECLARE @RolAdmin INT = (SELECT RolID FROM dbo.Rol WHERE NombreRol='Administrador');
+DECLARE @RolEmpleado INT = (SELECT RolID FROM dbo.Rol WHERE NombreRol='Empleado');
+
+IF NOT EXISTS (SELECT 1 FROM dbo.RolPermiso WHERE RolID=@RolAdmin AND ModuloID=@ModInv)
+  INSERT INTO dbo.RolPermiso(RolID, ModuloID, PuedeLeer, PuedeEscribir) VALUES (@RolAdmin, @ModInv, 1, 1);
+
+IF NOT EXISTS (SELECT 1 FROM dbo.RolPermiso WHERE RolID=@RolEmpleado AND ModuloID=@ModInv)
+  INSERT INTO dbo.RolPermiso(RolID, ModuloID, PuedeLeer, PuedeEscribir) VALUES (@RolEmpleado, @ModInv, 1, 1);
+
+
+CREATE OR ALTER PROCEDURE dbo.usp_Seguridad_PuedeAccederModulo
+  @UsuarioID INT,
+  @NombreModulo NVARCHAR(100),
+  @Accion NVARCHAR(20) = 'Leer' 
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  DECLARE @ModuloID INT = (SELECT ModuloID FROM dbo.Modulo WHERE Nombre=@NombreModulo AND IsActive=1);
+  IF @ModuloID IS NULL
+  BEGIN
+    RAISERROR('MODULO_INEXISTENTE',16,1);
+    RETURN;
+  END
+
+  DECLARE @RolID INT = (
+    SELECT TOP 1 ur.RolID
+    FROM dbo.UsuarioRol ur
+    JOIN dbo.Rol r ON r.RolID=ur.RolID AND r.IsActive=1
+    WHERE ur.UsuarioID=@UsuarioID
+    ORDER BY ur.AssignedAt DESC
+  );
+
+  IF @RolID IS NULL
+  BEGIN
+    SELECT CAST(0 AS BIT) AS HasAccess;
+    RETURN;
+  END
+
+  IF @Accion='Leer'
+    SELECT CAST(CASE WHEN rp.PuedeLeer=1 THEN 1 ELSE 0 END AS BIT) AS HasAccess
+    FROM dbo.RolPermiso rp WHERE rp.RolID=@RolID AND rp.ModuloID=@ModuloID;
+  ELSE
+    SELECT CAST(CASE WHEN rp.PuedeEscribir=1 THEN 1 ELSE 0 END AS BIT) AS HasAccess
+    FROM dbo.RolPermiso rp WHERE rp.RolID=@RolID AND rp.ModuloID=@ModuloID;
+END
+GO
+
+------alta de productos ----------
+CREATE OR ALTER PROCEDURE dbo.usp_Producto_Create
+  @Nombre NVARCHAR(250),
+  @PrecioVenta DECIMAL(18,2),
+  @SKU NVARCHAR(100) = NULL,
+  @Descripcion NVARCHAR(MAX) = NULL,
+  @CodigoInterno NVARCHAR(100) = NULL,
+  @UnidadAlmacenamientoID INT = NULL,
+  @PrecioCosto DECIMAL(18,2) = NULL,
+  @Peso DECIMAL(18,4) = NULL,
+  @Largo DECIMAL(18,4) = NULL,
+  @Alto DECIMAL(18,4) = NULL,
+  @Ancho DECIMAL(18,4) = NULL,
+  @CreatedBy INT = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  -- Validaciones 
+  IF (@Nombre IS NULL OR LTRIM(RTRIM(@Nombre))='')
+  BEGIN RAISERROR('FIELD_REQUIRED:Nombre',16,1); RETURN; END
+  IF (@PrecioVenta IS NULL)
+  BEGIN RAISERROR('FIELD_REQUIRED:PrecioVenta',16,1); RETURN; END
+
+  IF @SKU IS NOT NULL AND EXISTS(SELECT 1 FROM dbo.Producto WHERE SKU=@SKU)
+  BEGIN RAISERROR('SKU_DUPLICATE',16,1); RETURN; END
+
+  BEGIN TRY
+    INSERT INTO dbo.Producto
+    (SKU,Nombre,Descripcion,CodigoInterno,Peso,Largo,Alto,Ancho,UnidadAlmacenamientoID,PrecioCosto,PrecioVenta,CreatedBy)
+    VALUES (@SKU,@Nombre,@Descripcion,@CodigoInterno,@Peso,@Largo,@Alto,@Ancho,@UnidadAlmacenamientoID,@PrecioCosto,@PrecioVenta,@CreatedBy);
+
+    SELECT SCOPE_IDENTITY() AS ProductoID;
+  END TRY
+  BEGIN CATCH
+    DECLARE @Num INT = ERROR_NUMBER(), @Msg NVARCHAR(2048)=ERROR_MESSAGE();
+    IF @Num IN (2601,2627) RAISERROR('SKU_DUPLICATE',16,1);
+    ELSE RAISERROR(@Msg,16,1);
+  END CATCH
+END
+GO
+
+----consultas de existencias ---
+CREATE OR ALTER PROCEDURE dbo.usp_Inventario_GetStock
+  @ProductoID INT = NULL,
+  @BodegaID INT = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  SELECT
+    i.InventarioID,
+    p.ProductoID, p.Nombre AS Producto, p.SKU,
+    b.BodegaID, b.Nombre AS Bodega,
+    i.Cantidad,
+    i.CantidadReservada,
+    (i.Cantidad - i.CantidadReservada) AS Disponible,
+    i.FechaUltimaActualizacion
+  FROM dbo.Inventario i
+  JOIN dbo.Producto p ON p.ProductoID=i.ProductoID
+  JOIN dbo.Bodega b ON b.BodegaID=i.BodegaID
+  WHERE (@ProductoID IS NULL OR i.ProductoID=@ProductoID)
+    AND (@BodegaID IS NULL OR i.BodegaID=@BodegaID)
+  ORDER BY p.Nombre, b.Nombre;
+END
+GO
+
+---mantener stock
+CREATE OR ALTER PROCEDURE dbo.usp_Inventario_Ajuste
+  @ProductoID INT,
+  @BodegaID INT,
+  @TipoMovimiento NVARCHAR(50), 
+  @Cantidad DECIMAL(18,4),
+  @Motivo NVARCHAR(250) = NULL,
+  @UsuarioID INT = NULL
+AS
+BEGIN
+  SET NOCOUNT ON;
+  IF @Cantidad <= 0 BEGIN RAISERROR('INVALID_QTY',16,1); RETURN; END
+
+  BEGIN TRAN;
+
+  DECLARE @Sign INT = CASE WHEN @TipoMovimiento IN ('Entrada','AjustePositivo') THEN +1 ELSE -1 END;
+
+  IF NOT EXISTS (SELECT 1 FROM dbo.Inventario WHERE ProductoID=@ProductoID AND BodegaID=@BodegaID)
+    INSERT INTO dbo.Inventario(ProductoID,BodegaID,Cantidad,CantidadReservada)
+    VALUES(@ProductoID,@BodegaID,0,0);
+
+  IF @Sign = -1
+  BEGIN
+    DECLARE @Disponible DECIMAL(18,4) =
+      (SELECT (Cantidad - CantidadReservada) FROM dbo.Inventario WHERE ProductoID=@ProductoID AND BodegaID=@BodegaID);
+    IF @Disponible < @Cantidad
+    BEGIN ROLLBACK; RAISERROR('STOCK_INSUFICIENTE',16,1); RETURN; END
+  END
+
+  UPDATE dbo.Inventario
+     SET Cantidad = Cantidad + (@Sign * @Cantidad),
+         FechaUltimaActualizacion = SYSUTCDATETIME()
+   WHERE ProductoID=@ProductoID AND BodegaID=@BodegaID;
+
+  INSERT INTO dbo.MovimientoInventario(ProductoID,BodegaID,TipoMovimiento,Cantidad,ReferenciaTipo,Motivo,UsuarioID)
+  VALUES(@ProductoID,@BodegaID,@TipoMovimiento,@Cantidad,NULL,@Motivo,@UsuarioID);
+
+  COMMIT;
+  SELECT 'OK' AS Result;
+END
+GO
+
+
+
+SET NOCOUNT ON;
+
+--------------------------------
+-- Parámetros
+--------------------------------
+DECLARE @SKU       NVARCHAR(100) = N'1111';   -- <-- ajusta a tu SKU
+DECLARE @Cantidad  DECIMAL(18,4) = 120;       -- <-- cantidad a cargar
+DECLARE @Nombre    NVARCHAR(250) = N'Vino tinto demo';
+
+--------------------------------
+-- Bodegas (crear si faltan)
+--------------------------------
+IF NOT EXISTS (SELECT 1 FROM dbo.Bodega WHERE Nombre = N'Central')
+    INSERT INTO dbo.Bodega (Codigo, Nombre, Direccion, Contacto)
+    VALUES (N'CEN', N'Central', NULL, NULL);
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Bodega WHERE Nombre = N'Norte')
+    INSERT INTO dbo.Bodega (Codigo, Nombre, Direccion, Contacto)
+    VALUES (N'NOR', N'Norte', NULL, NULL);
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Bodega WHERE Nombre = N'Sur')
+    INSERT INTO dbo.Bodega (Codigo, Nombre, Direccion, Contacto)
+    VALUES (N'SUR', N'Sur', NULL, NULL);
+
+DECLARE @BodegaID INT = (SELECT TOP 1 BodegaID FROM dbo.Bodega WHERE Nombre = N'Central');
+
+--------------------------------
+-- Producto (buscar por SKU; crear si no existe)
+--------------------------------
+DECLARE @ProductoID INT = (SELECT TOP 1 ProductoID FROM dbo.Producto WHERE SKU = @SKU);
+
+IF @ProductoID IS NULL
+BEGIN
+    INSERT INTO dbo.Producto (SKU, Nombre, Descripcion, PrecioVenta, IsActive)
+    VALUES (@SKU, @Nombre, N'Producto de prueba', 35000, 1);
+
+    SET @ProductoID = SCOPE_IDENTITY();
+END
+
+--------------------------------
+-- Validaciones
+--------------------------------
+IF @ProductoID IS NULL
+BEGIN
+    RAISERROR('No se pudo obtener ProductoID', 16, 1);
+    RETURN;
+END
+
+IF @BodegaID IS NULL
+BEGIN
+    RAISERROR('No se pudo obtener BodegaID (revisa que exista "Central")', 16, 1);
+    RETURN;
+END
+
+--------------------------------
+-- UPSERT Inventario (sin MERGE)
+--------------------------------
+IF EXISTS (
+    SELECT 1 FROM dbo.Inventario
+    WHERE ProductoID = @ProductoID AND BodegaID = @BodegaID
+)
+BEGIN
+    UPDATE dbo.Inventario
+    SET Cantidad = Cantidad + @Cantidad,
+        FechaUltimaActualizacion = SYSUTCDATETIME()
+    WHERE ProductoID = @ProductoID AND BodegaID = @BodegaID;
+END
+ELSE
+BEGIN
+    INSERT INTO dbo.Inventario
+        (ProductoID, BodegaID, Cantidad, CantidadReservada, FechaUltimaActualizacion)
+    VALUES
+        (@ProductoID, @BodegaID, @Cantidad, 0, SYSUTCDATETIME());
+END
+
+--------------------------------
+-- Movimiento (auditoría)
+--------------------------------
+INSERT INTO dbo.MovimientoInventario
+    (ProductoID, BodegaID, TipoMovimiento, Cantidad, Motivo)
+VALUES
+    (@ProductoID, @BodegaID, N'Entrada', @Cantidad, N'Carga inicial demo');
+
+--------------------------------
+-- Verifica lo cargado
+--------------------------------
+SELECT
+    b.Nombre       AS Bodega,
+    p.Nombre       AS Producto,
+    p.SKU,
+    i.Cantidad     AS Existencia,
+    CAST(i.Cantidad - i.CantidadReservada AS DECIMAL(18,4)) AS Disponible
+FROM dbo.Inventario i
+JOIN dbo.Producto  p ON p.ProductoID = i.ProductoID
+JOIN dbo.Bodega    b ON b.BodegaID   = i.BodegaID
+WHERE i.ProductoID = @ProductoID AND i.BodegaID = @BodegaID;

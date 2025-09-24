@@ -189,6 +189,140 @@
         }
       }
     },
+    "/api/Inventario/acceso": {
+      "get": {
+        "tags": [
+          "Inventario"
+        ],
+        "parameters": [
+          {
+            "name": "modulo",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "Inventario"
+            }
+          },
+          {
+            "name": "accion",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "Leer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Inventario/stock": {
+      "get": {
+        "tags": [
+          "Inventario"
+        ],
+        "parameters": [
+          {
+            "name": "productoId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "bodegaId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Inventario/ajuste": {
+      "post": {
+        "tags": [
+          "Inventario"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AjusteInventarioDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AjusteInventarioDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/AjusteInventarioDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Productos": {
+      "post": {
+        "tags": [
+          "Productos"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductoCreateDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductoCreateDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductoCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/db-ping": {
+      "get": {
+        "tags": [
+          "ProfitManagerApp.Api"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/WeatherForecast": {
       "get": {
         "tags": [
@@ -231,6 +365,32 @@
   },
   "components": {
     "schemas": {
+      "AjusteInventarioDto": {
+        "type": "object",
+        "properties": {
+          "productoID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bodegaID": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tipoMovimiento": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidad": {
+            "type": "number",
+            "format": "double"
+          },
+          "motivo": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "LoginDto": {
         "type": "object",
         "properties": {
@@ -266,6 +426,62 @@
           },
           "rol": {
             "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ProductoCreateDto": {
+        "type": "object",
+        "properties": {
+          "sku": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "codigoInterno": {
+            "type": "string",
+            "nullable": true
+          },
+          "unidadAlmacenamientoID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "precioCosto": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "precioVenta": {
+            "type": "number",
+            "format": "double"
+          },
+          "peso": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "largo": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "alto": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "ancho": {
+            "type": "number",
+            "format": "double",
             "nullable": true
           }
         },

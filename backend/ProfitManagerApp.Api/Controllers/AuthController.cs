@@ -17,19 +17,29 @@ public class AuthController : ControllerBase
         _auth = auth; _jwt = jwt;
     }
 
+    private int? GetUserId()
+    {
+        var v =
+            User.FindFirstValue("uid") ??
+            User.FindFirstValue(ClaimTypes.NameIdentifier) ??
+            User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        return int.TryParse(v, out var id) ? id : (int?)null;
+    }
+
     [HttpPost("register")]
     [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
     {
         try
         {
-            var createdBy = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : (int?)null;
+            var createdBy = GetUserId();
             var idNew = await _auth.CreateUserAsync(dto, createdBy);
             return Ok(new { usuarioId = idNew });
         }
         catch (ApplicationException ex) when (ex.Message == "EMAIL_DUPLICATE")
         {
-            return Conflict(new { message = "El correo ya está registrado." }); 
+            return Conflict(new { message = "El correo ya está registrado." });
         }
     }
 
@@ -71,7 +81,9 @@ public class AuthController : ControllerBase
     [Authorize]
     public async Task<ActionResult<MeDto>> Me()
     {
-        var email = User.FindFirstValue(ClaimTypes.Email);
+        var email = User.FindFirstValue(ClaimTypes.Email)
+                  ?? User.FindFirstValue(JwtRegisteredClaimNames.Email);
+
         if (string.IsNullOrWhiteSpace(email)) return Unauthorized();
 
         var u = await _auth.GetByCorreoAsync(email);
@@ -84,10 +96,11 @@ public class AuthController : ControllerBase
     [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> UpdateRole([FromRoute] int usuarioId, [FromRoute] string rol)
     {
-        var by = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var id) ? id : (int?)null;
+        var by = GetUserId();
         await _auth.UpdateUserRoleAsync(usuarioId, rol, by);
         return Ok(new { usuarioId, rol });
     }
+
     [HttpGet("users")]
     [Authorize(Roles = "Administrador")]
     public async Task<ActionResult<IEnumerable<UserListItem>>> Users()
@@ -95,5 +108,4 @@ public class AuthController : ControllerBase
         var data = await _auth.GetUsersAsync();
         return Ok(data);
     }
-
 }

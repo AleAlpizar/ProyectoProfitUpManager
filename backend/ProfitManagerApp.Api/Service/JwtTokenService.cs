@@ -19,14 +19,20 @@ public class JwtTokenService
 
         var claims = new[]
         {
+            new Claim("uid", userId.ToString()),
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
             new Claim(JwtRegisteredClaimNames.Sub, userId.ToString()),
+
+            new Claim(ClaimTypes.Email, email),
             new Claim(JwtRegisteredClaimNames.Email, email),
+
             new Claim(ClaimTypes.Role, role ?? "Empleado")
         };
 
         var token = new JwtSecurityToken(
             issuer, audience, claims, notBefore: now,
-            expires: expires, signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
+            expires: expires,
+            signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256)
         );
 
         return (new JwtSecurityTokenHandler().WriteToken(token), expires);

@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Domain\\ProfitManagerApp.Domain.csproj": {}
+    "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Domain\\ProfitManagerApp.Domain.csproj": {}
   },
   "projects": {
-    "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\ProfitManagerApp.Data.csproj": {
+    "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\ProfitManagerApp.Data.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\ProfitManagerApp.Data.csproj",
+        "projectUniqueName": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\ProfitManagerApp.Data.csproj",
         "projectName": "ProfitManagerApp.Data",
-        "projectPath": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\ProfitManagerApp.Data.csproj",
-        "packagesPath": "C:\\Users\\EsteP\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\obj\\",
+        "projectPath": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\ProfitManagerApp.Data.csproj",
+        "packagesPath": "C:\\Users\\11alp\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\EsteP\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\11alp\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -86,20 +86,20 @@
         }
       }
     },
-    "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Domain\\ProfitManagerApp.Domain.csproj": {
+    "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Domain\\ProfitManagerApp.Domain.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Domain\\ProfitManagerApp.Domain.csproj",
+        "projectUniqueName": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Domain\\ProfitManagerApp.Domain.csproj",
         "projectName": "ProfitManagerApp.Domain",
-        "projectPath": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Domain\\ProfitManagerApp.Domain.csproj",
-        "packagesPath": "C:\\Users\\EsteP\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Domain\\obj\\",
+        "projectPath": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Domain\\ProfitManagerApp.Domain.csproj",
+        "packagesPath": "C:\\Users\\11alp\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Domain\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\EsteP\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\11alp\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -115,8 +115,8 @@
           "net9.0": {
             "targetAlias": "net9.0",
             "projectReferences": {
-              "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\ProfitManagerApp.Data.csproj": {
-                "projectPath": "C:\\Users\\EsteP\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\ProfitManagerApp.Data.csproj"
+              "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\ProfitManagerApp.Data.csproj": {
+                "projectPath": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\ProfitManagerApp.Data.csproj"
               }
             }
           }

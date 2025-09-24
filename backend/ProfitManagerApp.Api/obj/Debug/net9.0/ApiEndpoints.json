@@ -10,6 +10,80 @@
     "ReturnTypes": []
   },
   {
+    "ContainingType": "ProfitManagerApp.Api.Controllers.InventarioController",
+    "Method": "Acceso",
+    "RelativePath": "api/Inventario/acceso",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "modulo",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "accion",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ProfitManagerApp.Api.Controllers.InventarioController",
+    "Method": "Ajuste",
+    "RelativePath": "api/Inventario/ajuste",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "ProfitManagerApp.Domain.Inventory.Dto.AjusteInventarioDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ProfitManagerApp.Api.Controllers.InventarioController",
+    "Method": "GetStock",
+    "RelativePath": "api/Inventario/stock",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "productoId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "bodegaId",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=9.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ProfitManagerApp.Api.Controllers.ProductosController",
+    "Method": "Crear",
+    "RelativePath": "api/Productos",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "ProfitManagerApp.Domain.Inventory.Dto.ProductoCreateDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
     "ContainingType": "AuthController",
     "Method": "Login",
     "RelativePath": "auth/login",
@@ -111,6 +185,22 @@
       }
     ],
     "ReturnTypes": []
+  },
+  {
+    "ContainingType": "Program\u002B\u003C\u003Ec",
+    "Method": "\u003C\u003CMain\u003E$\u003Eb__0_2",
+    "RelativePath": "db-ping",
+    "HttpMethod": "GET",
+    "IsController": false,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Void",
+        "MediaTypes": [],
+        "StatusCode": 200
+      }
+    ]
   },
   {
     "ContainingType": "ProfitManagerApp.Api.Controllers.WeatherForecastController",

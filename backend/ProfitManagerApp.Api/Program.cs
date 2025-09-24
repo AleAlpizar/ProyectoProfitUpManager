@@ -1,6 +1,9 @@
+using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
+using ProfitManagerApp.Data.Abstractions;
+using ProfitManagerApp.Data.Infrastructure;
+using ProfitManagerApp.Data.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +24,9 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddSingleton<SqlConnectionFactory>();
+builder.Services.AddScoped<IInventarioRepository, InventarioRepository>();
 
 var issuer = builder.Configuration["Jwt:Issuer"];
 var audience = builder.Configuration["Jwt:Audience"];
@@ -65,6 +71,24 @@ app.UseCors(CorsPolicy);
 
 app.UseAuthentication();  
 app.UseAuthorization();
+
+app.MapGet("/db-ping", (SqlConnectionFactory f) =>
+{
+    try
+    {
+        using var cn = f.Create();       
+        cn.Open();                       
+        using var cmd = cn.CreateCommand(); 
+        cmd.CommandText = "SELECT DB_NAME()";
+        var db = cmd.ExecuteScalar() as string; 
+        return Results.Ok(new { connected = true, db });
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem(ex.Message);
+    }
+});
+
 
 app.MapControllers();
 

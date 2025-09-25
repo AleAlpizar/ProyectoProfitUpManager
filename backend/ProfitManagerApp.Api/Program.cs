@@ -1,16 +1,15 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
-using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Data.Infrastructure;
-using ProfitManagerApp.Data.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
 const string CorsPolicy = "AllowFrontend";
 
-var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
-                     ?? new[] { "http://localhost:3000" };
+var allowedOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? new[] { "http://localhost:3000" };
 
 builder.Services.AddCors(options =>
 {
@@ -26,11 +25,16 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddSingleton<SqlConnectionFactory>();
-builder.Services.AddScoped<IInventarioRepository, InventarioRepository>();
+
+builder.Services.AddScoped<
+    ProfitManagerApp.Data.Abstractions.IInventarioRepository,
+    ProfitManagerApp.Data.Repositories.InventarioRepository
+>();
 
 var issuer = builder.Configuration["Jwt:Issuer"];
 var audience = builder.Configuration["Jwt:Audience"];
-var key = builder.Configuration["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key no configurado");
+var key = builder.Configuration["Jwt:Key"]
+          ?? throw new InvalidOperationException("Jwt:Key no configurado");
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -54,7 +58,6 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<JwtTokenService>();
 
-
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -69,18 +72,18 @@ else
 
 app.UseCors(CorsPolicy);
 
-app.UseAuthentication();  
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapGet("/db-ping", (SqlConnectionFactory f) =>
 {
     try
     {
-        using var cn = f.Create();       
-        cn.Open();                       
-        using var cmd = cn.CreateCommand(); 
+        using var cn = f.Create();
+        cn.Open();
+        using var cmd = cn.CreateCommand();
         cmd.CommandText = "SELECT DB_NAME()";
-        var db = cmd.ExecuteScalar() as string; 
+        var db = cmd.ExecuteScalar() as string;
         return Results.Ok(new { connected = true, db });
     }
     catch (Exception ex)
@@ -89,7 +92,5 @@ app.MapGet("/db-ping", (SqlConnectionFactory f) =>
     }
 });
 
-
 app.MapControllers();
-
 app.Run();

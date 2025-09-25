@@ -1,68 +1,66 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Domain.Inventory.Dto;
-using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace ProfitManagerApp.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
     public class ProductosController : ControllerBase
     {
-        private readonly IInventarioRepository _repo;
-        public ProductosController(IInventarioRepository repo) => _repo = repo;
+        private readonly IInventarioRepository _inventarioRepository;
 
-        private int? GetUserId()
+        public ProductosController(IInventarioRepository inventarioRepository)
         {
-            var v =
-                User.FindFirstValue("uid") ??
-                User.FindFirstValue(ClaimTypes.NameIdentifier) ??
-                User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-
-            return int.TryParse(v, out var id) ? id : (int?)null;
+            _inventarioRepository = inventarioRepository;
         }
 
         [HttpPost]
-        public async Task<IActionResult> Crear([FromBody] ProductoCreateDto dto)
+        public async Task<IActionResult> Create([FromBody] ProductoCreateDto dto)
         {
-            var uid = GetUserId();
-            if (uid is null) return Unauthorized();
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            var allowed = await _repo.PuedeAccederModuloAsync(uid.Value, "Inventario", "Escribir");
-            if (!allowed) return Forbid();
-
-            if (string.IsNullOrWhiteSpace(dto.Nombre))
-                return BadRequest(new { error = "El nombre es obligatorio." });
-
-            if (dto.PrecioVenta <= 0)
-                return BadRequest(new { error = "El precio de venta debe ser mayor a 0." });
-
-            if (dto.BodegaId <= 0)
-                return BadRequest(new { error = "BODEGA_REQUERIDA", detalle = "Debe seleccionar una bodega válida." });
-
-            if (!await _repo.BodegaExistsAsync(dto.BodegaId))
-                return BadRequest(new { error = "BODEGA_INVALIDA", detalle = "La bodega seleccionada no existe o está inactiva." });
+            int? userId = null;
+            var idClaim = User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (int.TryParse(idClaim, out var idVal)) userId = idVal;
 
             try
             {
-                var id = await _repo.CrearProductoAsync(dto, uid);
-                return CreatedAtAction(nameof(Crear), new { id }, new { productoId = id, message = "Producto registrado" });
+                var productoId = await _inventarioRepository.CrearProductoAsync(dto, userId);
+
+                var tieneBodega = dto.BodegaID.HasValue;
+                var stockIni = dto.StockInicial.GetValueOrDefault(0m);
+
+                if (tieneBodega && stockIni > 0m)
+                {
+                    var ajuste = new AjusteInventarioDto
+                    {
+                        ProductoID = productoId,
+                        BodegaID = dto.BodegaID!.Value,
+                        TipoMovimiento = "Entrada",
+                        Cantidad = stockIni,
+                        Motivo = "Stock inicial (alta de producto)"
+                    };
+
+                    await _inventarioRepository.AjusteAsync(ajuste, userId);
+                }
+
+                return Created($"/api/productos/{productoId}", new { productoId });
             }
-            catch (ApplicationException ex) when (ex.Message == "BODEGA_INVALIDA")
+            catch (SqlException ex) when (ex.Message.Contains("SKU_DUPLICATE"))
             {
-                return BadRequest(new { error = "BODEGA_INVALIDA", detalle = "La bodega seleccionada no existe o está inactiva." });
+                return Conflict(new { error = "El SKU ya existe." });
             }
-            catch (ApplicationException ex) when (ex.Message == "SKU_DUPLICATE")
+            catch (SqlException ex) when (ex.Message.Contains("FIELD_REQUIRED:Nombre"))
             {
-                return BadRequest(new { error = "El SKU ya existe" });
+                return BadRequest(new { error = "El nombre es obligatorio." });
             }
-            catch (Exception ex) when (ex.Message.StartsWith("FIELD_REQUIRED"))
+            catch (SqlException ex) when (ex.Message.Contains("FIELD_REQUIRED:PrecioVenta"))
             {
-                var campo = ex.Message.Split(':').LastOrDefault() ?? "Desconocido";
-                return BadRequest(new { error = "Campos obligatorios faltantes", campo });
+                return BadRequest(new { error = "El precio de venta es obligatorio." });
             }
         }
     }

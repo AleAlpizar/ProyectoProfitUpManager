@@ -1,9 +1,9 @@
 import { useAuthToken } from "./useAuthToken";
-import { apiFetch, ApiError } from "../src/lib/api";
+import { apiFetch, ApiError } from "../../src/lib/api";
 import { useCallback, useState } from "react";
 
 export function useApi() {
-  const { token, ready } = useAuthToken();   
+  const { token, ready } = useAuthToken();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<ApiError | null>(null);
 
@@ -24,5 +24,5 @@ export function useApi() {
     [token]
   );
 
-  return { call, loading, error, ready };    
+  return { call, loading, error, ready };
 }

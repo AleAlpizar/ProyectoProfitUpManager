@@ -177,6 +177,47 @@
         }
       }
     },
+    "/api/Bodegas": {
+      "get": {
+        "tags": [
+          "Bodegas"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Bodegas"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BodegaCreateDto"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BodegaCreateDto"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/BodegaCreateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Health/db": {
       "get": {
         "tags": [
@@ -276,6 +317,44 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/Inventario/bodegas": {
+      "get": {
+        "tags": [
+          "Inventario"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BodegaDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BodegaDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BodegaDto"
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -391,6 +470,52 @@
         },
         "additionalProperties": false
       },
+      "BodegaCreateDto": {
+        "required": [
+          "nombre"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "direccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "contacto": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BodegaDto": {
+        "type": "object",
+        "properties": {
+          "bodegaId": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "codigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "isActive": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "LoginDto": {
         "type": "object",
         "properties": {
@@ -432,6 +557,10 @@
         "additionalProperties": false
       },
       "ProductoCreateDto": {
+        "required": [
+          "nombre",
+          "precioVenta"
+        ],
         "type": "object",
         "properties": {
           "sku": {
@@ -439,8 +568,8 @@
             "nullable": true
           },
           "nombre": {
-            "type": "string",
-            "nullable": true
+            "minLength": 1,
+            "type": "string"
           },
           "descripcion": {
             "type": "string",
@@ -461,6 +590,7 @@
             "nullable": true
           },
           "precioVenta": {
+            "minimum": 0,
             "type": "number",
             "format": "double"
           },
@@ -480,6 +610,17 @@
             "nullable": true
           },
           "ancho": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "bodegaID": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "stockInicial": {
+            "minimum": 0,
             "type": "number",
             "format": "double",
             "nullable": true

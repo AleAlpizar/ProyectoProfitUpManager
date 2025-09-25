@@ -5,6 +5,7 @@ using ProfitManagerApp.Domain.Inventory.Dto;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
 
+
 namespace ProfitManagerApp.Api.Controllers
 {
     [ApiController]

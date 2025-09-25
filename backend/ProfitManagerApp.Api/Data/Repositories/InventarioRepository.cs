@@ -1,8 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Data;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using Dapper;
-using Microsoft.Data.SqlClient;
+using Microsoft.Data.SqlClient; 
 using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Data.Infrastructure;
 using ProfitManagerApp.Domain.Inventory.Dto;
@@ -16,7 +17,7 @@ namespace ProfitManagerApp.Data.Repositories
 
         public async Task<bool> PuedeAccederModuloAsync(int usuarioId, string modulo, string accion)
         {
-            using var conn = _factory.Create(); 
+            using var conn = _factory.Create();
             var res = await conn.QueryFirstOrDefaultAsync<bool>(
                 "dbo.usp_Seguridad_PuedeAccederModulo",
                 new { UsuarioID = usuarioId, NombreModulo = modulo, Accion = accion },
@@ -27,37 +28,27 @@ namespace ProfitManagerApp.Data.Repositories
         public async Task<int> CrearProductoAsync(ProductoCreateDto dto, int? createdBy)
         {
             using var conn = _factory.Create();
-            try
-            {
-                var id = await conn.ExecuteScalarAsync<int>(
-                    "dbo.usp_Producto_Create",
-                    new
-                    {
-                        dto.SKU,
-                        dto.Nombre,
-                        dto.Descripcion,
-                        dto.CodigoInterno,
-                        dto.UnidadAlmacenamientoID,
-                        dto.PrecioCosto,
-                        dto.PrecioVenta,
-                        dto.Peso,
-                        dto.Largo,
-                        dto.Alto,
-                        dto.Ancho,
 
-                        dto.BodegaId,
-                        dto.StockInicial,
+            var id = await conn.ExecuteScalarAsync<int>(
+                "dbo.usp_Producto_Create",
+                new
+                {
+                    dto.SKU,
+                    dto.Nombre,
+                    dto.Descripcion,
+                    dto.CodigoInterno,
+                    dto.UnidadAlmacenamientoID,
+                    dto.PrecioCosto,
+                    dto.PrecioVenta,
+                    dto.Peso,
+                    dto.Largo,
+                    dto.Alto,
+                    dto.Ancho,
+                    CreatedBy = createdBy
+                },
+                commandType: CommandType.StoredProcedure);
 
-                        CreatedBy = createdBy
-                    },
-                    commandType: CommandType.StoredProcedure);
-
-                return id;
-            }
-            catch (SqlException)
-            {
-                throw;
-            }
+            return id;
         }
 
         public async Task<IEnumerable<StockRowDto>> GetStockAsync(int? productoId, int? bodegaId)
@@ -90,25 +81,37 @@ namespace ProfitManagerApp.Data.Repositories
         public async Task<bool> BodegaExistsAsync(int bodegaId)
         {
             using var conn = _factory.Create();
-            var exists = await conn.ExecuteScalarAsync<int?>(
-                "SELECT 1 FROM dbo.Bodega WHERE BodegaID = @BodegaID AND IsActive = 1",
+            var exists = await conn.ExecuteScalarAsync<int>(
+                "SELECT COUNT(1) FROM dbo.Bodega WHERE BodegaID = @BodegaID AND IsActive = 1",
                 new { BodegaID = bodegaId });
-            return exists.HasValue;
+            return exists > 0;
         }
 
         public async Task<IEnumerable<BodegaDto>> GetBodegasAsync()
         {
             using var conn = _factory.Create();
-            var sql = @"
-                SELECT 
-                    BodegaID   AS BodegaId,
-                    Codigo,
-                    Nombre,
-                    IsActive
-                FROM dbo.Bodega
-                WHERE IsActive = 1
-                ORDER BY Nombre;";
-            return await conn.QueryAsync<BodegaDto>(sql);
+            var rows = await conn.QueryAsync<BodegaDto>(
+                "dbo.usp_Bodega_List",
+                commandType: CommandType.StoredProcedure);
+            return rows;
+
+        }
+
+        public async Task<int> CrearBodegaAsync(BodegaCreateDto dto, int? createdBy)
+        {
+            using var conn = _factory.Create();
+            var id = await conn.ExecuteScalarAsync<int>(
+                "dbo.usp_Bodega_Create",
+                new
+                {
+                    dto.Codigo,
+                    dto.Nombre,
+                    dto.Direccion,
+                    dto.Contacto,
+                    CreatedBy = createdBy
+                },
+                commandType: CommandType.StoredProcedure);
+            return id;
         }
     }
 }

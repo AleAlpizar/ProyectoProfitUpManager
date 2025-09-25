@@ -722,101 +722,43 @@ BEGIN
 END
 GO
 
-
-
-SET NOCOUNT ON;
-
---------------------------------
--- Parámetros
---------------------------------
-DECLARE @SKU       NVARCHAR(100) = N'1111';   -- <-- ajusta a tu SKU
-DECLARE @Cantidad  DECIMAL(18,4) = 120;       -- <-- cantidad a cargar
-DECLARE @Nombre    NVARCHAR(250) = N'Vino tinto demo';
-
---------------------------------
--- Bodegas (crear si faltan)
---------------------------------
-IF NOT EXISTS (SELECT 1 FROM dbo.Bodega WHERE Nombre = N'Central')
-    INSERT INTO dbo.Bodega (Codigo, Nombre, Direccion, Contacto)
-    VALUES (N'CEN', N'Central', NULL, NULL);
-
-IF NOT EXISTS (SELECT 1 FROM dbo.Bodega WHERE Nombre = N'Norte')
-    INSERT INTO dbo.Bodega (Codigo, Nombre, Direccion, Contacto)
-    VALUES (N'NOR', N'Norte', NULL, NULL);
-
-IF NOT EXISTS (SELECT 1 FROM dbo.Bodega WHERE Nombre = N'Sur')
-    INSERT INTO dbo.Bodega (Codigo, Nombre, Direccion, Contacto)
-    VALUES (N'SUR', N'Sur', NULL, NULL);
-
-DECLARE @BodegaID INT = (SELECT TOP 1 BodegaID FROM dbo.Bodega WHERE Nombre = N'Central');
-
---------------------------------
--- Producto (buscar por SKU; crear si no existe)
---------------------------------
-DECLARE @ProductoID INT = (SELECT TOP 1 ProductoID FROM dbo.Producto WHERE SKU = @SKU);
-
-IF @ProductoID IS NULL
+---bodega create -----------
+CREATE OR ALTER PROCEDURE dbo.usp_Bodega_Create
+  @Codigo     NVARCHAR(50) = NULL,
+  @Nombre     NVARCHAR(150),
+  @Direccion  NVARCHAR(300) = NULL,
+  @Contacto   NVARCHAR(150) = NULL,
+  @CreatedBy  INT = NULL
+AS
 BEGIN
-    INSERT INTO dbo.Producto (SKU, Nombre, Descripcion, PrecioVenta, IsActive)
-    VALUES (@SKU, @Nombre, N'Producto de prueba', 35000, 1);
+  SET NOCOUNT ON;
 
-    SET @ProductoID = SCOPE_IDENTITY();
+  IF (@Nombre IS NULL OR LTRIM(RTRIM(@Nombre)) = '')
+  BEGIN RAISERROR('FIELD_REQUIRED:Nombre',16,1); RETURN; END
+
+  IF (@Codigo IS NOT NULL) AND EXISTS(SELECT 1 FROM dbo.Bodega WHERE Codigo=@Codigo)
+  BEGIN RAISERROR('BODEGA_CODIGO_DUPLICATE',16,1); RETURN; END
+
+  INSERT INTO dbo.Bodega (Codigo, Nombre, Direccion, Contacto, IsActive)
+  VALUES (@Codigo, @Nombre, @Direccion, @Contacto, 1);
+
+  SELECT SCOPE_IDENTITY() AS BodegaID;
 END
+GO
 
---------------------------------
--- Validaciones
---------------------------------
-IF @ProductoID IS NULL
+--listar
+CREATE OR ALTER PROCEDURE dbo.usp_Bodega_List
+AS
 BEGIN
-    RAISERROR('No se pudo obtener ProductoID', 16, 1);
-    RETURN;
+  SET NOCOUNT ON;
+  SELECT 
+    BodegaID   AS BodegaId,
+    Codigo,
+    Nombre,
+    Direccion,         
+    Contacto,
+    IsActive
+  FROM dbo.Bodega
+  ORDER BY Nombre;
 END
-
-IF @BodegaID IS NULL
-BEGIN
-    RAISERROR('No se pudo obtener BodegaID (revisa que exista "Central")', 16, 1);
-    RETURN;
-END
-
---------------------------------
--- UPSERT Inventario (sin MERGE)
---------------------------------
-IF EXISTS (
-    SELECT 1 FROM dbo.Inventario
-    WHERE ProductoID = @ProductoID AND BodegaID = @BodegaID
-)
-BEGIN
-    UPDATE dbo.Inventario
-    SET Cantidad = Cantidad + @Cantidad,
-        FechaUltimaActualizacion = SYSUTCDATETIME()
-    WHERE ProductoID = @ProductoID AND BodegaID = @BodegaID;
-END
-ELSE
-BEGIN
-    INSERT INTO dbo.Inventario
-        (ProductoID, BodegaID, Cantidad, CantidadReservada, FechaUltimaActualizacion)
-    VALUES
-        (@ProductoID, @BodegaID, @Cantidad, 0, SYSUTCDATETIME());
-END
-
---------------------------------
--- Movimiento (auditoría)
---------------------------------
-INSERT INTO dbo.MovimientoInventario
-    (ProductoID, BodegaID, TipoMovimiento, Cantidad, Motivo)
-VALUES
-    (@ProductoID, @BodegaID, N'Entrada', @Cantidad, N'Carga inicial demo');
-
---------------------------------
--- Verifica lo cargado
---------------------------------
-SELECT
-    b.Nombre       AS Bodega,
-    p.Nombre       AS Producto,
-    p.SKU,
-    i.Cantidad     AS Existencia,
-    CAST(i.Cantidad - i.CantidadReservada AS DECIMAL(18,4)) AS Disponible
-FROM dbo.Inventario i
-JOIN dbo.Producto  p ON p.ProductoID = i.ProductoID
-JOIN dbo.Bodega    b ON b.BodegaID   = i.BodegaID
-WHERE i.ProductoID = @ProductoID AND i.BodegaID = @BodegaID;
+GO

@@ -75,17 +75,20 @@ namespace ProfitManagerApp.Api.Controllers
             }
         }
         [HttpGet("bodegas")]
-        public async Task<ActionResult<IEnumerable<BodegaDto>>> Bodegas()
+        [AllowAnonymous]
+        public async Task<IActionResult> GetBodegas()
         {
-            var uid = GetUserId();
-            if (uid is null) return Unauthorized();
-
-            var allowed = await _repo.PuedeAccederModuloAsync(uid.Value, "Inventario", "Leer");
-            if (!allowed) return Forbid();
-
-            var rows = await _repo.GetBodegasAsync();
-            return Ok(rows);
+            var list = await _repo.GetBodegasAsync();
+            return Ok(list);
         }
+        [HttpGet("debug/db")]
+        [AllowAnonymous] 
+        public async Task<IActionResult> DebugDb()
+        {
+            var info = await _repo.DebugDbAsync();
+            return Ok(new { info.Server, info.Database, info.ProcId });
+        }
+
 
     }
 }

@@ -1,71 +1,53 @@
-import React, { useState } from "react";
-import { useBodegas } from "@hooks/useBodegas";
-import Modal from "@/components/Modal";
-import BodegaForm from "@/components/BodegaForm";
-import BodegaCard from "@/components/BodegaCard";
+import React from "react";
+import { useBodegas } from "@/components/hooks/useBodegas";
+import BodegasTable from "@/components/bodegas/BodegasTable";
+import SectionHeader from "@/components/SectionHeader"; 
+import Spinner from "@/components/Spinner";              
+import Alert from "@/components/Alert";  
 
 export default function BodegasPage() {
-  const {
-    items, initialLoading, error, setError,
-    create, creating, createError, setCreateError,
-    toggleActive, updating, toggling,
-  } = useBodegas();
-
-  const [open, setOpen] = useState(false);
+  const { filtered, q, setQ, loading, error, reload, stats } = useBodegas();
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-4xl font-extrabold tracking-tight">Bodegas</h1>
+    <div className="mx-auto max-w-6xl p-4 md:p-6">
+      <SectionHeader title="Bodegas" subtitle={`Total: ${stats.total} · Activas: ${stats.activas}`} />
+
+      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Buscar por código, nombre o dirección"
+          className="w-full rounded-xl border border-gray-200 bg-white/70 px-3 py-2 text-sm outline-none transition focus:border-gray-400 md:w-72"
+        />
         <button
-          onClick={() => setOpen(true)}
-          className="inline-flex items-center rounded-lg bg-green-600 px-4 py-2 font-medium text-white shadow hover:bg-green-700 focus:outline-none"
+          onClick={reload}
+          disabled={loading}
+          className="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
+          title="Refrescar"
         >
-          <span className="mr-2 text-xl">+</span> Nueva bodega
+          {loading ? "Actualizando…" : "Refrescar"}
         </button>
       </div>
 
-      {error && (
-        <div className="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-700">
-          {error}
-          <button onClick={() => setError(null)} className="ml-3 underline">cerrar</button>
+      {loading && (
+        <div className="mb-3">
+          <Spinner />
         </div>
       )}
 
-      <div className="mt-8">
-        <h2 className="mb-4 text-2xl font-semibold text-gray-500">Listado</h2>
+      {!loading && error && (
+         <div className="mb-3">
+            <Alert type="error">{error}</Alert>
+        </div>
+       )}
 
-        {initialLoading ? (
-          <div className="rounded-xl border border-gray-200 p-6 text-gray-500">Cargando...</div>
-        ) : items.length === 0 ? (
-          <div className="rounded-xl border border-gray-200 p-6 text-gray-500">
-            Aún no hay bodegas. Crea la primera con el botón “Nueva bodega”.
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {items.map((b) => (
-              <BodegaCard
-                key={b.bodegaId}
-                data={b}
-                onToggle={(id, next) => toggleActive(id, next)}
-                onEdit={() => {}}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      {!loading && !error && filtered.length === 0 && (
+        <div className="rounded-xl border border-gray-200 bg-white/60 p-6 text-center text-sm text-gray-500">
+          No se encontraron bodegas
+        </div>
+      )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Crear bodega">
-        <BodegaForm
-          submitting={creating}
-          error={createError}
-          onErrorClear={() => setCreateError(null)}
-          onSubmit={async (payload) => {
-            await create(payload);
-            setOpen(false);
-          }}
-        />
-      </Modal>
+      {!loading && !error && filtered.length > 0 && <BodegasTable rows={filtered} />}
     </div>
   );
 }

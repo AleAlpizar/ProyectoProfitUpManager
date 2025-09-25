@@ -1,62 +1,60 @@
+"use client";
+
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useApi } from "./useApi";                  
-import type { Bodega, BodegaCreate } from "../../types/bodegas";
+
+export type BodegaDto = {
+  bodegaID: number;
+  codigo?: string | null;
+  nombre: string;
+  direccion?: string | null;
+  contacto?: string | null;
+  isActive: boolean;
+};
+
+const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
 
 export function useBodegas() {
-  const { call, ready } = useApi();                 
-  const [items, setItems] = useState<Bodega[]>([]);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [data, setData] = useState<BodegaDto[]>([]);
+  const [filtered, setFiltered] = useState<BodegaDto[]>([]);
+  const [q, setQ] = useState("");
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    if (!ready) return;                           
-    setInitialLoading(true);
+  const reload = useCallback(async () => {
+    setLoading(true);
     setError(null);
     try {
-      const data = await call<Bodega[]>("/api/bodegas");
-      setItems(data);
+      const res = await fetch(`${API_BASE}/api/inventario/bodegas`, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+      const rows = (await res.json()) as BodegaDto[];
+      setData(rows);
+      setFiltered(rows);
     } catch (e: any) {
-      setError(e?.message ?? "No se pudo cargar bodegas");
+      setError(e?.message ?? "Error desconocido");
     } finally {
-      setInitialLoading(false);
-    }
-  }, [call, ready]);
-
-  useEffect(() => { load(); }, [load]);
-
-  const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-
-  const create = useCallback(async (payload: BodegaCreate) => {
-    setCreating(true);
-    setCreateError(null);
-    try {
-      await call<{ bodegaId: number }>(
-        "/api/bodegas",
-        { method: "POST", body: JSON.stringify(payload) }
-      );
-      await load();
-    } catch (e: any) {
-      setCreateError(e?.message ?? "No se pudo crear la bodega");
-      throw e;
-    } finally {
-      setCreating(false);
-    }
-  }, [call, load]);
-
-  const [toggling, setToggling] = useState(false);
-  const toggleActive = useCallback(async (id: number, next: boolean) => {
-    setToggling(true);
-    try {
-      setItems(prev => prev.map(b => b.bodegaId === id ? { ...b, isActive: next } : b));
-    } finally {
-      setToggling(false);
+      setLoading(false);
     }
   }, []);
 
-  const state = useMemo(() => ({
-    items, initialLoading, error, creating, createError, toggling
-  }), [items, initialLoading, error, creating, createError, toggling]);
+  useEffect(() => { reload(); }, [reload]);
 
-  return { ...state, load, setError, create, setCreateError, toggleActive };
+  useEffect(() => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return setFiltered(data);
+    setFiltered(
+      data.filter((b) =>
+        [b.codigo ?? "", b.nombre ?? "", b.direccion ?? "", b.contacto ?? ""]
+          .join(" ")
+          .toLowerCase()
+          .includes(needle)
+      )
+    );
+  }, [q, data]);
+
+  const stats = useMemo(
+    () => ({ total: data.length, activas: data.filter((b) => b.isActive).length }),
+    [data]
+  );
+
+  return { data, filtered, q, setQ, loading, error, reload, stats };
 }

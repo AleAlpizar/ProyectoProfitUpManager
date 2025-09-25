@@ -723,42 +723,61 @@ END
 GO
 
 ---bodega create -----------
-CREATE OR ALTER PROCEDURE dbo.usp_Bodega_Create
-  @Codigo     NVARCHAR(50) = NULL,
-  @Nombre     NVARCHAR(150),
-  @Direccion  NVARCHAR(300) = NULL,
-  @Contacto   NVARCHAR(150) = NULL,
-  @CreatedBy  INT = NULL
-AS
+IF OBJECT_ID('dbo.Bodega') IS NULL
 BEGIN
-  SET NOCOUNT ON;
-
-  IF (@Nombre IS NULL OR LTRIM(RTRIM(@Nombre)) = '')
-  BEGIN RAISERROR('FIELD_REQUIRED:Nombre',16,1); RETURN; END
-
-  IF (@Codigo IS NOT NULL) AND EXISTS(SELECT 1 FROM dbo.Bodega WHERE Codigo=@Codigo)
-  BEGIN RAISERROR('BODEGA_CODIGO_DUPLICATE',16,1); RETURN; END
-
-  INSERT INTO dbo.Bodega (Codigo, Nombre, Direccion, Contacto, IsActive)
-  VALUES (@Codigo, @Nombre, @Direccion, @Contacto, 1);
-
-  SELECT SCOPE_IDENTITY() AS BodegaID;
+  CREATE TABLE dbo.Bodega(
+    BodegaID   INT IDENTITY(1,1) PRIMARY KEY,
+    Codigo     NVARCHAR(50)  NULL UNIQUE,
+    Nombre     NVARCHAR(150) NOT NULL,
+    Direccion  NVARCHAR(300) NULL,
+    Contacto   NVARCHAR(150) NULL,
+    IsActive   BIT NOT NULL DEFAULT(1)
+  );
 END
 GO
+
 
 --listar
 CREATE OR ALTER PROCEDURE dbo.usp_Bodega_List
 AS
 BEGIN
   SET NOCOUNT ON;
-  SELECT 
-    BodegaID   AS BodegaId,
+
+  SELECT
+    BodegaID,
     Codigo,
     Nombre,
-    Direccion,         
+    Direccion,
     Contacto,
     IsActive
   FROM dbo.Bodega
+  WHERE IsActive = 1
   ORDER BY Nombre;
 END
+GO
+
+
+
+---arreglo de eliminacion
+
+IF EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[usp_Bodega_Create]') AND type = N'P')
+    DROP PROCEDURE [dbo].[usp_Bodega_Create];
+GO
+
+IF EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[usp_Bodega_List]') AND type = N'P')
+    DROP PROCEDURE [dbo].[usp_Bodega_List];
+GO
+
+---insertsss
+IF NOT EXISTS (SELECT 1 FROM dbo.Bodega WHERE Codigo='CENTRAL')
+INSERT dbo.Bodega (Codigo, Nombre, Direccion, Contacto, IsActive)
+VALUES ('CENTRAL','Bodega Central','San José, CR','(506) 2222-0000',1);
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Bodega WHERE Codigo='OESTE')
+INSERT dbo.Bodega (Codigo, Nombre, Direccion, Contacto, IsActive)
+VALUES ('OESTE','Bodega Oeste','Escazú, CR',NULL,1);
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Bodega WHERE Codigo='ESTE')
+INSERT dbo.Bodega (Codigo, Nombre, Direccion, Contacto, IsActive)
+VALUES ('ESTE','Bodega Este','Curridabat, CR',NULL,1);
 GO

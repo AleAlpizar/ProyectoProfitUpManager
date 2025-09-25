@@ -77,16 +77,6 @@ namespace ProfitManagerApp.Data.Repositories
                 },
                 commandType: CommandType.StoredProcedure);
         }
-
-        public async Task<bool> BodegaExistsAsync(int bodegaId)
-        {
-            using var conn = _factory.Create();
-            var exists = await conn.ExecuteScalarAsync<int>(
-                "SELECT COUNT(1) FROM dbo.Bodega WHERE BodegaID = @BodegaID AND IsActive = 1",
-                new { BodegaID = bodegaId });
-            return exists > 0;
-        }
-
         public async Task<IEnumerable<BodegaDto>> GetBodegasAsync()
         {
             using var conn = _factory.Create();
@@ -94,24 +84,18 @@ namespace ProfitManagerApp.Data.Repositories
                 "dbo.usp_Bodega_List",
                 commandType: CommandType.StoredProcedure);
             return rows;
-
         }
-
-        public async Task<int> CrearBodegaAsync(BodegaCreateDto dto, int? createdBy)
+        public async Task<(string Server, string Database, int? ProcId)> DebugDbAsync()
         {
             using var conn = _factory.Create();
-            var id = await conn.ExecuteScalarAsync<int>(
-                "dbo.usp_Bodega_Create",
-                new
-                {
-                    dto.Codigo,
-                    dto.Nombre,
-                    dto.Direccion,
-                    dto.Contacto,
-                    CreatedBy = createdBy
-                },
-                commandType: CommandType.StoredProcedure);
-            return id;
+            var sql = @"
+        SELECT
+          @@SERVERNAME    AS ServerName,
+          DB_NAME()       AS DbName,
+          OBJECT_ID('dbo.usp_Bodega_List') AS ProcId;";
+            var row = await conn.QuerySingleAsync<(string ServerName, string DbName, int? ProcId)>(sql);
+            return (row.ServerName, row.DbName, row.ProcId);
         }
+
     }
 }

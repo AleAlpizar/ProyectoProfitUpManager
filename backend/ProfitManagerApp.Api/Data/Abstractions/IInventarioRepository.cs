@@ -14,10 +14,9 @@ namespace ProfitManagerApp.Data.Abstractions
 
         Task AjusteAsync(AjusteInventarioDto dto, int? usuarioId);
 
-        Task<bool> BodegaExistsAsync(int bodegaId);
-
         Task<IEnumerable<BodegaDto>> GetBodegasAsync();
 
-        Task<int> CrearBodegaAsync(BodegaCreateDto dto, int? createdBy);
+        Task<(string Server, string Database, int? ProcId)> DebugDbAsync();
+
     }
 }

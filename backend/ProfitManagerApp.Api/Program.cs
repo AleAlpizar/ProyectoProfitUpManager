@@ -1,7 +1,9 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Data.Infrastructure;
+using ProfitManagerApp.Data.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +27,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddSingleton<SqlConnectionFactory>();
+builder.Services.AddScoped<IInventarioRepository, InventarioRepository>();
 
 builder.Services.AddScoped<
     ProfitManagerApp.Data.Abstractions.IInventarioRepository,

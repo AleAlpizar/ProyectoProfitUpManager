@@ -1,5 +1,5 @@
 import { useAuthToken } from "./useAuthToken";
-import { apiFetch, ApiError } from "../../src/lib/api";
+import { apiFetch, ApiError } from "../src/lib/api";
 import { useCallback, useState } from "react";
 
 export function useApi() {

@@ -32,6 +32,22 @@
   },
   {
     "ContainingType": "ProfitManagerApp.Api.Controllers.InventarioController",
+    "Method": "GetAccess",
+    "RelativePath": "api/Inventario/access",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "accion",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ProfitManagerApp.Api.Controllers.InventarioController",
     "Method": "Ajuste",
     "RelativePath": "api/Inventario/ajuste",
     "HttpMethod": "POST",

@@ -1,23 +1,28 @@
-import { useEffect, useState } from "react";
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
 import { useApi } from "./useApi";
 
-export function useInventoryAccess(accion: "Leer" | "Escribir" = "Leer") {
-  const { call, loading, error } = useApi();
-  const [allowed, setAllowed] = useState<boolean | null>(null);
+type AccessDto = { canRead: boolean; canWrite: boolean };
+
+export function useInventarioAccess() {
+  const { call, loading, error, ready } = useApi();
+  const [access, setAccess] = useState<AccessDto | null>(null);
+
+  const reload = useCallback(async () => {
+    const data = await call<AccessDto>("/api/inventario/access", { method: "GET" });
+    setAccess(data);
+  }, [call]);
 
   useEffect(() => {
-    (async () => {
-      try {
-        const r = await call<{ allowed: boolean }>(
-          `/api/inventario/acceso?modulo=Inventario&accion=${accion}`
-        );
-        setAllowed(r.allowed);
-      } catch (e: any) {
-        if (e?.status === 403) setAllowed(false);
-        else setAllowed(null);
-      }
-    })();
-  }, [accion, call]);
+    if (ready) reload().catch(() => {});
+  }, [ready, reload]);
 
-  return { allowed, loading, error };
+  return {
+    loading,
+    error,
+    reload,
+    canRead: !!access?.canRead,
+    canWrite: !!access?.canWrite,
+  };
 }

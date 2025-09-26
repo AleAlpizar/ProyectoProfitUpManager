@@ -340,6 +340,28 @@
         }
       }
     },
+    "/api/Inventario/access": {
+      "get": {
+        "tags": [
+          "Inventario"
+        ],
+        "parameters": [
+          {
+            "name": "accion",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "Leer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Productos": {
       "post": {
         "tags": [

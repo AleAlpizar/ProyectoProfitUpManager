@@ -116,6 +116,18 @@ namespace ProfitManagerApp.Api.Controllers
             var rows = await _repo.GetProductosMiniAsync();
             return Ok(rows);
         }
+        [HttpGet("access")]
+        public async Task<IActionResult> Access(
+    [FromQuery] string module = "Inventario",
+    [FromQuery] string action = "Leer")
+        {
+            var uid = GetUserId();
+            if (uid is null) return Unauthorized();
+
+            var ok = await _repo.PuedeAccederModuloAsync(uid.Value, module, action);
+            return Ok(ok);
+        }
+
 
     }
 }

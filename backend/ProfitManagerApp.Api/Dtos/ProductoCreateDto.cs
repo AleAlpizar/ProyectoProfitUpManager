@@ -23,5 +23,6 @@ namespace ProfitManagerApp.Domain.Inventory.Dto
         public int? BodegaID { get; set; }
         [Range(0, double.MaxValue)]
         public decimal? StockInicial { get; set; } = 0m;
+
     }
 }

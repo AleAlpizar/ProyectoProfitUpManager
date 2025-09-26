@@ -9,10 +9,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\data\\infrastructure\\sqlconnectionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\data\\infrastructure\\sqlconnectionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,7 +18,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 4,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -34,18 +30,6 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "Program.cs",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Program.cs",
-              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Program.cs",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Program.cs",
-              "RelativeToolTip": "ProfitManagerApp.Api\\Program.cs",
-              "ViewState": "AgIAAE0AAAAAAAAAAAAUwFIAAAAHAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-23T04:11:31.145Z"
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 1,
               "Title": "SqlConnectionFactory.cs",
               "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Data\\Infrastructure\\SqlConnectionFactory.cs",
@@ -54,7 +38,8 @@
               "RelativeToolTip": "ProfitManagerApp.Api\\Data\\Infrastructure\\SqlConnectionFactory.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-24T18:20:04.067Z"
+              "WhenOpened": "2025-09-24T18:20:04.067Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",

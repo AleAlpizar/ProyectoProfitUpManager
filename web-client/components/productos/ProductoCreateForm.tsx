@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useProductoCreate } from "@/components/hooks/useProductoCreate";
 import { useUnidades } from "@/components/hooks/useUnidades";
+import { useBodegas } from "@/components/hooks/useBodegas"; // <-- NUEVO
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   label: string;
@@ -41,12 +42,16 @@ export default function ProductoCreateForm() {
     error: unidadesError,
   } = useUnidades();
 
-  const [showToast, setShowToast] = useState(false);
+  const {
+    data: bodegas,
+    loading: loadingBodegas,
+    error: bodegasError,
+  } = useBodegas();
+  const [bodegaID, setBodegaID] = useState<number | "">(""); 
+
   useEffect(() => {
     if (successId) {
-      setShowToast(true);
-      const t = setTimeout(() => setShowToast(false), 4000);
-      return () => clearTimeout(t);
+      alert(`Producto registrado correctamente. ID #${successId}`);
     }
   }, [successId]);
 
@@ -67,6 +72,12 @@ export default function ProductoCreateForm() {
       {unidadesError && (
         <div className="rounded-xl border border-red-400/40 bg-red-400/10 p-3 text-sm text-red-300">
           ❌ Error al cargar unidades: {unidadesError}
+        </div>
+      )}
+
+      {bodegasError && (
+        <div className="rounded-xl border border-red-400/40 bg-red-400/10 p-3 text-sm text-red-300">
+          ❌ Error al cargar bodegas: {bodegasError}
         </div>
       )}
 
@@ -119,6 +130,27 @@ export default function ProductoCreateForm() {
           {errors.unidadAlmacenamientoID ? (
             <span className="text-xs text-red-400">{errors.unidadAlmacenamientoID}</span>
           ) : null}
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label className="text-sm text-gray-300">Bodega (opcional)</label>
+          <select
+            value={bodegaID}
+            onChange={(e) =>
+              setBodegaID(e.target.value === "" ? "" : Number(e.target.value))
+            }
+            className="rounded-xl border border-gray-700 bg-white/5 px-3 py-2 text-sm text-gray-100 outline-none transition focus:border-gray-500"
+            disabled={loadingBodegas}
+          >
+            <option value="">
+              {loadingBodegas ? "Cargando..." : "Selecciona una bodega"}
+            </option>
+            {bodegas.map((b) => (
+              <option key={b.bodegaID} value={b.bodegaID}>
+                {b.nombre} {b.codigo ? `(${b.codigo})` : ""}
+              </option>
+            ))}
+          </select>
         </div>
 
         <LabeledInput
@@ -201,21 +233,6 @@ export default function ProductoCreateForm() {
           {loading ? "Registrando…" : "Registrar producto"}
         </button>
       </div>
-
-      {showToast && (
-        <div className="fixed bottom-6 right-6 z-[9999]" aria-live="polite">
-          <div className="rounded-xl border border-emerald-400/40 bg-emerald-600/90 px-4 py-3 text-white shadow-lg">
-            <div className="text-sm font-semibold">Producto registrado</div>
-            <div className="text-xs opacity-90">ID #{successId} creado correctamente.</div>
-            <button
-              onClick={() => setShowToast(false)}
-              className="mt-2 rounded-md bg-white/15 px-2 py-1 text-xs hover:bg-white/25"
-            >
-              Cerrar
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

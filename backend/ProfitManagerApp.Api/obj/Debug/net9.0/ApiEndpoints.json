@@ -78,6 +78,16 @@
   },
   {
     "ContainingType": "ProfitManagerApp.Api.Controllers.InventarioController",
+    "Method": "GetProductosMini",
+    "RelativePath": "api/Inventario/productos/mini",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ProfitManagerApp.Api.Controllers.InventarioController",
     "Method": "GetStock",
     "RelativePath": "api/Inventario/stock",
     "HttpMethod": "GET",

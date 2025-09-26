@@ -8,6 +8,7 @@ export type ProductoCreate = {
   descripcion?: string;
   codigoInterno?: string;
   unidadAlmacenamientoID?: number | null;
+  bodegaID?: number | null;               
   precioCosto: number | null;
   precioVenta: number | null;
   peso?: number | null;
@@ -29,6 +30,8 @@ function parseServerError(raw: string): string {
     return "La 'Unidad de almacenamiento' es obligatoria.";
   if (msg.includes("UNIDAD_NOT_FOUND"))
     return "La unidad seleccionada no existe. Actualiza la lista y vuelve a intentar.";
+  if (msg.includes("BODEGA_NOT_FOUND"))                      
+    return "La bodega seleccionada no existe.";              
   return raw || "No se pudo registrar el producto.";
 }
 
@@ -39,6 +42,7 @@ export function useProductoCreate() {
     descripcion: "",
     codigoInterno: "",
     unidadAlmacenamientoID: null,
+    bodegaID: null,                                          
     precioCosto: null,
     precioVenta: null,
     peso: null,
@@ -92,6 +96,7 @@ export function useProductoCreate() {
       descripcion: "",
       codigoInterno: "",
       unidadAlmacenamientoID: null,
+      bodegaID: null,                                        
       precioCosto: null,
       precioVenta: null,
       peso: null,
@@ -129,6 +134,7 @@ export function useProductoCreate() {
           descripcion: values.descripcion?.trim() || null,
           codigoInterno: values.codigoInterno?.trim() || null,
           unidadAlmacenamientoID: values.unidadAlmacenamientoID ?? null,
+          bodegaID: values.bodegaID ?? null,                 // <--
           precioCosto: Number(values.precioCosto),
           precioVenta: Number(values.precioVenta),
           peso: values.peso != null ? Number(values.peso) : null,
@@ -142,7 +148,7 @@ export function useProductoCreate() {
         const text = await res.text();
         setServerError(parseServerError(text));
         return { ok: false, reason: "server" as const, status: res.status };
-        }
+      }
 
       const json = (await res.json()) as ProductoCreateResult | number;
       const id = typeof json === "number" ? json : (json as any).id ?? json;

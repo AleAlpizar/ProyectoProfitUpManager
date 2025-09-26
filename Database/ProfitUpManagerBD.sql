@@ -626,10 +626,50 @@ CREATE OR ALTER PROCEDURE dbo.usp_Producto_Create
   @Largo DECIMAL(18,4) = NULL,
   @Alto DECIMAL(18,4) = NULL,
   @Ancho DECIMAL(18,4) = NULL,
+  @BodegaID INT = NULL,             
   @CreatedBy INT = NULL
 AS
 BEGIN
   SET NOCOUNT ON;
+
+  IF (@Nombre IS NULL OR LTRIM(RTRIM(@Nombre))='')
+  BEGIN RAISERROR('FIELD_REQUIRED:Nombre',16,1); RETURN; END
+
+  IF (@PrecioVenta IS NULL)
+  BEGIN RAISERROR('FIELD_REQUIRED:PrecioVenta',16,1); RETURN; END
+
+  IF @SKU IS NOT NULL AND EXISTS(SELECT 1 FROM dbo.Producto WHERE SKU=@SKU)
+  BEGIN RAISERROR('SKU_DUPLICATE',16,1); RETURN; END
+
+  IF @BodegaID IS NOT NULL AND NOT EXISTS(SELECT 1 FROM dbo.Bodega WHERE BodegaID=@BodegaID AND IsActive=1)
+  BEGIN RAISERROR('BODEGA_INVALIDA',16,1); RETURN; END
+
+  BEGIN TRY
+    INSERT INTO dbo.Producto
+    (SKU,Nombre,Descripcion,CodigoInterno,Peso,Largo,Alto,Ancho,UnidadAlmacenamientoID,PrecioCosto,PrecioVenta,CreatedBy)
+    VALUES (@SKU,@Nombre,@Descripcion,@CodigoInterno,@Peso,@Largo,@Alto,@Ancho,@UnidadAlmacenamientoID,@PrecioCosto,@PrecioVenta,@CreatedBy);
+
+    DECLARE @NewID INT = SCOPE_IDENTITY();
+
+    IF @BodegaID IS NOT NULL
+    BEGIN
+      MERGE dbo.Inventario AS tgt
+      USING (SELECT @NewID AS ProductoID, @BodegaID AS BodegaID) AS src
+         ON tgt.ProductoID = src.ProductoID AND tgt.BodegaID = src.BodegaID
+      WHEN NOT MATCHED THEN
+        INSERT (ProductoID, BodegaID, Cantidad, CantidadReservada)
+        VALUES (src.ProductoID, src.BodegaID, 0, 0);
+    END
+
+    SELECT @NewID AS ProductoID;
+  END TRY
+  BEGIN CATCH
+    DECLARE @Num INT = ERROR_NUMBER(), @Msg NVARCHAR(2048)=ERROR_MESSAGE();
+    IF @Num IN (2601,2627) RAISERROR('SKU_DUPLICATE',16,1);
+    ELSE RAISERROR(@Msg,16,1);
+  END CATCH
+END
+GO
 
   -- Validaciones 
   IF (@Nombre IS NULL OR LTRIM(RTRIM(@Nombre))='')
@@ -658,27 +698,55 @@ GO
 ----consultas de existencias ---
 CREATE OR ALTER PROCEDURE dbo.usp_Inventario_GetStock
   @ProductoID INT = NULL,
-  @BodegaID INT = NULL
+  @BodegaID   INT = NULL
 AS
 BEGIN
   SET NOCOUNT ON;
 
   SELECT
     i.InventarioID,
-    p.ProductoID, p.Nombre AS Producto, p.SKU,
-    b.BodegaID, b.Nombre AS Bodega,
-    i.Cantidad,
-    i.CantidadReservada,
+    p.ProductoID,
+    p.Nombre AS Producto,
+    p.SKU,
+    b.BodegaID,
+    b.Nombre AS Bodega,
+
+    i.Cantidad AS Existencia,
+    i.CantidadReservada AS Reservada,
     (i.Cantidad - i.CantidadReservada) AS Disponible,
+
     i.FechaUltimaActualizacion
   FROM dbo.Inventario i
-  JOIN dbo.Producto p ON p.ProductoID=i.ProductoID
-  JOIN dbo.Bodega b ON b.BodegaID=i.BodegaID
-  WHERE (@ProductoID IS NULL OR i.ProductoID=@ProductoID)
-    AND (@BodegaID IS NULL OR i.BodegaID=@BodegaID)
+  JOIN dbo.Producto p ON p.ProductoID = i.ProductoID
+  JOIN dbo.Bodega   b ON b.BodegaID  = i.BodegaID
+  WHERE (@ProductoID IS NULL OR i.ProductoID = @ProductoID)
+    AND (@BodegaID   IS NULL OR i.BodegaID   = @BodegaID)
   ORDER BY p.Nombre, b.Nombre;
 END
 GO
+
+
+IF NOT EXISTS (
+  SELECT 1 FROM sys.indexes
+  WHERE name = 'IX_Inventario_Producto_Bodega'
+    AND object_id = OBJECT_ID('dbo.Inventario')
+)
+CREATE INDEX IX_Inventario_Producto_Bodega
+ON dbo.Inventario(ProductoID, BodegaID)
+INCLUDE (Cantidad, CantidadReservada, FechaUltimaActualizacion);
+GO
+
+CREATE OR ALTER PROCEDURE dbo.usp_Producto_MiniList
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SELECT ProductoID, SKU, Nombre
+  FROM dbo.Producto
+  WHERE IsActive = 1
+  ORDER BY Nombre;
+END
+GO
+
 
 ---mantener stock
 CREATE OR ALTER PROCEDURE dbo.usp_Inventario_Ajuste

@@ -328,6 +328,18 @@
         }
       }
     },
+    "/api/Inventario/productos/mini": {
+      "get": {
+        "tags": [
+          "Inventario"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/Productos": {
       "post": {
         "tags": [

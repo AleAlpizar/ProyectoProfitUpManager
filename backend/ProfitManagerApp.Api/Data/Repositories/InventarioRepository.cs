@@ -45,6 +45,7 @@ namespace ProfitManagerApp.Data.Repositories
                     dto.Largo,
                     dto.Alto,
                     dto.Ancho,
+                    BodegaID = dto.BodegaID,   
                     CreatedBy = createdBy
                 },
                 commandType: CommandType.StoredProcedure);
@@ -162,5 +163,14 @@ namespace ProfitManagerApp.Data.Repositories
 
             return (row.Item1, row.Item2, row.Item3);
         }
+        public async Task<IEnumerable<ProductoMiniDto>> GetProductosMiniAsync()
+        {
+            using var conn = _factory.Create();
+            var rows = await conn.QueryAsync<ProductoMiniDto>(
+                "dbo.usp_Producto_MiniList",
+                commandType: CommandType.StoredProcedure);
+            return rows;
+        }
+
     }
 }

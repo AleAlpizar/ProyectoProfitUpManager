@@ -3,56 +3,16 @@
   "WorkspaceRootPath": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\controllers\\inventariocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\controllers\\inventariocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\data\\repositories\\inventariorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\data\\repositories\\inventariorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\data\\abstractions\\iinventariorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\data\\abstractions\\iinventariorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\dtos\\bodegadto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\dtos\\bodegadto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\controllers\\productoscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\controllers\\productoscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\controllers\\healthcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\controllers\\healthcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\controllers\\authcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\dtos\\productocreatedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\dtos\\productocreatedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\dtos\\ajusteinventariodto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\dtos\\ajusteinventariodto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\service\\jwttokenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\service\\jwttokenservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
-      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\data\\infrastructure\\sqlconnectionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\data\\infrastructure\\sqlconnectionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -62,7 +22,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 4,
           "Children": [
             {
               "$type": "Bookmark",
@@ -74,144 +34,19 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
-              "Title": "BodegaDto.cs",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\BodegaDto.cs",
-              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Dtos\\BodegaDto.cs",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\BodegaDto.cs",
-              "RelativeToolTip": "ProfitManagerApp.Api\\Dtos\\BodegaDto.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-25T20:34:39.517Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "HealthController.cs",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\HealthController.cs",
-              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Controllers\\HealthController.cs",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\HealthController.cs",
-              "RelativeToolTip": "ProfitManagerApp.Api\\Controllers\\HealthController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-25T19:42:27.42Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "AuthController.cs",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\AuthController.cs",
-              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Controllers\\AuthController.cs",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\AuthController.cs",
-              "RelativeToolTip": "ProfitManagerApp.Api\\Controllers\\AuthController.cs",
-              "ViewState": "AgIAAEcAAAAAAAAAAAAmwBMAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-23T03:30:05.62Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 5,
-              "Title": "ProductosController.cs",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\ProductosController.cs",
-              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Controllers\\ProductosController.cs",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\ProductosController.cs",
-              "RelativeToolTip": "ProfitManagerApp.Api\\Controllers\\ProductosController.cs",
-              "ViewState": "AgIAAB4AAAAAAAAAAAAYwBkAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-24T18:22:27.416Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "InventarioController.cs",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\InventarioController.cs",
-              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Controllers\\InventarioController.cs",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\InventarioController.cs",
-              "RelativeToolTip": "ProfitManagerApp.Api\\Controllers\\InventarioController.cs",
-              "ViewState": "AgIAADUAAAAAAAAAAADwv1QAAAAZAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-24T18:21:07.632Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "ProductoCreateDto.cs",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\ProductoCreateDto.cs",
-              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Dtos\\ProductoCreateDto.cs",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\ProductoCreateDto.cs",
-              "RelativeToolTip": "ProfitManagerApp.Api\\Dtos\\ProductoCreateDto.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABYAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-24T18:19:21.443Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "InventarioRepository.cs",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Data\\Repositories\\InventarioRepository.cs",
-              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Data\\Repositories\\InventarioRepository.cs",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Data\\Repositories\\InventarioRepository.cs",
-              "RelativeToolTip": "ProfitManagerApp.Api\\Data\\Repositories\\InventarioRepository.cs",
-              "ViewState": "AgIAAEsAAAAAAAAAAAAIwGIAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-24T18:20:13.027Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
               "DocumentIndex": 2,
-              "Title": "IInventarioRepository.cs",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Data\\Abstractions\\IInventarioRepository.cs",
-              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Data\\Abstractions\\IInventarioRepository.cs",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Data\\Abstractions\\IInventarioRepository.cs",
-              "RelativeToolTip": "ProfitManagerApp.Api\\Data\\Abstractions\\IInventarioRepository.cs",
-              "ViewState": "AgIAAAMAAAAAAAAAAAAAABMAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-24T18:19:54.658Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "JwtTokenService.cs",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Service\\JwtTokenService.cs",
-              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Service\\JwtTokenService.cs",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Service\\JwtTokenService.cs",
-              "RelativeToolTip": "ProfitManagerApp.Api\\Service\\JwtTokenService.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABwAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-23T04:10:59.224Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 3,
               "Title": "Program.cs",
               "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Program.cs",
               "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Program.cs",
               "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Program.cs",
               "RelativeToolTip": "ProfitManagerApp.Api\\Program.cs",
-              "ViewState": "AgIAADsAAAAAAAAAAAAUwFIAAAAHAAAAAAAAAA==",
+              "ViewState": "AgIAAE0AAAAAAAAAAAAUwFIAAAAHAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-23T04:11:31.145Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-09-23T04:11:31.145Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "appsettings.json",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\appsettings.json",
-              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\appsettings.json",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\appsettings.json",
-              "RelativeToolTip": "ProfitManagerApp.Api\\appsettings.json",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
-              "WhenOpened": "2025-09-24T18:24:02.234Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 12,
+              "DocumentIndex": 1,
               "Title": "SqlConnectionFactory.cs",
               "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Data\\Infrastructure\\SqlConnectionFactory.cs",
               "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Data\\Infrastructure\\SqlConnectionFactory.cs",
@@ -223,7 +58,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 9,
+              "DocumentIndex": 0,
               "Title": "AjusteInventarioDto.cs",
               "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\AjusteInventarioDto.cs",
               "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Dtos\\AjusteInventarioDto.cs",
@@ -231,7 +66,8 @@
               "RelativeToolTip": "ProfitManagerApp.Api\\Dtos\\AjusteInventarioDto.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAA/AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-24T18:19:46.887Z"
+              "WhenOpened": "2025-09-24T18:19:46.887Z",
+              "EditorCaption": ""
             }
           ]
         },

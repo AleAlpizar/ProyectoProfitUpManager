@@ -4,7 +4,6 @@ export function ProductCard({ name, price, stock, imageUrl }:{
   return (
     <div className="max-w-xs bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200 hover:shadow-md transition-shadow">
       <div className="relative w-full h-48">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
       </div>
       <div className="p-4">

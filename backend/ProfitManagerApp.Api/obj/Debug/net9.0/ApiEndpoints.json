@@ -68,6 +68,16 @@
   },
   {
     "ContainingType": "ProfitManagerApp.Api.Controllers.InventarioController",
+    "Method": "DebugUnidades",
+    "RelativePath": "api/Inventario/debug/unidades",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ProfitManagerApp.Api.Controllers.InventarioController",
     "Method": "GetStock",
     "RelativePath": "api/Inventario/stock",
     "HttpMethod": "GET",
@@ -85,6 +95,16 @@
         "IsRequired": false
       }
     ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "ProfitManagerApp.Api.Controllers.InventarioController",
+    "Method": "GetUnidades",
+    "RelativePath": "api/Inventario/unidades",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
     "ReturnTypes": []
   },
   {

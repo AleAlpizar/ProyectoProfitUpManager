@@ -88,12 +88,10 @@ export const CompaniesDropdown = () => {
                '$$dropdownItemHeight': '60px',
                '& .nextui-dropdown-item': {
                   'py': '$2',
-                  // dropdown item left icon
                   'svg': {
                      color: '$secondary',
                      mr: '$4',
                   },
-                  // dropdown item title
                   '& .nextui-dropdown-item-content': {
                      w: '100%',
                      fontWeight: '$semibold',

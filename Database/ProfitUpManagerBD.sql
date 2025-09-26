@@ -758,6 +758,7 @@ GO
 
 
 
+
 ---arreglo de eliminacion
 
 IF EXISTS (SELECT 1 FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[usp_Bodega_Create]') AND type = N'P')
@@ -781,3 +782,113 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Bodega WHERE Codigo='ESTE')
 INSERT dbo.Bodega (Codigo, Nombre, Direccion, Contacto, IsActive)
 VALUES ('ESTE','Bodega Este','Curridabat, CR',NULL,1);
 GO
+
+
+IF OBJECT_ID('dbo.UnidadAlmacenamiento') IS NULL
+BEGIN
+  CREATE TABLE dbo.UnidadAlmacenamiento(
+    UnidadID  INT IDENTITY(1,1) PRIMARY KEY,
+    Codigo    NVARCHAR(10) NOT NULL UNIQUE,
+    Nombre    NVARCHAR(100) NOT NULL,
+    Activo    BIT NOT NULL DEFAULT(1)
+  );
+END
+GO
+
+
+-------productos unidad
+USE [ProfitUpManagerBD];
+GO
+
+IF OBJECT_ID('dbo.UnidadAlmacenamiento') IS NULL
+BEGIN
+  CREATE TABLE dbo.UnidadAlmacenamiento(
+    UnidadID  INT IDENTITY(1,1) PRIMARY KEY,
+    Codigo    NVARCHAR(10) NOT NULL UNIQUE,
+    Nombre    NVARCHAR(100) NOT NULL,
+    Activo    BIT NOT NULL DEFAULT(1)
+  );
+END
+GO
+
+
+IF NOT EXISTS (SELECT 1 FROM dbo.UnidadAlmacenamiento WHERE Codigo='UN')
+INSERT dbo.UnidadAlmacenamiento (Codigo, Nombre) VALUES ('UN', 'Unidad');
+
+IF NOT EXISTS (SELECT 1 FROM dbo.UnidadAlmacenamiento WHERE Codigo='CJ')
+INSERT dbo.UnidadAlmacenamiento (Codigo, Nombre) VALUES ('CJ', 'Caja');
+
+IF NOT EXISTS (SELECT 1 FROM dbo.UnidadAlmacenamiento WHERE Codigo='KG')
+INSERT dbo.UnidadAlmacenamiento (Codigo, Nombre) VALUES ('KG', 'Kilogramo');
+
+IF NOT EXISTS (SELECT 1 FROM dbo.UnidadAlmacenamiento WHERE Codigo='LT')
+INSERT dbo.UnidadAlmacenamiento (Codigo, Nombre) VALUES ('LT', 'Litro');
+GO
+
+
+
+IF COL_LENGTH('dbo.UnidadAlmacenamiento', 'Codigo') IS NULL
+    ALTER TABLE dbo.UnidadAlmacenamiento ADD Codigo NVARCHAR(10) NULL;
+
+IF COL_LENGTH('dbo.UnidadAlmacenamiento', 'Activo') IS NULL
+BEGIN
+    ALTER TABLE dbo.UnidadAlmacenamiento ADD Activo BIT NULL;
+    IF NOT EXISTS (SELECT 1 FROM sys.default_constraints WHERE name = 'DF_UnidAlm_Activo')
+        ALTER TABLE dbo.UnidadAlmacenamiento
+        ADD CONSTRAINT DF_UnidAlm_Activo DEFAULT(1) FOR Activo;
+END
+GO
+
+
+-- Backfill para filas existentes
+UPDATE UA
+SET
+  Codigo = ISNULL(Codigo, CONCAT('U', UnidadID)),
+  Activo = ISNULL(Activo, 1)
+FROM dbo.UnidadAlmacenamiento UA;
+GO
+
+
+IF NOT EXISTS (
+    SELECT 1 FROM sys.indexes 
+    WHERE name = 'UX_UnidadAlmacenamiento_Codigo' 
+      AND object_id = OBJECT_ID('dbo.UnidadAlmacenamiento')
+)
+BEGIN
+    CREATE UNIQUE INDEX UX_UnidadAlmacenamiento_Codigo 
+    ON dbo.UnidadAlmacenamiento(Codigo)
+    WHERE Codigo IS NOT NULL;
+END
+GO
+
+
+MERGE dbo.UnidadAlmacenamiento AS tgt
+USING (VALUES
+('UN','Unidad',1),
+('CJ','Caja',1),
+('KG','Kilogramo',1),
+('LT','Litro',1)
+) AS src(Codigo, Nombre, Activo)
+ON tgt.Codigo = src.Codigo
+WHEN NOT MATCHED BY TARGET THEN
+  INSERT (Codigo, Nombre, Activo) VALUES (src.Codigo, src.Nombre, src.Activo);
+GO
+
+
+
+SELECT UnidadID, Codigo, Nombre FROM dbo.UnidadAlmacenamiento ORDER BY UnidadID;
+
+-- SP para listar unidades activas
+CREATE OR ALTER PROCEDURE dbo.usp_Unidad_List
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SELECT UnidadID, Codigo, Nombre, Activo
+  FROM dbo.UnidadAlmacenamiento
+  WHERE Activo = 1
+  ORDER BY Nombre;
+END
+GO
+
+
+

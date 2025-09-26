@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Data;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Dapper;
-using Microsoft.Data.SqlClient; 
+using Microsoft.Data.SqlClient;
 using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Data.Infrastructure;
 using ProfitManagerApp.Domain.Inventory.Dto;
@@ -77,6 +78,7 @@ namespace ProfitManagerApp.Data.Repositories
                 },
                 commandType: CommandType.StoredProcedure);
         }
+
         public async Task<IEnumerable<BodegaDto>> GetBodegasAsync()
         {
             using var conn = _factory.Create();
@@ -85,6 +87,7 @@ namespace ProfitManagerApp.Data.Repositories
                 commandType: CommandType.StoredProcedure);
             return rows;
         }
+
         public async Task<(string Server, string Database, int? ProcId)> DebugDbAsync()
         {
             using var conn = _factory.Create();
@@ -97,5 +100,67 @@ namespace ProfitManagerApp.Data.Repositories
             return (row.ServerName, row.DbName, row.ProcId);
         }
 
+
+        public async Task<IEnumerable<UnidadDto>> GetUnidadesAsync()
+        {
+            using var conn = _factory.Create();
+
+            try
+            {
+                var rows = await conn.QueryAsync<UnidadDto>(
+                    "dbo.usp_Unidad_List",
+                    commandType: CommandType.StoredProcedure);
+
+                Console.WriteLine($"[Unidades] OK SP en DB='{conn.Database}'");
+                return rows;
+            }
+            catch (SqlException ex) when (ex.Number == 2812) 
+            {
+                Console.WriteLine($"[Unidades] SP NO existe en DB='{conn.Database}'. Fallback a SELECT. Detalle: {ex.Message}");
+            }
+            catch (SqlException ex) when (ex.Number == 208) 
+            {
+                Console.WriteLine($"[Unidades] Error obj. no existe en DB='{conn.Database}'. Fallback a SELECT. Detalle: {ex.Message}");
+            }
+
+            var columnas = (await conn.QueryAsync<string>(
+                @"SELECT name 
+                    FROM sys.columns 
+                   WHERE object_id = OBJECT_ID('dbo.UnidadAlmacenamiento');"))
+                   .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            if (columnas.Count == 0)
+                throw new InvalidOperationException(
+                    $"[Unidades] No existe la tabla dbo.UnidadAlmacenamiento en DB='{conn.Database}'. Revisa la connection string.");
+
+            bool hasCodigo = columnas.Contains("Codigo");
+            bool hasNombre = columnas.Contains("Nombre");
+            bool hasActivo = columnas.Contains("Activo");
+
+            string sql =
+                $@"SELECT 
+                      UnidadID,
+                      {(hasCodigo ? "Codigo" : "CAST(NULL AS NVARCHAR(50)) AS Codigo")},
+                      {(hasNombre ? "Nombre" : "CAST(NULL AS NVARCHAR(100)) AS Nombre")},
+                      {(hasActivo ? "Activo" : "CAST(1 AS bit) AS Activo")}
+                  FROM dbo.UnidadAlmacenamiento
+                  {(hasActivo ? "WHERE Activo = 1" : "")}
+                  ORDER BY {(hasNombre ? "Nombre" : "UnidadID")};";
+
+            Console.WriteLine($"[Unidades] SELECT dinámico en DB='{conn.Database}'. hasCodigo={hasCodigo}, hasNombre={hasNombre}, hasActivo={hasActivo}");
+
+            var dynRows = await conn.QueryAsync<UnidadDto>(sql, commandType: CommandType.Text);
+            return dynRows;
+        }
+
+        public async Task<(string Server, string Database, int? ProcId)> DebugUnidadesAsync()
+        {
+            using var conn = _factory.Create();
+            var row = await conn.QuerySingleAsync<(string, string, int?)>(
+                "SELECT @@SERVERNAME, DB_NAME(), OBJECT_ID('dbo.usp_Unidad_List');",
+                commandType: CommandType.Text);
+
+            return (row.Item1, row.Item2, row.Item3);
+        }
     }
 }

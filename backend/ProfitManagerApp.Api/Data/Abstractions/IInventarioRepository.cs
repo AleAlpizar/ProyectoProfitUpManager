@@ -18,5 +18,9 @@ namespace ProfitManagerApp.Data.Abstractions
 
         Task<(string Server, string Database, int? ProcId)> DebugDbAsync();
 
+        Task<IEnumerable<UnidadDto>> GetUnidadesAsync();
+
+        Task<(string Server, string Database, int? ProcId)> DebugUnidadesAsync();
+
     }
 }

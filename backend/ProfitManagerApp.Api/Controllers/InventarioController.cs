@@ -89,6 +89,22 @@ namespace ProfitManagerApp.Api.Controllers
             return Ok(new { info.Server, info.Database, info.ProcId });
         }
 
+        [HttpGet("unidades")]
+        [AllowAnonymous] 
+        public async Task<IActionResult> GetUnidades()
+        {
+            var list = await _repo.GetUnidadesAsync();
+            return Ok(list);
+        }
+
+        [HttpGet("debug/unidades")]
+        [AllowAnonymous]   
+        public async Task<IActionResult> DebugUnidades()
+        {
+            var info = await _repo.DebugUnidadesAsync();
+            return Ok(new { info.Server, info.Database, info.ProcId });
+        }
+
 
     }
 }

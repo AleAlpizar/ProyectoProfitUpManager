@@ -28,3 +28,18 @@ C:\Users\11alp\source\repos\ProyectoProfitUpManager\backend\ProfitManagerApp.Dat
 C:\Users\11alp\source\repos\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\obj\Debug\net9.0\ProfitManagerApp.Data.pdb
 C:\Users\11alp\source\repos\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\obj\Debug\net9.0\ProfitManagerApp.Data.genruntimeconfig.cache
 C:\Users\11alp\source\repos\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\obj\Debug\net9.0\ref\ProfitManagerApp.Data.dll
+C:\Users\XSF\Documents\9 cuatrimestre\Proyecto 3 cuatris\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\bin\Debug\net9.0\ProfitManagerApp.Data.deps.json
+C:\Users\XSF\Documents\9 cuatrimestre\Proyecto 3 cuatris\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\bin\Debug\net9.0\ProfitManagerApp.Data.runtimeconfig.json
+C:\Users\XSF\Documents\9 cuatrimestre\Proyecto 3 cuatris\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\bin\Debug\net9.0\ProfitManagerApp.Data.dll
+C:\Users\XSF\Documents\9 cuatrimestre\Proyecto 3 cuatris\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\bin\Debug\net9.0\ProfitManagerApp.Data.pdb
+C:\Users\XSF\Documents\9 cuatrimestre\Proyecto 3 cuatris\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\obj\Debug\net9.0\ProfitManagerApp.Data.csproj.AssemblyReference.cache
+C:\Users\XSF\Documents\9 cuatrimestre\Proyecto 3 cuatris\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\obj\Debug\net9.0\ProfitManagerApp.Data.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\XSF\Documents\9 cuatrimestre\Proyecto 3 cuatris\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\obj\Debug\net9.0\ProfitManagerApp.Data.AssemblyInfoInputs.cache
+C:\Users\XSF\Documents\9 cuatrimestre\Proyecto 3 cuatris\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\obj\Debug\net9.0\ProfitManagerApp.Data.AssemblyInfo.cs
+C:\Users\XSF\Documents\9 cuatrimestre\Proyecto 3 cuatris\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\obj\Debug\net9.0\ProfitManagerApp.Data.csproj.CoreCompileInputs.cache
+C:\Users\XSF\Documents\9 cuatrimestre\Proyecto 3 cuatris\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\obj\Debug\net9.0\ProfitManagerApp.Data.sourcelink.json
+C:\Users\XSF\Documents\9 cuatrimestre\Proyecto 3 cuatris\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\obj\Debug\net9.0\ProfitManagerApp.Data.dll
+C:\Users\XSF\Documents\9 cuatrimestre\Proyecto 3 cuatris\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\obj\Debug\net9.0\refint\ProfitManagerApp.Data.dll
+C:\Users\XSF\Documents\9 cuatrimestre\Proyecto 3 cuatris\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\obj\Debug\net9.0\ProfitManagerApp.Data.pdb
+C:\Users\XSF\Documents\9 cuatrimestre\Proyecto 3 cuatris\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\obj\Debug\net9.0\ProfitManagerApp.Data.genruntimeconfig.cache
+C:\Users\XSF\Documents\9 cuatrimestre\Proyecto 3 cuatris\ProyectoProfitUpManager\backend\ProfitManagerApp.Data\obj\Debug\net9.0\ref\ProfitManagerApp.Data.dll

@@ -8,6 +8,7 @@ using Microsoft.Data.SqlClient;
 using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Data.Infrastructure;
 using ProfitManagerApp.Domain.Inventory.Dto;
+using ProfitManagerApp.Api.Dtos;
 
 namespace ProfitManagerApp.Data.Repositories
 {
@@ -172,5 +173,49 @@ namespace ProfitManagerApp.Data.Repositories
             return rows;
         }
 
+        public async Task<IEnumerable<ProductoRowDto>> GetProductosAsync()
+        {
+            using var conn = _factory.Create();
+            var rows = await conn.QueryAsync<ProductoRowDto>(
+                "SELECT ProductoID, SKU, Nombre, Descripcion FROM Producto WHERE IsActive = 1",
+                commandType: CommandType.Text);
+            return rows;
+        }
+
+        public async Task UpdateProductoAsync(int id, ProductoUpdateDto dto)
+        {
+            using var conn = _factory.Create();
+
+            try
+            {
+                var affected = await conn.ExecuteAsync(
+                    @"UPDATE Producto
+              SET Nombre = @Nombre,
+                  Descripcion = @Descripcion
+              WHERE ProductoID = @Id AND IsActive = 1",
+                    new { dto.Nombre, dto.Descripcion, Id = id }
+                );
+
+                if (affected == 0)
+                {
+                    throw new Exception("Producto no encontrado o inactivo");
+                }
+            }
+            catch (SqlException ex)
+            {
+                Console.WriteLine($"[SQL Error] {ex.Message}");
+                throw new Exception("Error al actualizar el producto en la base de datos");
+            }
+        }
+        public async Task<ProductoDetalleDto?> GetProductoDetalleAsync(int productoId)
+        {
+            using var conn = _factory.Create();
+            var detalle = await conn.QueryFirstOrDefaultAsync<ProductoDetalleDto>(
+                "dbo.usp_Producto_Detalle",
+                new { ProductoID = productoId },
+                commandType: CommandType.StoredProcedure
+            );
+            return detalle;
+        }
     }
 }

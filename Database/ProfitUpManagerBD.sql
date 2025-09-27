@@ -362,7 +362,7 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Rol WHERE NombreRol = 'Administrador')
 IF NOT EXISTS (SELECT 1 FROM dbo.Rol WHERE NombreRol = 'Empleado')
     INSERT INTO dbo.Rol (NombreRol, Descripcion) VALUES ('Empleado','Acceso operativo limitado');
 
--- Índices 
+-- ï¿½ndices 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Usuario_Correo' AND object_id = OBJECT_ID('dbo.Usuario'))
     CREATE UNIQUE INDEX IX_Usuario_Correo ON dbo.Usuario(Correo);
 
@@ -539,7 +539,7 @@ GO
 
 
 -----------------------Productosss------------------------------
--- Módulos del sistema
+-- Mï¿½dulos del sistema
 IF OBJECT_ID('dbo.Modulo','U') IS NULL
 CREATE TABLE dbo.Modulo (
   ModuloID INT IDENTITY(1,1) PRIMARY KEY,
@@ -547,7 +547,7 @@ CREATE TABLE dbo.Modulo (
   IsActive BIT NOT NULL DEFAULT 1
 );
 
--- Permisos por Rol y Módulo
+-- Permisos por Rol y Mï¿½dulo
 IF OBJECT_ID('dbo.RolPermiso','U') IS NULL
 CREATE TABLE dbo.RolPermiso (
   RolPermisoID INT IDENTITY(1,1) PRIMARY KEY,
@@ -560,7 +560,7 @@ CREATE TABLE dbo.RolPermiso (
   CONSTRAINT FK_RolPermiso_Mod FOREIGN KEY (ModuloID) REFERENCES dbo.Modulo(ModuloID)
 );
 
--- Seed del módulo Inventario y permisos base
+-- Seed del mï¿½dulo Inventario y permisos base
 IF NOT EXISTS (SELECT 1 FROM dbo.Modulo WHERE Nombre='Inventario')
   INSERT INTO dbo.Modulo (Nombre) VALUES ('Inventario');
 
@@ -740,13 +740,12 @@ CREATE OR ALTER PROCEDURE dbo.usp_Producto_MiniList
 AS
 BEGIN
   SET NOCOUNT ON;
-  SELECT ProductoID, SKU, Nombre
+  SELECT ProductoID, SKU, Nombre, Descripcion
   FROM dbo.Producto
   WHERE IsActive = 1
   ORDER BY Nombre;
 END
 GO
-
 
 ---mantener stock
 CREATE OR ALTER PROCEDURE dbo.usp_Inventario_Ajuste
@@ -840,11 +839,11 @@ GO
 ---insertsss
 IF NOT EXISTS (SELECT 1 FROM dbo.Bodega WHERE Codigo='CENTRAL')
 INSERT dbo.Bodega (Codigo, Nombre, Direccion, Contacto, IsActive)
-VALUES ('CENTRAL','Bodega Central','San José, CR','(506) 2222-0000',1);
+VALUES ('CENTRAL','Bodega Central','San Josï¿½, CR','(506) 2222-0000',1);
 
 IF NOT EXISTS (SELECT 1 FROM dbo.Bodega WHERE Codigo='OESTE')
 INSERT dbo.Bodega (Codigo, Nombre, Direccion, Contacto, IsActive)
-VALUES ('OESTE','Bodega Oeste','Escazú, CR',NULL,1);
+VALUES ('OESTE','Bodega Oeste','Escazï¿½, CR',NULL,1);
 
 IF NOT EXISTS (SELECT 1 FROM dbo.Bodega WHERE Codigo='ESTE')
 INSERT dbo.Bodega (Codigo, Nombre, Direccion, Contacto, IsActive)
@@ -957,6 +956,32 @@ BEGIN
   ORDER BY Nombre;
 END
 GO
+
+EXEC dbo.usp_Inventario_GetStock @ProductoID = NULL, @BodegaID = NULL;
+
+
+-- Procedimiento para mostrar el detalle de los productos
+CREATE PROCEDURE dbo.usp_Producto_Detalle
+    @ProductoID INT
+AS
+BEGIN
+    SET NOCOUNT ON;
+
+    SELECT 
+        CodigoInterno,
+        Peso,
+        Largo,
+        Alto,
+        Ancho,
+        UnidadAlmacenamientoID,
+        PrecioCosto,
+        PrecioVenta
+    FROM Producto
+    WHERE ProductoID = @ProductoID
+      AND IsActive = 1;
+END
+GO
+
 
 
 

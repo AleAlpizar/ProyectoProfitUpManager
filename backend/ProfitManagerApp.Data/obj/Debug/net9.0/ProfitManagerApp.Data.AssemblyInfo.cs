@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ProfitManagerApp.Data")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+c86360ce57102530b33be76089e94bda68de2ccd")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+766eadcf86478931e18770a90346616e507e082b")]
 [assembly: System.Reflection.AssemblyProductAttribute("ProfitManagerApp.Data")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ProfitManagerApp.Data")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

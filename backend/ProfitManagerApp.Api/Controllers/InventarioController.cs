@@ -4,6 +4,7 @@ using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Domain.Inventory.Dto;
 using System.Security.Claims;
 using System.IdentityModel.Tokens.Jwt;
+using ProfitManagerApp.Api.Dtos;
 
 
 namespace ProfitManagerApp.Api.Controllers
@@ -39,7 +40,7 @@ namespace ProfitManagerApp.Api.Controllers
         }
 
         [HttpGet("stock")]
-        public async Task<IActionResult> GetStock([FromQuery] int? productoId, [FromQuery] int? bodegaId)
+        public async Task<IActionResult> GetStock([FromQuery] int? productoId = null, [FromQuery] int? bodegaId = null)
         {
             var uid = GetUserId();
             if (uid is null) return Unauthorized();
@@ -47,8 +48,15 @@ namespace ProfitManagerApp.Api.Controllers
             var allowed = await _repo.PuedeAccederModuloAsync(uid.Value, "Inventario", "Leer");
             if (!allowed) return Forbid();
 
-            var rows = await _repo.GetStockAsync(productoId, bodegaId);
-            return Ok(rows);
+            var stock = await _repo.GetStockAsync(productoId, bodegaId);
+            return Ok(stock); 
+        }
+
+        [HttpGet("productos")]
+        public async Task<IActionResult> GetProductos()
+        {
+            var productos = await _repo.GetProductosAsync();
+            return Ok(productos);
         }
 
         [HttpPost("ajuste")]
@@ -113,9 +121,10 @@ namespace ProfitManagerApp.Api.Controllers
             var allowed = await _repo.PuedeAccederModuloAsync(uid.Value, "Inventario", "Leer");
             if (!allowed) return Forbid();
 
-            var rows = await _repo.GetProductosMiniAsync();
+            var rows = await _repo.GetProductosAsync(); 
             return Ok(rows);
         }
+
         [HttpGet("access")]
         public async Task<IActionResult> Access(
     [FromQuery] string module = "Inventario",
@@ -128,6 +137,41 @@ namespace ProfitManagerApp.Api.Controllers
             return Ok(ok);
         }
 
+        [HttpPut("productos/{id}")]
+        public async Task<IActionResult> UpdateProducto(int id, [FromBody] ProductoUpdateDto dto)
+        {
+            var uid = GetUserId();
+            if (uid is null) return Unauthorized();
+
+            // Validar permisos
+            var allowed = await _repo.PuedeAccederModuloAsync(uid.Value, "Inventario", "Escribir");
+            if (!allowed) return Forbid();
+
+            try
+            {
+                await _repo.UpdateProductoAsync(id, dto);
+                return Ok(new { message = "Producto actualizado" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+        }
+
+        [HttpGet("productos/detalle/{id}")]
+        public async Task<IActionResult> GetProductoDetalle(int id)
+        {
+            var uid = GetUserId();
+            if (uid is null) return Unauthorized();
+
+            var allowed = await _repo.PuedeAccederModuloAsync(uid.Value, "Inventario", "Leer");
+            if (!allowed) return Forbid();
+
+            var detalle = await _repo.GetProductoDetalleAsync(id);
+            if (detalle == null) return NotFound();
+
+            return Ok(detalle);
+        }
 
     }
 }

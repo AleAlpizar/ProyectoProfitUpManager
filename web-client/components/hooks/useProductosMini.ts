@@ -7,6 +7,7 @@ export type ProductoMini = {
   productoID: number;
   nombre: string;
   sku: string | null;
+  descripcion: string | null;
 };
 
 export function useProductosMini() {
@@ -21,10 +22,11 @@ export function useProductosMini() {
   }, [call]);
 
   useEffect(() => {
-    if (ready) {
-      load().catch(() => {});
-    }
+    if (ready) load().catch(() => {});
   }, [ready, load]);
 
   return { data, load, loading, error };
 }
+
+
+

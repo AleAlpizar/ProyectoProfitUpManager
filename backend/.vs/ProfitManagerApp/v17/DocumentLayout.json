@@ -1,18 +1,82 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\",
+  "WorkspaceRootPath": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\controllers\\inventariocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\controllers\\inventariocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\controllers\\inventariocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\dtos\\ajusteinventariodto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\dtos\\productodetalledto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\dtos\\productodetalledto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\data\\repositories\\inventariorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\data\\repositories\\inventariorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\data\\abstractions\\iinventariorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\data\\abstractions\\iinventariorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\dtos\\productoupdatedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\dtos\\productoupdatedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\dtos\\ajusteinventariodto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\dtos\\ajusteinventariodto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\11alp\\source\\repos\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\data\\infrastructure\\sqlconnectionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\dtos\\productocreatedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\dtos\\productocreatedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\controllers\\productoscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\controllers\\productoscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\profitmanagerapp.api.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\profitmanagerapp.api.http||{5703B403-55E7-4C63-8C88-A8F52C7A45C5}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\appsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\dtos\\productorowdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\dtos\\productorowdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\dtos\\productominidto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\dtos\\productominidto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\data\\infrastructure\\sqlconnectionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\data\\infrastructure\\sqlconnectionfactory.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\dtos\\stockrowdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\dtos\\stockrowdto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\dtos\\unidaddto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\dtos\\unidaddto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\dtos\\stockquerydto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\dtos\\stockquerydto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\dtos\\bodegadto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\dtos\\bodegadto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\service\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\service\\authservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|c:\\users\\xsf\\documents\\9 cuatrimestre\\proyecto 3 cuatris\\proyectoprofitupmanager\\backend\\profitmanagerapp.api\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{45A9656E-CC5D-4766-AC1A-F661EF303D12}|ProfitManagerApp.Api\\ProfitManagerApp.Api.csproj|solutionrelative:profitmanagerapp.api\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
     }
   ],
   "DocumentGroupContainers": [
@@ -22,36 +86,179 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 4,
           "Children": [
-            {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
-            },
             {
               "$type": "Bookmark",
               "Name": "ST:128:0:{75188d03-9892-4ae2-abf1-207126247ce5}"
             },
             {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "ProductoDetalleDto.cs",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\ProductoDetalleDto.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Dtos\\ProductoDetalleDto.cs",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\ProductoDetalleDto.cs",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Dtos\\ProductoDetalleDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-27T16:26:05.661Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "ProductoCreateDto.cs",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\ProductoCreateDto.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Dtos\\ProductoCreateDto.cs",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\ProductoCreateDto.cs",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Dtos\\ProductoCreateDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-26T23:33:51.293Z",
+              "EditorCaption": ""
+            },
+            {
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "InventarioController.cs",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\InventarioController.cs",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\InventarioController.cs",
               "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Controllers\\InventarioController.cs",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\InventarioController.cs",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\InventarioController.cs",
               "RelativeToolTip": "ProfitManagerApp.Api\\Controllers\\InventarioController.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAIAAAAAJAAAAAAAAAA==",
+              "ViewState": "AgIAAJcAAAAAAAAAAAAUwLAAAAABAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-09-26T05:53:26.112Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "IInventarioRepository.cs",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Data\\Abstractions\\IInventarioRepository.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Data\\Abstractions\\IInventarioRepository.cs",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Data\\Abstractions\\IInventarioRepository.cs",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Data\\Abstractions\\IInventarioRepository.cs",
+              "ViewState": "AgIAAAoAAAAAAAAAAAAgwCIAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-26T23:01:08.968Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 2,
+              "Title": "InventarioRepository.cs",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Data\\Repositories\\InventarioRepository.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Data\\Repositories\\InventarioRepository.cs",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Data\\Repositories\\InventarioRepository.cs",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Data\\Repositories\\InventarioRepository.cs",
+              "ViewState": "AgIAAL4AAAAAAAAAAAAQwN0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-26T22:46:21.074Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "AjusteInventarioDto.cs",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\AjusteInventarioDto.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Dtos\\AjusteInventarioDto.cs",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\AjusteInventarioDto.cs",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Dtos\\AjusteInventarioDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-24T18:19:46.887Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "ProductoUpdateDto.cs",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\ProductoUpdateDto.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Dtos\\ProductoUpdateDto.cs",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\ProductoUpdateDto.cs",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Dtos\\ProductoUpdateDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-27T03:30:35.263Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "appsettings.json",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\appsettings.json",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\appsettings.json",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\appsettings.json",
+              "RelativeToolTip": "ProfitManagerApp.Api\\appsettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-09-26T16:28:52.82Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "ProductosController.cs",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\ProductosController.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Controllers\\ProductosController.cs",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Controllers\\ProductosController.cs",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Controllers\\ProductosController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-26T23:33:06.666Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "ProductoRowDto.cs",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\ProductoRowDto.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Dtos\\ProductoRowDto.cs",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\ProductoRowDto.cs",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Dtos\\ProductoRowDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-27T00:06:14.145Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "ProfitManagerApp.Api.http",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\ProfitManagerApp.Api.http",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\ProfitManagerApp.Api.http",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\ProfitManagerApp.Api.http",
+              "RelativeToolTip": "ProfitManagerApp.Api\\ProfitManagerApp.Api.http",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003502|",
+              "WhenOpened": "2025-09-27T15:33:42.96Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "ProductoMiniDto.cs",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\ProductoMiniDto.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Dtos\\ProductoMiniDto.cs",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\ProductoMiniDto.cs",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Dtos\\ProductoMiniDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-26T23:33:57.405Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
               "Title": "SqlConnectionFactory.cs",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Data\\Infrastructure\\SqlConnectionFactory.cs",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Data\\Infrastructure\\SqlConnectionFactory.cs",
               "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Data\\Infrastructure\\SqlConnectionFactory.cs",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Data\\Infrastructure\\SqlConnectionFactory.cs",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Data\\Infrastructure\\SqlConnectionFactory.cs",
               "RelativeToolTip": "ProfitManagerApp.Api\\Data\\Infrastructure\\SqlConnectionFactory.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -59,26 +266,75 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
-              "Title": "AjusteInventarioDto.cs",
-              "DocumentMoniker": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\AjusteInventarioDto.cs",
-              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Dtos\\AjusteInventarioDto.cs",
-              "ToolTip": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\AjusteInventarioDto.cs",
-              "RelativeToolTip": "ProfitManagerApp.Api\\Dtos\\AjusteInventarioDto.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAA/AAAAAAAAAA==",
+              "DocumentIndex": 13,
+              "Title": "StockRowDto.cs",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\StockRowDto.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Dtos\\StockRowDto.cs",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\StockRowDto.cs",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Dtos\\StockRowDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-09-24T18:19:46.887Z",
-              "EditorCaption": ""
-            }
-          ]
-        },
-        {
-          "DockedWidth": 986,
-          "SelectedChildIndex": -1,
-          "Children": [
+              "WhenOpened": "2025-09-26T23:34:14.248Z"
+            },
             {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "UnidadDto.cs",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\UnidadDto.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Dtos\\UnidadDto.cs",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\UnidadDto.cs",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Dtos\\UnidadDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-26T23:34:03.939Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "StockQueryDto.cs",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\StockQueryDto.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Dtos\\StockQueryDto.cs",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\StockQueryDto.cs",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Dtos\\StockQueryDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-26T23:34:18.727Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "BodegaDto.cs",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\BodegaDto.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Dtos\\BodegaDto.cs",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Dtos\\BodegaDto.cs",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Dtos\\BodegaDto.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-26T23:33:45.495Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "AuthService.cs",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Service\\AuthService.cs",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Service\\AuthService.cs",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Service\\AuthService.cs",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Service\\AuthService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAABYAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-09-26T23:02:17.896Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "launchSettings.json",
+              "DocumentMoniker": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Properties\\launchSettings.json",
+              "RelativeDocumentMoniker": "ProfitManagerApp.Api\\Properties\\launchSettings.json",
+              "ToolTip": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Api\\Properties\\launchSettings.json",
+              "RelativeToolTip": "ProfitManagerApp.Api\\Properties\\launchSettings.json",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2025-09-26T22:21:35.959Z"
             }
           ]
         }

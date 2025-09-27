@@ -96,10 +96,10 @@ export const SidebarWrapper = () => {
 
               <SidebarMenu title="Inventario">
                 <SidebarItem
-                  isActive={router.pathname === "/inventario" || router.pathname.startsWith("/inventario/index")}
+                  isActive={router.pathname === "/inventario/inventario"}
                   title="Inicio"
-                  icon={<ProductsIcon />}
-                  href="/inventario"
+                  icon={<ReportsIcon />}
+                  href="/inventario/inventario"
                 />
                 <SidebarItem
                   isActive={router.pathname.startsWith("/inventario/productos")}
@@ -133,12 +133,6 @@ export const SidebarWrapper = () => {
                   title="Ventas"
                   icon={<ReportsIcon />}
                   href="/reportes/ventas"
-                />
-                <SidebarItem
-                  isActive={router.pathname === "/reportes/inventario"}
-                  title="Inventario"
-                  icon={<ReportsIcon />}
-                  href="/reportes/inventario"
                 />
                 <SidebarItem
                   isActive={router.pathname === "/reportes/ordenes"}

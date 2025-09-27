@@ -4680,23 +4680,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\11alp\\.nuget\\packages\\": {},
+    "C:\\Users\\XSF\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\ProfitManagerApp.Data.csproj",
+      "projectUniqueName": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\ProfitManagerApp.Data.csproj",
       "projectName": "ProfitManagerApp.Data",
-      "projectPath": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\ProfitManagerApp.Data.csproj",
-      "packagesPath": "C:\\Users\\11alp\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\11alp\\source\\repos\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\obj\\",
+      "projectPath": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\ProfitManagerApp.Data.csproj",
+      "packagesPath": "C:\\Users\\XSF\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\XSF\\Documents\\9 cuatrimestre\\Proyecto 3 cuatris\\ProyectoProfitUpManager\\backend\\ProfitManagerApp.Data\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\11alp\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\XSF\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -4705,7 +4705,6 @@
       ],
       "sources": {
         "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
-        "C:\\Program Files\\dotnet\\library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -4724,7 +4723,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.300"
+      "SdkAnalysisLevel": "9.0.100"
     },
     "frameworks": {
       "net9.0": {
@@ -4761,7 +4760,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.305/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.101/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

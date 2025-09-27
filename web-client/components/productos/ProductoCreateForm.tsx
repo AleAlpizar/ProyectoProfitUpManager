@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useProductoCreate } from "@/components/hooks/useProductoCreate";
 import { useUnidades } from "@/components/hooks/useUnidades";
-import { useBodegas } from "@/components/hooks/useBodegas"; // <-- NUEVO
+import { useBodegas } from "@/components/hooks/useBodegas"; 
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
   label: string;

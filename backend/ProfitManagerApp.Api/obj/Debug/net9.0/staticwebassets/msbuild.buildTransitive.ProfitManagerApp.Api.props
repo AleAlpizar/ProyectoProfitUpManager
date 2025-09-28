@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="..\buildMultiTargeting\ProfitManagerApp.Api.props" />
-</Project>

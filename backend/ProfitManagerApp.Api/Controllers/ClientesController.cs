@@ -51,6 +51,34 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
     return CreatedAtAction(nameof(GetById), new { id = model.ClienteID }, read);
   }
 
+  [HttpPut]
+  [Authorize]
+  public async Task<IActionResult> Update([FromBody] ClienteUpdateDto dto, CancellationToken ct)
+  {
+    var user = GetUserId();
+
+    if (!ModelState.IsValid) return ValidationProblem(ModelState);
+
+    if (!string.IsNullOrWhiteSpace(dto.CodigoCliente)
+        && await handlers.CodigoExisteAsync(dto.CodigoCliente!, ct))
+      return Conflict(new { message = "CodigoCliente ya existe." });
+
+    var model = await handlers.CrearAsync(
+        dto.Nombre, dto.CodigoCliente, dto.TipoPersona, dto.Identificacion,
+        dto.Correo, dto.Telefono, dto.Direccion, dto.IsActive,
+        User, ct);
+
+    // Puedes mapear model -> readDto si quieres mantener DTOs en la respuesta
+    var read = new ClienteReadDto(
+        model.ClienteID, model.CodigoCliente, model.Nombre, model.TipoPersona,
+        model.Identificacion, model.Correo, model.Telefono, model.Direccion,
+        model.FechaRegistro, model.IsActive, model.CreatedAt,
+        model.CreatedBy, model.UpdatedAt, model.UpdatedBy
+    );
+
+    return CreatedAtAction(nameof(GetById), new { id = model.ClienteID }, read);
+  }
+
   [HttpGet("{id:int}")]
   [Authorize]
   public async Task<IActionResult> GetById(int id, CancellationToken ct)
@@ -67,4 +95,31 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
 
     return Ok(read);
   }
+
+  [HttpGet()]
+  [Authorize]
+  public async Task<IActionResult> GetAll(CancellationToken ct)
+  {
+    var model = await handlers.ObtenerClientes(ct);
+    return Ok(model);
+  }
+
+  [HttpPatch("{id:int}/activo")]
+  //[Authorize] 
+  public async Task<IActionResult> PatchActivo([FromRoute] int id, [FromBody] ClientePatchActivoDto dto, CancellationToken ct)
+  {
+    if (!ModelState.IsValid) return ValidationProblem(ModelState);
+
+    var model = await handlers.SetActivoAsync(id, dto.IsActive, User, ct);
+    if (model is null) return NotFound();
+
+    return Ok(new
+    {
+      model.ClienteID,
+      model.IsActive,
+      model.UpdatedAt,
+      model.UpdatedBy
+    });
+  }
+
 }

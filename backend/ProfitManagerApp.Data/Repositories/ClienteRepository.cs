@@ -18,4 +18,21 @@ public class ClienteRepository(AppDbContext db) : IClienteRepository
 
   public Task<ClienteRow?> GetByIdAsync(int id, CancellationToken ct) =>
       db.Clientes.AsNoTracking().FirstOrDefaultAsync(x => x.ClienteID == id, ct);
+
+  public Task<List<ClienteRow>> GetAll(CancellationToken ct)
+  {
+    return db.Clientes.ToListAsync(cancellationToken: ct);
+  }
+  public async Task<bool> SetActivoAsync(int id, bool isActive, int? updatedBy, DateTime whenUtc, CancellationToken ct)
+  {
+    var affected = await db.Clientes
+        .Where(x => x.ClienteID == id)
+        .ExecuteUpdateAsync(setters => setters
+            .SetProperty(x => x.IsActive, isActive)
+            .SetProperty(x => x.UpdatedAt, whenUtc)
+            .SetProperty(x => x.UpdatedBy, updatedBy), ct);
+
+    return affected > 0;
+  }
 }
+

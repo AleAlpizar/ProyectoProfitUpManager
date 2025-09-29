@@ -64,9 +64,32 @@ public class ClienteHandler(IClienteRepository repo)
     return ToModel(added);
   }
 
+  public async Task<List<ClienteModel>> ObtenerClientes(CancellationToken ct)
+  {
+    var result = await repo.GetAll(ct);
+    var mappedResult = new List<ClienteModel>();
+    result.ForEach(r => mappedResult.Add(ToModel(r)));
+    return mappedResult;
+  }
+
   public async Task<ClienteModel?> ObtenerPorIdAsync(int id, CancellationToken ct)
   {
     var row = await repo.GetByIdAsync(id, ct);
     return row is null ? null : ToModel(row);
   }
+  public async Task<ClienteModel?> SetActivoAsync(int id, bool isActive, ClaimsPrincipal? user, CancellationToken ct)
+  {
+    int? updatedBy = null;
+    var sub = user?.FindFirst("sub")?.Value ?? user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (int.TryParse(sub, out var uid)) updatedBy = uid;
+
+    var whenUtc = DateTime.UtcNow;
+
+    var ok = await repo.SetActivoAsync(id, isActive, updatedBy, whenUtc, ct);
+    if (!ok) return null;
+
+    var row = await repo.GetByIdAsync(id, ct);
+    return row is null ? null : ToModel(row);
+  }
 }
+

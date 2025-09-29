@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import Button from "../buttons/button";
 import { Cliente, Estado } from "./types";
 import ClientForm from "./ClientForm";
@@ -7,11 +7,9 @@ import Modal from "../modals/Modal";
 import { formatMoney } from "../../helpers/ui-helpers";
 import { useApi } from "../hooks/useApi";
 
-const FAKE: Cliente[] = [];
-
 export default function ClientesPage() {
-  const [rows, setRows] = React.useState<Cliente[]>(FAKE);
-  const { call, loading: calling, error: apiError, ready } = useApi();
+  const [rows, setRows] = React.useState<Cliente[]>([]);
+  const { call } = useApi();
   const [q, setQ] = React.useState("");
   const [filterEstado, setFilterEstado] = React.useState<"Todos" | Estado>(
     "Todos"
@@ -32,8 +30,23 @@ export default function ClientesPage() {
     to: Estado;
   } | null>(null);
 
+  const fetchClientData = async () => {
+    const data = await call<Cliente[]>(`/api/clientes`, {
+      method: "GET",
+    });
+    console.log("data", data);
+    if (data) {
+      setRows(data);
+    }
+  };
+
+  // Cargar Datos iniciales
+  useEffect(() => {
+    fetchClientData().catch(console.error);
+  }, []);
+
   // Bloquear scroll al abrir modales
-  React.useEffect(() => {
+  useEffect(() => {
     const any = formOpen || discountOpen || !!confirm;
     document.body.classList.toggle("overflow-hidden", any);
   }, [formOpen, discountOpen, confirm]);
@@ -69,13 +82,12 @@ export default function ClientesPage() {
 
   // Handlers
   const onSaveCliente = async (payload: Cliente) => {
-    console.log('payload', payload);
+    console.log("payload", payload);
     if (!edit) {
-      const data = await call<any>(`/api/clientes`, {
+      const data = await call<Cliente>(`/api/clientes`, {
         method: "POST",
         body: JSON.stringify(payload),
       });
-      console.log('data',data);
       pageRows.push(data as Cliente);
     }
     setFormOpen(false);
@@ -86,20 +98,27 @@ export default function ClientesPage() {
     if (!discountTarget) return;
     setRows((prev) =>
       prev.map((c) =>
-        c.id === discountTarget.id ? { ...c, descuento: value } : c
+        c.clienteID === discountTarget.clienteID ? { ...c, descuento: value } : c
       )
     );
     setDiscountOpen(false);
     setDiscountTarget(null);
   };
 
-  const onConfirmEstado = () => {
+  const onConfirmEstado = async () => {
     if (!confirm) return;
-    setRows((prev) =>
-      prev.map((c) =>
-        c.id?.toString() === confirm.id ? { ...c, estado: confirm.to } : c
-      )
-    );
+    const data = await call<{
+      clienteID: number;
+      isActive: boolean;
+      }>(`/api/clientes/${confirm.id}/activo`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        isActive: confirm.to === "Activo",
+      }),
+    }).catch(console.error);
+    if(data){
+        await fetchClientData();
+      }
     setConfirm(null);
   };
 
@@ -177,7 +196,7 @@ export default function ClientesPage() {
           </thead>
           <tbody className="divide-y divide-gray-200">
             {pageRows.map((r) => (
-              <tr key={r.id} className="hover:bg-gray-50">
+              <tr key={r.clienteID ?? ""} className="hover:bg-gray-50">
                 <Td strong>{r.codigoCliente}</Td>
                 <Td>
                   <div className="font-medium text-secondary">{r.nombre}</div>
@@ -215,12 +234,12 @@ export default function ClientesPage() {
                       variant="danger"
                       onClick={() =>
                         setConfirm({
-                          id: r.id?.toString() ?? "",
-                          to: !r.isActive ? "Inactivo" : "Activo",
+                          id: r.clienteID?.toString() ?? "",
+                          to: r.isActive ? "Inactivo" : "Activo", // el estado deseado
                         })
                       }
                     >
-                      {!r.isActive ? "Inactivar" : "Reactivar"}
+                      {r.isActive ? "Inactivar" : "Reactivar"}
                     </Button>
                   </div>
                 </Td>
@@ -284,7 +303,7 @@ export default function ClientesPage() {
               Cambiar estado
             </h2>
             <p className="text-sm text-secondary/80">
-              ¿Confirmas {confirm.to === "Activo" ? "reactivar" : "inactivar"}{" "}
+              ¿Confirmas {confirm.to === "Activo" ? "inactivar " : "reactivar "}
               al cliente <b>{confirm.id}</b>?
             </p>
             <div className="flex justify-end gap-2">

@@ -52,3 +52,9 @@ public class ClientePatchDto // vamos a usar patch?
   [MaxLength(300)] public string? Direccion { get; set; }
   public bool? IsActive { get; set; }
 }
+
+public record class ClientePatchActivoDto
+{
+  [Required]
+  public bool IsActive { get; init; }
+}

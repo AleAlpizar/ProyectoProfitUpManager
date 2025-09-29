@@ -1,14 +1,18 @@
-using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using ProfitManagerApp.Api.Mapping;
 using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Data.Infrastructure;
 using ProfitManagerApp.Data.Repositories;
+using ProfitManagerApp.Data;
+using System.Text;
+using ProfitManagerApp.Application.Clientes;
 
 var builder = WebApplication.CreateBuilder(args);
 
 const string CorsPolicy = "AllowFrontend";
 
+// CORS
 var allowedOrigins = builder.Configuration
     .GetSection("Cors:AllowedOrigins")
     .Get<string[]>() ?? new[] { "http://localhost:3000" };
@@ -22,17 +26,35 @@ builder.Services.AddCors(options =>
         .AllowCredentials());
 });
 
+//EF
+builder.Services.AddProfitManagerData(builder.Configuration);
+
+// AutoMapper
+builder.Services.AddAutoMapper(typeof(ApiMappingProfile).Assembly);
+
+
+// Controllers + Swagger (con JWT)
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// DI API
+
 builder.Services.AddSingleton<SqlConnectionFactory>();
 builder.Services.AddScoped<IInventarioRepository, InventarioRepository>();
 
-builder.Services.AddScoped<
-    ProfitManagerApp.Data.Abstractions.IInventarioRepository,
-    ProfitManagerApp.Data.Repositories.InventarioRepository
->();
+//Domain
+builder.Services.AddScoped<ClienteHandler>(); // TODO: make an interface xd
+
+
+// DATA
+builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
+
+
+//builder.Services.AddScoped<
+//    ProfitManagerApp.Data.Abstractions.IInventarioRepository,
+//    ProfitManagerApp.Data.Repositories.InventarioRepository
+//>();
 
 var issuer = builder.Configuration["Jwt:Issuer"];
 var audience = builder.Configuration["Jwt:Audience"];
@@ -57,9 +79,12 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
-
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<JwtTokenService>();
+
+
+
+
 
 var app = builder.Build();
 
@@ -73,11 +98,12 @@ else
     app.UseHttpsRedirection();
 }
 
+// CORS + Auth
 app.UseCors(CorsPolicy);
-
 app.UseAuthentication();
 app.UseAuthorization();
 
+// health check
 app.MapGet("/db-ping", (SqlConnectionFactory f) =>
 {
     try
@@ -94,6 +120,7 @@ app.MapGet("/db-ping", (SqlConnectionFactory f) =>
         return Results.Problem(ex.Message);
     }
 });
+
 
 app.MapControllers();
 app.Run();

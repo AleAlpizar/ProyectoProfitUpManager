@@ -1,9 +1,14 @@
 export type Estado = "Activo" | "Inactivo";
+export type TipoDePersona = "Natural" | "Juridico";
 export type Cliente = {
-  id?: string;
+  id?: number;
+  codigoCliente: string;
   nombre: string;
-  email: string;
-  estado: Estado;
-  totalCompras: number; // mejor numérico para cálculos
-  descuento?: number;   // porcentaje 0..100
+  tipoPersona: TipoDePersona;
+  identificacion: string;
+  correo: string;
+  telefono: string;
+  direccion: string;
+  isActive: boolean;
+
 };

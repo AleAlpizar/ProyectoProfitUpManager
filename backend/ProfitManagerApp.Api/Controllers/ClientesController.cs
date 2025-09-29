@@ -24,7 +24,7 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
 
 
   [HttpPost]
-  // [Authorize]
+  [Authorize]
   public async Task<IActionResult> Create([FromBody] ClienteCreateDto dto, CancellationToken ct)
   {
     var user = GetUserId();

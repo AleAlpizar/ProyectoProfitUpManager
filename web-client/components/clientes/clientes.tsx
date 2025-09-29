@@ -34,7 +34,6 @@ export default function ClientesPage() {
     const data = await call<Cliente[]>(`/api/clientes`, {
       method: "GET",
     });
-    console.log("data", data);
     if (data) {
       setRows(data);
     }
@@ -82,7 +81,6 @@ export default function ClientesPage() {
 
   // Handlers
   const onSaveCliente = async (payload: Cliente) => {
-    console.log(payload);
       await call<Cliente>(`/api/clientes${edit ? `/${payload.clienteID}` : ""}`, {
         method: edit ? "PUT" : "POST",
         body: JSON.stringify(payload),

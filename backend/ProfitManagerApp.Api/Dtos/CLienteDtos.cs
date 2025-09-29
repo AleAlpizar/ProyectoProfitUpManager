@@ -30,27 +30,16 @@ public record ClienteReadDto(
     int? UpdatedBy
 );
 
-public record ClienteUpdateDto(
-    [property: Required, MaxLength(200)] string Nombre,
-    [property: MaxLength(50)] string? CodigoCliente,
-    [property: MaxLength(20)] string? TipoPersona,
-    [property: MaxLength(50)] string? Identificacion,
-    [property: EmailAddress, MaxLength(200)] string? Correo,
-    [property: MaxLength(50)] string? Telefono,
-    [property: MaxLength(300)] string? Direccion,
-    [property: Required] bool IsActive
-);
-
-public class ClientePatchDto // vamos a usar patch?
+public record class ClienteUpdateDto
 {
-  [MaxLength(200)] public string? Nombre { get; set; }
-  [MaxLength(50)] public string? CodigoCliente { get; set; }
-  [MaxLength(20)] public string? TipoPersona { get; set; }
-  [MaxLength(50)] public string? Identificacion { get; set; }
-  [EmailAddress, MaxLength(200)] public string? Correo { get; set; }
-  [MaxLength(50)] public string? Telefono { get; set; }
-  [MaxLength(300)] public string? Direccion { get; set; }
-  public bool? IsActive { get; set; }
+  [Required, MaxLength(200)] public string Nombre { get; init; } = null!;
+  [MaxLength(50)] public string? CodigoCliente { get; init; }
+  [MaxLength(20)] public string? TipoPersona { get; init; }  // "Natural"/"Jurídica" 
+  [MaxLength(50)] public string? Identificacion { get; init; }
+  [EmailAddress, MaxLength(200)] public string? Correo { get; init; }
+  [MaxLength(50)] public string? Telefono { get; init; }
+  [MaxLength(300)] public string? Direccion { get; init; }
+  [Required] public bool IsActive { get; init; }
 }
 
 public record class ClientePatchActivoDto

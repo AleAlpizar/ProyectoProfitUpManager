@@ -14,6 +14,7 @@ const ClienteForm = ({
   onCancel: () => void;
   onSave: (payload: Cliente) => void;
 }) => {
+  console.log("initial", initial);
   const [codigoCliente, setCodigoCliente] = useState(initial?.codigoCliente ?? "");
   const [identificacion, setIdentificacion] = useState(initial?.identificacion ?? "");
   const [tipoPersona, setTipoPersona] = useState(initial?.tipoPersona ?? "Natural"); // dropdown
@@ -33,19 +34,19 @@ const ClienteForm = ({
       nombre: nombre.trim(),
       correo: email.trim(),
       isActive: estado == "Activo",
-      id: initial?.id,
+      clienteID: initial?.clienteID,
       codigoCliente,
       direccion,
       tipoPersona,
       identificacion,
-      telefono
+      telefono,
     });
   };
 
   return (
     <form onSubmit={submit} className="w-full max-w-2xl">
       <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-secondary">
+        <h2 className="text-xl font-semibold text-gray-300">
           {initial ? "Editar cliente" : "Nuevo cliente"}
         </h2>
         <Button variant="primary" type="button" onClick={onCancel}>
@@ -64,6 +65,7 @@ const ClienteForm = ({
           placeholder="Juan Perez"
           label="Nombre"
           className="border-b-2"
+          value={nombre}
           onChange={(e: { target: { value: React.SetStateAction<string>; }; }) => setNombre(e.target.value)}
         />
 
@@ -80,7 +82,7 @@ const ClienteForm = ({
           <select
             value={estado}
             onChange={(e) => setEstado(e.target.value as Estado)}
-            className="rounded-xl border border-gray-700 bg-white/5 px-3 py-2 text-sm text-black! outline-none transition focus:border-gray-500"
+            className="rounded-xl border border-gray-700 bg-white/5 px-3 py-2 text-sm text-white! outline-none transition focus:border-gray-500"
           >
             <option className="text-black">Activo</option>
             <option className="text-black">Inactivo</option>
@@ -108,7 +110,7 @@ const ClienteForm = ({
           <select
             value={tipoPersona}
             onChange={(e) => setTipoPersona(e.target.value as TipoDePersona)}
-            className="rounded-xl border border-gray-700 bg-white/5 px-3 py-2 text-sm text-black! outline-none transition focus:border-gray-500"
+            className="rounded-xl border border-gray-700 bg-white/5 px-3 py-2 text-sm text-white! outline-none transition focus:border-gray-500"
           >
             <option className="text-black">Natural</option>
             <option className="text-black">Juridica</option>

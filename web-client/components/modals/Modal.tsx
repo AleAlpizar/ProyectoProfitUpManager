@@ -7,7 +7,7 @@ const Modal: React.FC<React.PropsWithChildren<{ onClose: () => void }>> = ({
     onClick={onClose}
   >
     <div
-      className="w-full max-w-3xl rounded-2xl border border-black/5 bg-white p-5 shadow-xl"
+      className="w-full max-w-3xl rounded-2xl border border-black/5 bg-secondary  p-5 shadow-xl"
       onClick={(e) => e.stopPropagation()}
     >
       {children}

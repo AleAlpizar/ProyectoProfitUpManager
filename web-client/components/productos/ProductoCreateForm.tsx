@@ -4,25 +4,8 @@ import React, { useEffect, useState } from "react";
 import { useProductoCreate } from "@/components/hooks/useProductoCreate";
 import { useUnidades } from "@/components/hooks/useUnidades";
 import { useBodegas } from "@/components/hooks/useBodegas"; 
+import LabeledInput from "../Inputs/LabeledInput";
 
-type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
-  label: string;
-  error?: string;
-};
-
-function LabeledInput({ label, error, ...rest }: InputProps) {
-  return (
-    <div className="flex flex-col gap-1">
-      <label className="text-sm text-gray-300">{label}</label>
-      <input
-        {...rest}
-        className={`rounded-xl border bg-white/5 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-400 outline-none transition
-        ${error ? "border-red-400" : "border-gray-700 focus:border-gray-500"}`}
-      />
-      {error ? <span className="text-xs text-red-400">{error}</span> : null}
-    </div>
-  );
-}
 
 export default function ProductoCreateForm() {
   const {

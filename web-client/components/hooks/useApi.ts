@@ -11,6 +11,7 @@ export function useApi() {
     async <T,>(path: string, options?: RequestInit) => {
       setLoading(true);
       setError(null);
+      console.log('useAuth', token)
       try {
         const data = await apiFetch<T>(path, options, token || undefined);
         return data;

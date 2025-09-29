@@ -5,35 +5,13 @@ import ClientForm from "./ClientForm";
 import DiscountForm from "./DiscountForm";
 import Modal from "../modals/Modal";
 import { formatMoney } from "../../helpers/ui-helpers";
+import { useApi } from "../hooks/useApi";
 
-const FAKE: Cliente[] = [
-  {
-    id: "CL-0001",
-    nombre: "María Rodríguez",
-    email: "maria@acme.com",
-    estado: "Activo",
-    totalCompras: 1240,
-    descuento: 5,
-  },
-  {
-    id: "CL-0002",
-    nombre: "Juan Pérez",
-    email: "juan@beta.io",
-    estado: "Activo",
-    totalCompras: 980,
-  },
-  {
-    id: "CL-0003",
-    nombre: "Sofía García",
-    email: "sofia@delta.co",
-    estado: "Inactivo",
-    totalCompras: 210,
-  },
-];
+const FAKE: Cliente[] = [];
 
 export default function ClientesPage() {
   const [rows, setRows] = React.useState<Cliente[]>(FAKE);
-
+  const { call, loading: calling, error: apiError, ready } = useApi();
   const [q, setQ] = React.useState("");
   const [filterEstado, setFilterEstado] = React.useState<"Todos" | Estado>(
     "Todos"
@@ -67,9 +45,13 @@ export default function ClientesPage() {
       const matchQ =
         !term ||
         r.nombre.toLowerCase().includes(term) ||
-        r.email.toLowerCase().includes(term);
+        r.correo.toLowerCase().includes(term);
       const matchEstado =
-        filterEstado === "Todos" ? true : r.estado === filterEstado;
+        filterEstado === "Todos"
+          ? true
+          : r.isActive
+          ? "Activo"
+          : "Inactivo" === filterEstado;
       return matchQ && matchEstado;
     });
   }, [rows, q, filterEstado]);
@@ -86,34 +68,15 @@ export default function ClientesPage() {
   }, [q, filterEstado]);
 
   // Handlers
-  const onSaveCliente = (payload: Cliente) => {
-    if (edit) {
-      setRows((prev) =>
-        prev.map((c) =>
-          c.id === edit.id
-            ? {
-                ...c,
-                nombre: payload.nombre,
-                email: payload.email,
-                estado: payload.estado,
-              }
-            : c
-        )
-      );
-    } else {
-      // Generar id simple (visual)
-      const nextId =
-        "CL-" + (1000 + rows.length + 1).toString().padStart(4, "0");
-      setRows((prev) => [
-        {
-          id: nextId,
-          nombre: payload.nombre,
-          email: payload.email,
-          estado: payload.estado,
-          totalCompras: 0,
-        },
-        ...prev,
-      ]);
+  const onSaveCliente = async (payload: Cliente) => {
+    console.log('payload', payload);
+    if (!edit) {
+      const data = await call<any>(`/api/clientes`, {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      console.log('data',data);
+      pageRows.push(data as Cliente);
     }
     setFormOpen(false);
     setEdit(null);
@@ -133,7 +96,9 @@ export default function ClientesPage() {
   const onConfirmEstado = () => {
     if (!confirm) return;
     setRows((prev) =>
-      prev.map((c) => (c.id === confirm.id ? { ...c, estado: confirm.to } : c))
+      prev.map((c) =>
+        c.id?.toString() === confirm.id ? { ...c, estado: confirm.to } : c
+      )
     );
     setConfirm(null);
   };
@@ -206,32 +171,26 @@ export default function ClientesPage() {
               <Th>Cliente</Th>
               <Th>Email</Th>
               <Th>Estado</Th>
-              <Th className="text-right">Total compras</Th>
-              <Th className="text-right">Acciones</Th>
+              {/* <Th className="text-right">Total compras</Th>
+              <Th className="text-right">Acciones</Th> */}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {pageRows.map((r) => (
               <tr key={r.id} className="hover:bg-gray-50">
-                <Td strong>{r.id}</Td>
+                <Td strong>{r.codigoCliente}</Td>
                 <Td>
                   <div className="font-medium text-secondary">{r.nombre}</div>
-                  {typeof r.descuento === "number" && (
-                    <div className="mt-0.5 text-xs text-secondary/60">
-                      Descuento actual:{" "}
-                      <span className="font-semibold">{r.descuento}%</span>
-                    </div>
-                  )}
                 </Td>
-                <Td className="text-secondary/80">{r.email}</Td>
+                <Td className="text-secondary/80">{r.correo}</Td>
                 <Td>
-                  <Badge tone={r.estado === "Activo" ? "success" : "danger"}>
-                    {r.estado}
+                  <Badge tone={r.isActive ? "success" : "danger"}>
+                    {r.isActive ? "Activo" : "Inactivo"}
                   </Badge>
                 </Td>
-                <Td className="text-right font-semibold text-secondary">
+                {/* <Td className="text-right font-semibold text-secondary">
                   {formatMoney(r.totalCompras)}
-                </Td>
+                </Td> */}
                 <Td className="text-right">
                   <div className="inline-flex items-center gap-2">
                     <Button
@@ -256,12 +215,12 @@ export default function ClientesPage() {
                       variant="danger"
                       onClick={() =>
                         setConfirm({
-                          id: r.id ?? "",
-                          to: r.estado === "Activo" ? "Inactivo" : "Activo",
+                          id: r.id?.toString() ?? "",
+                          to: !r.isActive ? "Inactivo" : "Activo",
                         })
                       }
                     >
-                      {r.estado === "Activo" ? "Inactivar" : "Reactivar"}
+                      {!r.isActive ? "Inactivar" : "Reactivar"}
                     </Button>
                   </div>
                 </Td>
@@ -280,37 +239,6 @@ export default function ClientesPage() {
             )}
           </tbody>
         </table>
-      </div>
-
-      {/* Paginación */}
-      <div className="mt-4 flex items-center justify-between text-sm text-secondary/70">
-        <span>
-          Mostrando{" "}
-          <b>
-            {pageRows.length === 0 ? 0 : (page - 1) * pageSize + 1}-
-            {(page - 1) * pageSize + pageRows.length}
-          </b>{" "}
-          de <b>{filtered.length}</b>
-        </span>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            disabled={page <= 1}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-          >
-            Prev
-          </Button>
-          <span>
-            Página <b>{page}</b> de <b>{totalPages}</b>
-          </span>
-          <Button
-            variant="ghost"
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-          >
-            Next
-          </Button>
-        </div>
       </div>
 
       {formOpen && (

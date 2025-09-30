@@ -51,34 +51,6 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
     return CreatedAtAction(nameof(GetById), new { id = model.ClienteID }, read);
   }
 
-  [HttpPut]
-  [Authorize]
-  public async Task<IActionResult> Update([FromBody] ClienteUpdateDto dto, CancellationToken ct)
-  {
-    var user = GetUserId();
-
-    if (!ModelState.IsValid) return ValidationProblem(ModelState);
-
-    if (!string.IsNullOrWhiteSpace(dto.CodigoCliente)
-        && await handlers.CodigoExisteAsync(dto.CodigoCliente!, ct))
-      return Conflict(new { message = "CodigoCliente ya existe." });
-
-    var model = await handlers.CrearAsync(
-        dto.Nombre, dto.CodigoCliente, dto.TipoPersona, dto.Identificacion,
-        dto.Correo, dto.Telefono, dto.Direccion, dto.IsActive,
-        User, ct);
-
-    // Puedes mapear model -> readDto si quieres mantener DTOs en la respuesta
-    var read = new ClienteReadDto(
-        model.ClienteID, model.CodigoCliente, model.Nombre, model.TipoPersona,
-        model.Identificacion, model.Correo, model.Telefono, model.Direccion,
-        model.FechaRegistro, model.IsActive, model.CreatedAt,
-        model.CreatedBy, model.UpdatedAt, model.UpdatedBy
-    );
-
-    return CreatedAtAction(nameof(GetById), new { id = model.ClienteID }, read);
-  }
-
   [HttpGet("{id:int}")]
   [Authorize]
   public async Task<IActionResult> GetById(int id, CancellationToken ct)
@@ -105,7 +77,7 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
   }
 
   [HttpPatch("{id:int}/activo")]
-  //[Authorize] 
+  [Authorize] 
   public async Task<IActionResult> PatchActivo([FromRoute] int id, [FromBody] ClientePatchActivoDto dto, CancellationToken ct)
   {
     if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -121,5 +93,37 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
       model.UpdatedBy
     });
   }
+
+  [HttpPut("{id:int}")]
+  [Authorize]
+  public async Task<IActionResult> Put([FromRoute] int id, [FromBody] ClienteUpdateDto dto, CancellationToken ct)
+  {
+    if (!ModelState.IsValid) return ValidationProblem(ModelState);
+
+    try
+    {
+      var model = await handlers.ActualizarAsync(
+          id,
+          dto.Nombre, dto.CodigoCliente, dto.TipoPersona, dto.Identificacion,
+          dto.Correo, dto.Telefono, dto.Direccion, dto.IsActive,
+          User, ct);
+
+      if (model is null) return NotFound();
+
+      var read = new ClienteReadDto(
+          model.ClienteID, model.CodigoCliente, model.Nombre, model.TipoPersona,
+          model.Identificacion, model.Correo, model.Telefono, model.Direccion,
+          model.FechaRegistro, model.IsActive, model.CreatedAt,
+          model.CreatedBy, model.UpdatedAt, model.UpdatedBy
+      );
+
+      return Ok(read); 
+    }
+    catch (InvalidOperationException ex) when (ex.Message.Contains("CodigoCliente"))
+    {
+      return Conflict(new { message = ex.Message });
+    }
+  }
+
 
 }

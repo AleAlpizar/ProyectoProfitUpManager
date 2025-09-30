@@ -34,7 +34,6 @@ export default function ClientesPage() {
     const data = await call<Cliente[]>(`/api/clientes`, {
       method: "GET",
     });
-    console.log("data", data);
     if (data) {
       setRows(data);
     }
@@ -82,16 +81,13 @@ export default function ClientesPage() {
 
   // Handlers
   const onSaveCliente = async (payload: Cliente) => {
-    console.log("payload", payload);
-    if (!edit) {
-      const data = await call<Cliente>(`/api/clientes`, {
-        method: "POST",
+      await call<Cliente>(`/api/clientes${edit ? `/${payload.clienteID}` : ""}`, {
+        method: edit ? "PUT" : "POST",
         body: JSON.stringify(payload),
-      });
-      pageRows.push(data as Cliente);
-    }
+      }).catch(console.error);
     setFormOpen(false);
     setEdit(null);
+    await fetchClientData();
   };
 
   const onSaveDiscount = (value: number) => {
@@ -235,7 +231,7 @@ export default function ClientesPage() {
                       onClick={() =>
                         setConfirm({
                           id: r.clienteID?.toString() ?? "",
-                          to: r.isActive ? "Inactivo" : "Activo", // el estado deseado
+                          to: r.isActive ? "Inactivo" : "Activo", // el estado deseado, no el actual.
                         })
                       }
                     >

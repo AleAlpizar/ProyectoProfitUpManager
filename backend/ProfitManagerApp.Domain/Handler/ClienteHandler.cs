@@ -91,5 +91,61 @@ public class ClienteHandler(IClienteRepository repo)
     var row = await repo.GetByIdAsync(id, ct);
     return row is null ? null : ToModel(row);
   }
+
+  public async Task<ClienteModel?> ActualizarAsync(
+        int id,
+        string nombre, string? codigoCliente, string? tipoPersona,
+        string? identificacion, string? correo, string? telefono, string? direccion,
+        bool isActive, ClaimsPrincipal? user, CancellationToken ct)
+  {
+
+    // ver que el codigo nos se repita
+    if (!string.IsNullOrWhiteSpace(codigoCliente))
+    {
+      var exists = await repo.ExistsCodigoForOtherAsync(id, codigoCliente!, ct);
+      if (exists) throw new InvalidOperationException("CodigoCliente ya existe en otro cliente.");
+    }
+
+    nombre = nombre.Trim();
+    codigoCliente = TrimOrNull(codigoCliente);
+    tipoPersona = TrimOrNull(tipoPersona) ?? "Natural";
+    identificacion = TrimOrNull(identificacion);
+    correo = TrimOrNull(correo);
+    telefono = TrimOrNull(telefono);
+    direccion = TrimOrNull(direccion);
+
+    int? updatedBy = null;
+    var sub = user?.FindFirst("sub")?.Value ?? user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (int.TryParse(sub, out var uid)) updatedBy = uid;
+
+    var whenUtc = DateTime.UtcNow;
+
+    var ok = await repo.UpdateAsync(id, nombre, codigoCliente, tipoPersona,
+        identificacion, correo, telefono, direccion, isActive, updatedBy, whenUtc, ct);
+    if (!ok) return null;
+
+    var row = await repo.GetByIdAsync(id, ct);
+    return row is null ? null : ToModel(row);
+
+    //return row is null ? null : new ClienteModel
+    //{
+    //  ClienteID = row.ClienteID,
+    //  CodigoCliente = row.CodigoCliente,
+    //  Nombre = row.Nombre,
+    //  TipoPersona = row.TipoPersona,
+    //  Identificacion = row.Identificacion,
+    //  Correo = row.Correo,
+    //  Telefono = row.Telefono,
+    //  Direccion = row.Direccion,
+    //  FechaRegistro = row.FechaRegistro,
+    //  IsActive = row.IsActive,
+    //  CreatedAt = row.CreatedAt,
+    //  CreatedBy = row.CreatedBy,
+    //  UpdatedAt = row.UpdatedAt,
+    //  UpdatedBy = row.UpdatedBy
+    //};
+  }
+
+  private static string? TrimOrNull(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 }
 

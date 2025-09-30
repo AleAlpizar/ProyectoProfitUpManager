@@ -14,7 +14,6 @@ const ClienteForm = ({
   onCancel: () => void;
   onSave: (payload: Cliente) => void;
 }) => {
-  console.log("initial", initial);
   const [codigoCliente, setCodigoCliente] = useState(initial?.codigoCliente ?? "");
   const [identificacion, setIdentificacion] = useState(initial?.identificacion ?? "");
   const [tipoPersona, setTipoPersona] = useState(initial?.tipoPersona ?? "Natural"); // dropdown

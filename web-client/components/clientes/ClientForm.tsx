@@ -83,8 +83,8 @@ const ClienteForm = ({
             onChange={(e) => setEstado(e.target.value as Estado)}
             className="rounded-xl border border-gray-700 bg-white/5 px-3 py-2 text-sm text-white! outline-none transition focus:border-gray-500"
           >
-            <option className="text-black">Activo</option>
-            <option className="text-black">Inactivo</option>
+            <option className="text-gray-900 dark:text-gray-100">Activo</option>
+            <option className="text-gray-900 dark:text-gray-100">Inactivo</option>
           </select>
         </Field>
         
@@ -111,8 +111,8 @@ const ClienteForm = ({
             onChange={(e) => setTipoPersona(e.target.value as TipoDePersona)}
             className="rounded-xl border border-gray-700 bg-white/5 px-3 py-2 text-sm text-white! outline-none transition focus:border-gray-500"
           >
-            <option className="text-black">Natural</option>
-            <option className="text-black">Juridica</option>
+            <option className="text-gray-900 dark:text-gray-100">Natural</option>
+            <option className="text-gray-900 dark:text-gray-100">Juridica</option>
           </select>
         </Field>
 

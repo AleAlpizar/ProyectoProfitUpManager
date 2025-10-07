@@ -81,7 +81,6 @@ export const NavbarWrapper = ({children}: Props) => {
                      'transition': 'all 0.2s ease',
                      '@xsMax': {
                         w: '100%',
-                        // mw: '300px',
                      },
                      '& .nextui-input-content--left': {
                         h: '100%',

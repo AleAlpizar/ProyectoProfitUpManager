@@ -4,22 +4,19 @@ import { Sidebar } from "./sidebar.styles";
 import { Avatar, Tooltip } from "@nextui-org/react";
 import { Flex } from "../styles/flex";
 import { CompaniesDropdown } from "./companies-dropdown";
+
 import { HomeIcon } from "../icons/sidebar/home-icon";
 import { PaymentsIcon } from "../icons/sidebar/payments-icon";
-import { BalanceIcon } from "../icons/sidebar/balance-icon";
 import { AccountsIcon } from "../icons/sidebar/accounts-icon";
 import { CustomersIcon } from "../icons/sidebar/customers-icon";
 import { ProductsIcon } from "../icons/sidebar/products-icon";
 import { ReportsIcon } from "../icons/sidebar/reports-icon";
-import { DevIcon } from "../icons/sidebar/dev-icon";
-import { ViewIcon } from "../icons/sidebar/view-icon";
 import { SettingsIcon } from "../icons/sidebar/settings-icon";
-import { CollapseItems } from "./collapse-items";
 import { SidebarItem } from "./sidebar-item";
-import { SidebarMenu } from "./sidebar-menu";
 import { FilterIcon } from "../icons/sidebar/filter-icon";
-import { useSidebarContext } from "../layout/layout-context";
 import { ChangeLogIcon } from "../icons/sidebar/changelog-icon";
+
+import { useSidebarContext } from "../layout/layout-context";
 import { useRouter } from "next/router";
 import { useSession } from "@/hooks/useSession";
 
@@ -30,9 +27,9 @@ export const SidebarWrapper = () => {
 
   const onLogout = async () => {
     try {
-      await logout();             
+      await logout();
     } finally {
-      router.replace("/login");    
+      router.replace("/login");
     }
   };
 
@@ -56,147 +53,77 @@ export const SidebarWrapper = () => {
         <Flex direction={"column"} justify={"between"} css={{ height: "100%" }}>
           <Sidebar.Body className="body sidebar">
             <SidebarItem
-              title="Home"
+              title="Inicio"
               icon={<HomeIcon />}
               isActive={router.pathname === "/"}
               href="/"
             />
 
-            <SidebarMenu title="Administracion">
-              <SidebarItem
-                isActive={router.pathname === "/accounts"}
-                title="Cuentas"
-                icon={<AccountsIcon />}
-                href="/accounts"
-              />
-            </SidebarMenu>
+            <SidebarItem
+              title="Administración"
+              icon={<AccountsIcon />}
+              isActive={router.pathname === "/accounts"}
+              href="/accounts"
+            />
 
-            <SidebarMenu title="Clientes">
-              <SidebarItem
-                isActive={router.pathname === "/customers"}
-                title="Clientes"
-                icon={<CustomersIcon />}
-                href="/customers"
-              />
-            </SidebarMenu>
+            <SidebarItem
+              title="Clientes"
+              icon={<CustomersIcon />}
+              isActive={router.pathname === "/customers"}
+              href="/customers"
+            />
 
-            <SidebarMenu title="Operaciones">
-              <SidebarItem
-                isActive={router.pathname.startsWith("/compras")}
-                title="Compras"
-                icon={<ProductsIcon />}
-                href="/compras/ordenes"
-              />
-              <SidebarItem
-                isActive={router.pathname.startsWith("/ventas")}
-                title="Registrar venta"
-                icon={<PaymentsIcon />}
-                href="/ventas/registrar"
-              />
+            <SidebarItem
+              title="Operaciones"
+              icon={<PaymentsIcon />}
+              isActive={router.pathname.startsWith("/compras") || router.pathname.startsWith("/ventas")}
+              href="/compras/ordenes"
+            />
 
-              <SidebarMenu title="Inventario">
-                <SidebarItem
-                  isActive={router.pathname === "/inventario/inventario"}
-                  title="Inicio"
-                  icon={<ReportsIcon />}
-                  href="/inventario/inventario"
-                />
-                <SidebarItem
-                  isActive={router.pathname.startsWith("/inventario/productos")}
-                  title="Productos"
-                  icon={<ProductsIcon />}
-                  href="/inventario/productos"
-                />
-                <SidebarItem
-                  isActive={router.pathname.startsWith("/inventario/bodegas")}
-                  title="Bodegas"
-                  icon={<ProductsIcon />}
-                  href="/inventario/bodegas"
-                />
-                <SidebarItem
-                  isActive={router.pathname.startsWith("/inventario/existencias")}
-                  title="Existencias"
-                  icon={<ProductsIcon />}
-                  href="/inventario/existencias"
-                />
-                <SidebarItem
-                  isActive={router.pathname.startsWith("/inventario/descuentos")}
-                  title="Descuentos"
-                  icon={<ProductsIcon />}
-                  href="/inventario/descuentos"
-                />
-              </SidebarMenu>
+            <SidebarItem
+              title="Inventario"
+              icon={<ProductsIcon />}
+              isActive={router.pathname.startsWith("/inventario")}
+              href="/inventario/inventario"
+            />
 
-              <SidebarMenu title="Reportes">
-                <SidebarItem
-                  isActive={router.pathname === "/reportes/ventas"}
-                  title="Ventas"
-                  icon={<ReportsIcon />}
-                  href="/reportes/ventas"
-                />
-                <SidebarItem
-                  isActive={router.pathname === "/reportes/ordenes"}
-                  title="Órdenes de compra"
-                  icon={<ReportsIcon />}
-                  href="/reportes/ordenes"
-                />
-                <SidebarItem
-                  isActive={router.pathname === "/reportes/historial"}
-                  title="Historial"
-                  icon={<ChangeLogIcon />}
-                  href="/reportes/historial"
-                />
-              </SidebarMenu>
-            </SidebarMenu>
+            <SidebarItem
+              title="Reportes"
+              icon={<ReportsIcon />}
+              isActive={router.pathname.startsWith("/reportes")}
+              href="/reportes/ventas"
+            />
 
-            <SidebarMenu title="Vencimientos">
-              <SidebarItem
-                isActive={router.pathname === "/vencimientos/gestionar"}
-                title="Gestionar"
-                icon={<ReportsIcon />}
-                href="/vencimientos/gestionar"
-              />
-            </SidebarMenu>
+            <SidebarItem
+              title="Vencimientos"
+              icon={<ReportsIcon />}
+              isActive={router.pathname.startsWith("/vencimientos")}
+              href="/vencimientos/gestionar"
+            />
 
-            <SidebarMenu title="General">
-              <SidebarItem
-                isActive={router.pathname === "/developers"}
-                title="Developers"
-                icon={<DevIcon />}
-                href="/developers"
-              />
-              <SidebarItem
-                isActive={router.pathname === "/view"}
-                title="View Test Data"
-                icon={<ViewIcon />}
-                href="/view"
-              />
-              <SidebarItem
-                isActive={router.pathname === "/settings"}
-                title="Settings"
-                icon={<SettingsIcon />}
-                href="/settings"
-              />
-            </SidebarMenu>
+            <SidebarItem
+              title="Ajustes"
+              icon={<SettingsIcon />}
+              isActive={router.pathname === "/settings"}
+              href="/settings"
+            />
 
-            <SidebarMenu title="Updates">
-              <SidebarItem
-                isActive={router.pathname === "/changelog"}
-                title="Changelog"
-                icon={<ChangeLogIcon />}
-                href="/changelog"
-              />
-            </SidebarMenu>
+            <SidebarItem
+              title="Novedades"
+              icon={<ChangeLogIcon />}
+              isActive={router.pathname === "/changelog"}
+              href="/changelog"
+            />
           </Sidebar.Body>
 
           <Sidebar.Footer>
-            <Tooltip content={"Settings"} rounded color="primary">
+            <Tooltip content={"Ajustes"} rounded color="primary">
               <SettingsIcon />
             </Tooltip>
-            <Tooltip content={"Adjustments"} rounded color="primary">
+            <Tooltip content={"Filtros"} rounded color="primary">
               <FilterIcon />
             </Tooltip>
-            <Tooltip content={"Profile"} rounded color="primary">
+            <Tooltip content={"Perfil"} rounded color="primary">
               <Avatar src="https://i.pravatar.cc/150?u=a042581f4e29026704d" size={"sm"} />
             </Tooltip>
 

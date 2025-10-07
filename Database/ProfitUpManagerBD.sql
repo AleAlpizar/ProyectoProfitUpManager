@@ -1,3 +1,4 @@
++
 IF DB_ID(N'ProfitUpManagerBD') IS NULL
 BEGIN
     CREATE DATABASE ProfitUpManagerBD;

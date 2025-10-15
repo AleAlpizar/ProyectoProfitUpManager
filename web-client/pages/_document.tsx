@@ -21,20 +21,16 @@ class MyDocument extends Document {
 
   render() {
     return (
-      <Html lang="es">
+      <Html lang="es" className="dark">
         <Head>
           <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link
-            rel="preconnect"
-            href="https://fonts.gstatic.com"
-            crossOrigin="anonymous"
-          />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
           <link
             href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
             rel="stylesheet"
           />
         </Head>
-        <body>
+        <body className="min-h-screen bg-[color:var(--color-background)] text-[color:var(--color-secondary)] antialiased">
           <Main />
           <NextScript />
         </body>

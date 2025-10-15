@@ -89,44 +89,54 @@ export default function Accounts() {
   };
 
   return (
-    <div className="p-6 sm:px-16">
+    <div className="min-h-screen bg-[#0B0F0E] text-[#E6E9EA] p-6 sm:px-16">
+      {/* Breadcrumb */}
       <nav aria-label="Breadcrumb" className="mb-3">
-        <ol className="flex items-center gap-2 text-sm text-secondary/70">
+        <ol className="flex items-center gap-2 text-sm text-[#8B9AA0]">
           <li className="flex items-center gap-2">
             <HouseIcon />
-            <Link href="/" className="hover:text-secondary">Inicio</Link>
-            <span className="px-1">/</span>
+            <Link href="/" className="hover:text-white transition">Inicio</Link>
+            <span className="px-1 text-[#8B9AA0]">/</span>
           </li>
           <li className="flex items-center gap-2">
             <UsersIcon />
-            <span className="text-secondary">Cuentas</span>
+            <span className="text-white">Cuentas</span>
           </li>
         </ol>
       </nav>
 
+      {/* Header */}
       <header className="mb-6">
-        <h1 className="text-2xl font-bold text-secondary">Cuentas</h1>
-        <p className="text-sm text-secondary/70">Registrar, editar, inactivar y exportar cuentas</p>
+        <h1 className="text-2xl font-semibold tracking-wide">Cuentas</h1>
+        <p className="text-sm text-[#8B9AA0]">Registrar, editar, inactivar y exportar cuentas</p>
       </header>
 
+      {/* Filters */}
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-1 items-center gap-2">
-          <div className="relative w-full max-w-sm">
+          {/* Search */}
+          <label className="relative w-full max-w-sm">
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Buscar por nombre, correo o #"
-              className="w-full rounded-md border border-gray-300 bg-white pl-9 pr-3 py-2 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-primary/30"
+              className="w-full rounded-xl border border-white/10 bg-[#121618] pl-9 pr-3 py-2 text-sm outline-none
+                         placeholder:text-[#8B9AA0] focus:ring-2 focus:ring-[#A30862]/40 focus:border-transparent transition"
             />
-            <svg className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 opacity-60" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
+            <svg
+              className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 opacity-70"
+              viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden
+            >
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z" />
             </svg>
-          </div>
+          </label>
 
+          {/* Status filter */}
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value as any)}
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-primary/30"
+            className="rounded-xl border border-white/10 bg-[#121618] px-3 py-2 text-sm outline-none
+                       focus:ring-2 focus:ring-[#A30862]/40 focus:border-transparent transition"
           >
             <option value="Todos">Todos</option>
             <option value="ACTIVE">Activos</option>
@@ -139,7 +149,8 @@ export default function Accounts() {
           {isAuthenticated && hasRole("Administrador") && <AddUser onCreated={handleCreated} />}
           <button
             type="button"
-            className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            className="inline-flex items-center gap-2 rounded-xl bg-[#A30862] px-4 py-2 text-sm font-medium text-white shadow-sm
+                       transition hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-[#A30862]/40"
             onClick={() => console.log("Export CSV (visual)")}
           >
             Exportar CSV
@@ -148,87 +159,105 @@ export default function Accounts() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-black/5 bg-white shadow-sm">
+      {/* Table */}
+      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#121618] shadow-[0_10px_30px_rgba(0,0,0,0.25)]">
         <table className="min-w-full border-collapse">
           <thead>
-            <tr className="bg-surface">
+            <tr className="bg-[#1C2224]">
               <Th>Nombre</Th>
               <Th>ROL</Th>
               <Th>Estado</Th>
               <Th className="text-right">ACCIONES</Th>
             </tr>
           </thead>
-        <tbody className="divide-y divide-gray-200">
-          {loading && (
-            <tr>
-              <td colSpan={4} className="px-4 py-10 text-center text-sm text-secondary/70">
-                Cargando usuarios…
-              </td>
-            </tr>
-          )}
+          <tbody className="[&>tr:not(:last-child)]:border-b [&>tr]:border-white/10">
+            {loading && (
+              <tr>
+                <td colSpan={4} className="px-4 py-10 text-center text-sm text-[#8B9AA0]">
+                  Cargando usuarios…
+                </td>
+              </tr>
+            )}
 
-          {!loading && pageRows.map((u) => (
-            <tr key={u.id} className="hover:bg-gray-50">
-              <Td>
-                <div className="flex items-center gap-3">
-                  <div className="grid h-10 w-10 place-items-center rounded-full bg-gray-200 text-sm font-semibold text-gray-600">
-                    {u.name.slice(0, 1).toUpperCase()}
+            {!loading && pageRows.map((u) => (
+              <tr key={u.id} className="hover:bg-white/5">
+                <Td>
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-sm font-semibold text-white">
+                      {u.name.slice(0, 1).toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">{u.name}</div>
+                      <div className="truncate text-xs text-[#8B9AA0]">{u.email}</div>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-medium text-secondary">{u.name}</div>
-                    <div className="truncate text-xs text-secondary/60">{u.email}</div>
-                  </div>
-                </div>
-              </Td>
+                </Td>
 
-              <Td>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-secondary">{u.role}</span>
-                  {isAuthenticated && hasRole("Administrador") && (
-                    <select
-                      className="rounded-md border border-gray-300 bg-white px-2 py-1 text-xs"
-                      value={u.role === "Administrador" ? "Administrador" : "Empleado"}
-                      onChange={(e) => onChangeRole(u, e.target.value as Role)}
-                      title="Cambiar rol"
+                <Td>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold">{u.role}</span>
+                    {isAuthenticated && hasRole("Administrador") && (
+                      <select
+                        className="rounded-lg border border-white/10 bg-[#1C2224] px-2 py-1 text-xs
+                                   focus:outline-none focus:ring-2 focus:ring-[#A30862]/40"
+                        value={u.role === "Administrador" ? "Administrador" : "Empleado"}
+                        onChange={(e) => onChangeRole(u, e.target.value as Role)}
+                        title="Cambiar rol"
+                      >
+                        <option value="Empleado">Empleado</option>
+                        <option value="Administrador">Administrador</option>
+                      </select>
+                    )}
+                  </div>
+                </Td>
+
+                <Td><StatusBadge status={u.status} /></Td>
+
+                <Td className="text-right">
+                  <div className="inline-flex items-center gap-2">
+                    {/* Asumo que tu <Button> admite variant; si no, puedes reemplazar por <button> */}
+                    <Button
+                      variant="outline-primary"
+                      onClick={() => console.log("Editar", u.id)}
+                      className="!rounded-xl !border-white/20 !bg-transparent hover:!bg-white/5 !text-white"
                     >
-                      <option value="Empleado">Empleado</option>
-                      <option value="Administrador">Administrador</option>
-                    </select>
-                  )}
-                </div>
-              </Td>
+                      Editar
+                    </Button>
+                    <Button
+                      variant="danger"
+                      onClick={() => console.log("Inactivar (visual)", u.id)}
+                      className="!rounded-xl !bg-[#6C0F1C] hover:!opacity-95"
+                    >
+                      Inactivar
+                    </Button>
+                  </div>
+                </Td>
+              </tr>
+            ))}
 
-              <Td><StatusBadge status={u.status} /></Td>
-
-              <Td className="text-right">
-                <div className="inline-flex items-center gap-2">
-                  <Button variant="outline-primary" onClick={() => console.log("Editar", u.id)}>Editar</Button>
-                  <Button variant="danger" onClick={() => console.log("Inactivar (visual)", u.id)}>Inactivar</Button>
-                </div>
-              </Td>
-            </tr>
-          ))}
-
-          {!loading && pageRows.length === 0 && (
-            <tr>
-              <td colSpan={4} className="px-4 py-10 text-center text-sm text-secondary/70">
-                No hay cuentas para mostrar.
-              </td>
-            </tr>
-          )}
-        </tbody>
+            {!loading && pageRows.length === 0 && (
+              <tr>
+                <td colSpan={4} className="px-4 py-10 text-center text-sm text-[#8B9AA0]">
+                  No hay cuentas para mostrar.
+                </td>
+              </tr>
+            )}
+          </tbody>
         </table>
       </div>
 
-      <div className="mt-4 flex items-center justify-between text-sm text-secondary/70">
+      {/* Pagination */}
+      <div className="mt-4 flex items-center justify-between text-sm text-[#8B9AA0]">
         <span>
           Mostrando{" "}
-          <b>{pageRows.length === 0 ? 0 : (page - 1) * pageSize + 1}-{(page - 1) * pageSize + pageRows.length}</b>{" "}
-          de <b>{filtered.length}</b>
+          <b className="text-white">
+            {pageRows.length === 0 ? 0 : (page - 1) * pageSize + 1}-{(page - 1) * pageSize + pageRows.length}
+          </b>{" "}
+          de <b className="text-white">{filtered.length}</b>
         </span>
         <div className="flex items-center gap-2">
           <PageBtn disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</PageBtn>
-          <span> Página <b>{page}</b> de <b>{totalPages}</b> </span>
+          <span> Página <b className="text-white">{page}</b> de <b className="text-white">{totalPages}</b> </span>
           <PageBtn disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next</PageBtn>
         </div>
       </div>
@@ -236,35 +265,56 @@ export default function Accounts() {
   );
 }
 
+/* ---------- tiny presentational helpers (dark-first) ---------- */
+
 const Th: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ className = "", children }) => (
-  <th className={["px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-secondary", className].join(" ")}>
+  <th
+    className={[
+      "px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide",
+      "text-[#8B9AA0]"
+    , className].join(" ")}
+  >
     {children}
   </th>
 );
+
 const Td: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ className = "", children }) => (
-  <td className={["px-3 py-2 text-sm text-secondary/80", className].join(" ")}>
+  <td className={["px-3 py-3 text-sm", className].join(" ")}>
     {children}
   </td>
 );
+
 const PageBtn: React.FC<React.PropsWithChildren<React.ButtonHTMLAttributes<HTMLButtonElement>>> = ({
   className = "", children, ...props
 }) => (
   <button
-    className={["rounded-md px-3 py-1 text-sm","bg-gray-200 text-secondary hover:bg-gray-300","disabled:cursor-not-allowed disabled:opacity-60",className].join(" ")}
+    className={[
+      "rounded-xl px-3 py-1 text-sm transition",
+      "bg-[#1C2224] text-white hover:bg-white/10",
+      "disabled:cursor-not-allowed disabled:opacity-50",
+      "focus:outline-none focus:ring-2 focus:ring-[#A30862]/40",
+      className
+    ].join(" ")}
     {...props}
   >
     {children}
   </button>
 );
+
 const StatusBadge: React.FC<{ status: "ACTIVE" | "PAUSED" | "VACATION" }> = ({ status }) => {
   const map: Record<"ACTIVE" | "PAUSED" | "VACATION", string> = {
-    ACTIVE: "bg-green-100 text-green-800",
-    PAUSED: "bg-pink-100 text-pink-800",
-    VACATION: "bg-amber-200 text-amber-900",
+    ACTIVE:   "bg-[#95B64F]/20 text-[#95B64F] border-[#95B64F]/30",
+    PAUSED:   "bg-[#6C0F1C]/20 text-[#F7C6CF] border-[#6C0F1C]/40",
+    VACATION: "bg-amber-400/20 text-amber-300 border-amber-400/30",
   };
-  const label = { ACTIVE: "ACTIVE", PAUSED: "PAUSED", VACATION: "VACATION" } as const;
+  const label = { ACTIVE: "ACTIVO", PAUSED: "PAUSADO", VACATION: "VACACIONES" } as const;
   return (
-    <span className={["inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", map[status]].join(" ")}>
+    <span
+      className={[
+        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+        "border", map[status]
+      ].join(" ")}
+    >
       {label[status]}
     </span>
   );

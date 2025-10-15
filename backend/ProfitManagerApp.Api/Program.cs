@@ -8,11 +8,13 @@ using ProfitManagerApp.Data;
 using System.Text;
 using ProfitManagerApp.Application.Clientes;
 
+using Dapper;
+using ProfitManagerApp.Api.Auth;
+
 var builder = WebApplication.CreateBuilder(args);
 
 const string CorsPolicy = "AllowFrontend";
 
-// CORS
 var allowedOrigins = builder.Configuration
     .GetSection("Cors:AllowedOrigins")
     .Get<string[]>() ?? new[] { "http://localhost:3000" };
@@ -25,36 +27,25 @@ builder.Services.AddCors(options =>
         .AllowAnyMethod()
         .AllowCredentials());
 });
-
-//EF
 builder.Services.AddProfitManagerData(builder.Configuration);
 
-// AutoMapper
 builder.Services.AddAutoMapper(typeof(ApiMappingProfile).Assembly);
 
-
-// Controllers + Swagger (con JWT)
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// DI API
-
 builder.Services.AddSingleton<SqlConnectionFactory>();
 builder.Services.AddScoped<IInventarioRepository, InventarioRepository>();
 
-//Domain
-builder.Services.AddScoped<ClienteHandler>(); // TODO: make an interface xd
-
-
-// DATA
+builder.Services.AddScoped<ClienteHandler>();
 builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 
+builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<JwtTokenService>();
 
-//builder.Services.AddScoped<
-//    ProfitManagerApp.Data.Abstractions.IInventarioRepository,
-//    ProfitManagerApp.Data.Repositories.InventarioRepository
-//>();
+builder.Services.AddSingleton<IMailSender, SmtpMailSender>();
+builder.Services.AddScoped<PasswordResetService>();
 
 var issuer = builder.Configuration["Jwt:Issuer"];
 var audience = builder.Configuration["Jwt:Audience"];
@@ -76,15 +67,87 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
             ClockSkew = TimeSpan.FromMinutes(2)
         };
+
+        o.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = ctx =>
+            {
+                Console.WriteLine($"[JWT] OnAuthenticationFailed: {ctx.Exception?.Message}");
+                return Task.CompletedTask;
+            },
+            OnChallenge = ctx =>
+            {
+                Console.WriteLine($"[JWT] OnChallenge: {ctx.Error} - {ctx.ErrorDescription}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = async ctx =>
+            {
+                try
+                {
+                    var bearer = ctx.Request.Headers["Authorization"].ToString();
+                    var token = bearer?.Split(' ').LastOrDefault();
+
+                    if (string.IsNullOrWhiteSpace(token))
+                    {
+                        Console.WriteLine("[JWT] Token ausente en Authorization");
+                        ctx.Fail("Token ausente.");
+                        return;
+                    }
+
+                    var cfg = ctx.HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+                    var factory = ctx.HttpContext.RequestServices.GetRequiredService<SqlConnectionFactory>();
+
+                    var slidingMinutes = 30;
+                    var slidingStr = cfg["Auth:SlidingInactivityMinutes"];
+                    if (!string.IsNullOrWhiteSpace(slidingStr) && int.TryParse(slidingStr, out var parsed))
+                        slidingMinutes = parsed;
+
+                    using var cn = factory.Create();
+                    cn.Open(); 
+                    var sesion = await cn.QueryFirstOrDefaultAsync<(bool IsActive, DateTime ExpireAt)>(@"
+                        SELECT IsActive, ExpireAt
+                        FROM dbo.Sesion
+                        WHERE Token = @tok
+                    ", new { tok = token });
+
+                    if (sesion.Equals(default((bool, DateTime))))
+                    {
+                        Console.WriteLine("[JWT] Sesión no encontrada en DB para el token. Dejar pasar (sin sliding).");
+                        return;
+                    }
+
+                    if (!sesion.IsActive)
+                    {
+                        Console.WriteLine("[JWT] Sesión inactiva en DB.");
+                        ctx.Fail("Sesión inactiva.");
+                        return;
+                    }
+
+                    var now = DateTime.UtcNow;
+                    if (now > sesion.ExpireAt)
+                    {
+                        Console.WriteLine($"[JWT] Sesión expirada (ExpireAt={sesion.ExpireAt:O}, Now={now:O}). Marcando inactiva.");
+                        await cn.ExecuteAsync("UPDATE dbo.Sesion SET IsActive = 0 WHERE Token = @tok", new { tok = token });
+                        ctx.Fail("Sesión expirada por inactividad.");
+                        return;
+                    }
+
+                    var newExpire = now.AddMinutes(slidingMinutes);
+                    await cn.ExecuteAsync(@"UPDATE dbo.Sesion SET ExpireAt = @exp WHERE Token = @tok",
+                        new { exp = newExpire, tok = token });
+
+                    Console.WriteLine($"[JWT] Sliding OK. New ExpireAt={newExpire:O}");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[JWT] Error en OnTokenValidated: {ex.Message}");
+                  
+                }
+            }
+        };
     });
 
 builder.Services.AddAuthorization();
-builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<JwtTokenService>();
-
-
-
-
 
 var app = builder.Build();
 
@@ -98,12 +161,10 @@ else
     app.UseHttpsRedirection();
 }
 
-// CORS + Auth
 app.UseCors(CorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
 
-// health check
 app.MapGet("/db-ping", (SqlConnectionFactory f) =>
 {
     try
@@ -120,7 +181,6 @@ app.MapGet("/db-ping", (SqlConnectionFactory f) =>
         return Results.Problem(ex.Message);
     }
 });
-
 
 app.MapControllers();
 app.Run();

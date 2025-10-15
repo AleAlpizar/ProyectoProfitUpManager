@@ -4,8 +4,6 @@ import Modal from "../modals/Modal";
 import { createUser, RegisterInput, Role } from "./accounts.api";
 import { useSession } from "@/hooks/useSession";
 
-
-
 type Props = {
   onCreated?: (u: {
     usuarioId: number;
@@ -17,7 +15,7 @@ type Props = {
 };
 
 export const AddUser: React.FC<Props> = ({ onCreated }) => {
-  const [visible, setVisible] = React.useState(false);
+  const [visible, setVisible] = React.useState<boolean>(false);
   const [form, setForm] = React.useState<RegisterInput>({
     nombre: "",
     apellido: "",
@@ -26,21 +24,32 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
     password: "",
     rol: "Empleado",
   });
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string | null>(null);
   const { authHeader } = useSession();
 
   const open = () => setVisible(true);
-  const close = () => { setVisible(false); setError(null); setLoading(false); };
-
-  const onChange = (k: keyof RegisterInput) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  const onSubmit = async () => {
+  const close = () => {
+    setVisible(false);
     setError(null);
+    setLoading(false);
+  };
+
+  const onChange =
+    (k: keyof RegisterInput) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      setForm((f) => ({ ...f, [k]: e.target.value }));
+    };
+
+  const onSubmit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setError(null);
+
     if (!form.nombre.trim()) return setError("El nombre es obligatorio.");
     if (!form.correo.includes("@")) return setError("Correo inválido.");
-    if (!form.password || form.password.length < 6) return setError("La contraseña debe tener al menos 6 caracteres.");
+    if (!form.password || form.password.length < 6)
+      return setError("La contraseña debe tener al menos 6 caracteres.");
+
     try {
       setLoading(true);
       const res = await createUser(form, authHeader as any);
@@ -61,65 +70,133 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
 
   return (
     <div>
-      <Button onClick={open}>Add User</Button>
+      <Button
+        onClick={open}
+        className="!rounded-xl !bg-[#A30862] !text-white hover:!opacity-95 focus:!ring-2 focus:!ring-[#A30862]/40"
+      >
+        Nuevo usuario
+      </Button>
 
       {visible && (
         <Modal onClose={close}>
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-secondary">Crear usuario</h2>
-              <button onClick={close} className="text-gray-500 hover:text-gray-700">✕</button>
+          <form
+            onSubmit={onSubmit}
+            className="w-full max-w-2xl rounded-3xl border border-white/10 bg-[#13171A] text-[#E6E9EA] shadow-[0_30px_80px_rgba(0,0,0,.55)] ring-1 ring-black/20"
+          >
+            <div className="flex items-start justify-between gap-4 px-6 pt-5">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-2.5 py-1 text-[11px] text-[#8B9AA0]">
+                  Usuarios
+                </div>
+                <h2 className="mt-2 text-xl font-semibold tracking-wide">Crear usuario</h2>
+                <p className="mt-1 text-sm text-[#8B9AA0]">
+                  Completa los datos para registrar un nuevo usuario.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={close}
+                className="rounded-xl p-2 text-[#8B9AA0] hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#A30862]/40"
+                aria-label="Cerrar"
+                title="Cerrar"
+              >
+                ✕
+              </button>
             </div>
 
+            <div className="mx-6 my-4 h-px bg-white/10" />
+
             {error && (
-              <div className="rounded-md bg-primary-foreground px-4 py-3 text-sm text-danger">
+              <div className="mx-6 mb-4 rounded-2xl border border-[#6C0F1C]/40 bg-[#6C0F1C]/15 px-4 py-3 text-sm text-[#F7C6CF]">
                 {error}
               </div>
             )}
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-gray-600">Primer nombre</label>
-                <input className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  value={form.nombre} onChange={onChange("nombre")} />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-gray-600">Apellidos</label>
-                <input className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  value={form.apellido} onChange={onChange("apellido")} />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-gray-600">Email</label>
-                <input type="email" className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  value={form.correo} onChange={onChange("correo")} />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-gray-600">Teléfono</label>
-                <input className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  value={form.telefono ?? ""} onChange={onChange("telefono")} />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-gray-600">Contraseña</label>
-                <input type="password" className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  value={form.password} onChange={onChange("password")} />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm text-gray-600">Rol</label>
-                <select className="rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  value={form.rol} onChange={onChange("rol")}>
+            <div className="grid grid-cols-1 gap-4 px-6 pb-2 md:grid-cols-2">
+              <Field
+                label="Primer nombre"
+                value={form.nombre}
+                onChange={onChange("nombre")}
+                autoFocus
+              />
+              <Field
+                label="Apellidos"
+                value={form.apellido ?? ""}   
+                onChange={onChange("apellido")}
+              />
+              <Field
+                label="Email"
+                type="email"
+                value={form.correo}
+                onChange={onChange("correo")}
+              />
+              <Field
+                label="Teléfono"
+                value={form.telefono ?? ""}   
+                onChange={onChange("telefono")}
+              />
+              <Field
+                label="Contraseña"
+                type="password"
+                value={form.password}
+                onChange={onChange("password")}
+                helper="Mínimo 6 caracteres."
+              />
+              <label className="space-y-1">
+                <span className="text-xs text-[#8B9AA0]">Rol</span>
+                <select
+                  className="w-full rounded-2xl border border-white/10 bg-[#0F1315] px-3 py-2.5 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
+                  value={form.rol}
+                  onChange={onChange("rol")}
+                >
                   <option value="Empleado">Empleado</option>
                   <option value="Administrador">Administrador</option>
                 </select>
-              </div>
+              </label>
             </div>
 
-            <div className="flex justify-end gap-2 pt-4">
-              <Button variant="outline" onClick={close}>Cancelar</Button>
-              <Button onClick={onSubmit} disabled={loading}>{loading ? "Guardando..." : "Guardar usuario"}</Button>
+            <div className="mx-6 mt-4 mb-6 flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={close}
+                className="!rounded-2xl !border-white/20 !bg-transparent !text-[#E6E9EA] hover:!bg-white/5 focus:!ring-2 focus:!ring-[#A30862]/40"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="!rounded-2xl !bg-[#A30862] !text-white hover:!opacity-95 focus:!ring-2 focus:!ring-[#A30862]/40 disabled:!opacity-60"
+              >
+                {loading ? "Guardando..." : "Guardar usuario"}
+              </Button>
             </div>
-          </div>
+          </form>
         </Modal>
       )}
     </div>
   );
 };
+
+const Field: React.FC<{
+  label: string;
+  type?: React.HTMLInputTypeAttribute;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  helper?: string;
+  autoFocus?: boolean;
+}> = ({ label, type = "text", value, onChange, helper, autoFocus }) => (
+  <label className="space-y-1">
+    <span className="text-xs text-[#8B9AA0]">{label}</span>
+    <input
+      autoFocus={autoFocus}
+      type={type}
+      value={value}
+      onChange={onChange}
+      className="w-full rounded-2xl border border-white/10 bg-[#0F1315] px-3 py-2.5 text-sm outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] placeholder:text-[#8B9AA0] transition focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
+    />
+    {helper && <span className="block text-[11px] text-[#8B9AA0]">{helper}</span>}
+  </label>
+);

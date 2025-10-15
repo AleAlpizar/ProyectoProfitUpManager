@@ -1,108 +1,72 @@
-import {Collapse, Text} from '@nextui-org/react';
-import React, {useState} from 'react';
-import {ChevronUpIcon} from '../icons/sidebar/chevron-up-icon';
-import {Flex} from '../styles/flex';
+import React from "react";
 
 interface Props {
-   icon: React.ReactNode;
-   title: string;
-   items: string[];
+  icon: React.ReactNode;
+  title: string;
+  items: string[];
+  onItemClick?: (item: string, index: number) => void;
 }
 
-export const CollapseItems = ({icon, items, title}: Props) => {
-   const [open, setOpen] = useState(false);
+export const CollapseItems: React.FC<Props> = ({
+  icon,
+  title,
+  items,
+  onItemClick,
+}) => {
+  const [open, setOpen] = React.useState(false);
 
-   const handleToggle = () => setOpen(!open);
-   return (
-      <Flex
-         css={{
-            gap: '$6',
-            height: '100%',
-            alignItems: 'center',
-            cursor: 'pointer',
-         }}
-         align={'center'}
+  return (
+    <div className="w-full">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        className="group w-full rounded-lg border border-white/5 bg-transparent px-4 py-3
+                   text-left transition active:scale-[0.99] hover:bg-white/5"
       >
-         <Collapse
-            title={
-               <Flex
-                  css={{
-                     'gap': '$6',
-                     'width': '100%',
-                     'py': '$5',
-                     'px': '$7',
-                     'borderRadius': '8px',
-                     'transition': 'all 0.15s ease',
-                     '&:active': {
-                        transform: 'scale(0.98)',
-                     },
-                     '&:hover': {
-                        bg: '$accents2',
-                     },
-                  }}
-                  justify={'between'}
-                  onClick={handleToggle}
-               >
-                  <Flex css={{gap: '$6'}}>
-                     {icon}
-                     <Text
-                        span
-                        weight={'normal'}
-                        size={'$base'}
-                        css={{
-                           color: '$accents9',
-                        }}
-                     >
-                        {title}
-                     </Text>
-                  </Flex>
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="grid h-8 w-8 place-items-center rounded-md bg-[#A30862]/15 text-[#A30862]">
+              {icon}
+            </span>
 
-                  <ChevronUpIcon
-                     css={{
-                        transition: 'transform 0.3s ease',
-                        transform: open ? 'rotate(-180deg)' : 'rotate(0deg)',
-                     }}
-                  />
-               </Flex>
-            }
-            css={{
-               'width': '100%',
-               '& .nextui-collapse-view': {
-                  p: '0',
-               },
-               '& .nextui-collapse-content': {
-                  marginTop: '$1',
-                  padding: '0px',
-               },
-            }}
-            divider={false}
-            showArrow={false}
-         >
-            {items.map((item, index) => (
-               <Flex
-                  key={index}
-                  direction={'column'}
-                  css={{
-                     paddingLeft: '$16',
-                  }}
-               >
-                  <Text
-                     span
-                     weight={'normal'}
-                     size={'$md'}
-                     css={{
-                        'color': '$accents8',
-                        'cursor': 'pointer',
-                        '&:hover': {
-                           color: '$accents9',
-                        },
-                     }}
-                  >
-                     {item}
-                  </Text>
-               </Flex>
-            ))}
-         </Collapse>
-      </Flex>
-   );
+            <span className="text-sm font-medium text-gray-200">{title}</span>
+          </div>
+
+          <svg
+            className={`h-4 w-4 text-gray-400 transition-transform ${
+              open ? "rotate-180" : ""
+            }`}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden="true"
+          >
+            <path d="M6 15l6-6 6 6" />
+          </svg>
+        </div>
+      </button>
+
+      <div
+        className={`grid transition-[grid-template-rows] duration-300 ${
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+        }`}
+      >
+        <div className="min-h-0 overflow-hidden">
+          {items.map((item, index) => (
+            <button
+              key={`${item}-${index}`}
+              type="button"
+              onClick={() => onItemClick?.(item, index)}
+              className="w-full rounded-md px-4 py-2 pl-12 text-left text-sm
+                         text-gray-400 transition hover:bg-white/[0.03] hover:text-white"
+            >
+              {item}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 };

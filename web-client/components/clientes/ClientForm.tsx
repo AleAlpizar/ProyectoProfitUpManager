@@ -4,7 +4,6 @@ import Field from "../Inputs/fields";
 import { Cliente, Estado, TipoDePersona } from "./types";
 import LabeledInput from "../Inputs/LabeledInput";
 
-
 const ClienteForm = ({
   initial,
   onCancel,
@@ -16,7 +15,7 @@ const ClienteForm = ({
 }) => {
   const [codigoCliente, setCodigoCliente] = useState(initial?.codigoCliente ?? "");
   const [identificacion, setIdentificacion] = useState(initial?.identificacion ?? "");
-  const [tipoPersona, setTipoPersona] = useState(initial?.tipoPersona ?? "Natural"); // dropdown
+  const [tipoPersona, setTipoPersona] = useState<TipoDePersona>(initial?.tipoPersona ?? "Natural");
   const [direccion, setDireccion] = useState(initial?.direccion ?? "");
   const [telefono, setTelefono] = useState(initial?.telefono ?? "");
   const [nombre, setNombre] = useState(initial?.nombre ?? "");
@@ -26,13 +25,13 @@ const ClienteForm = ({
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Validación mínima
     if (!nombre.trim()) return setError("El nombre es obligatorio.");
     if (!email.includes("@")) return setError("El correo no es válido.");
+
     onSave({
       nombre: nombre.trim(),
       correo: email.trim(),
-      isActive: estado == "Activo",
+      isActive: estado === "Activo",
       clienteID: initial?.clienteID,
       codigoCliente,
       direccion,
@@ -43,107 +42,134 @@ const ClienteForm = ({
   };
 
   return (
-    <form onSubmit={submit} className="w-full max-w-2xl">
-      <div className="mb-5 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-300">
-          {initial ? "Editar cliente" : "Nuevo cliente"}
-        </h2>
-        <Button variant="primary" type="button" onClick={onCancel}>
+    <form
+      onSubmit={submit}
+      className="w-full max-w-2xl rounded-3xl border border-white/10 bg-[#13171A] text-[#E6E9EA] shadow-[0_30px_80px_rgba(0,0,0,.55)] ring-1 ring-black/20"
+    >
+      <div className="flex items-start justify-between gap-4 px-6 pt-5">
+        <div>
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-2.5 py-1 text-[11px] text-[#8B9AA0]">
+            Clientes
+          </div>
+          <h2 className="mt-2 text-xl font-semibold tracking-wide">
+            {initial ? "Editar cliente" : "Nuevo cliente"}
+          </h2>
+          <p className="mt-1 text-sm text-[#8B9AA0]">
+            Completa los datos para registrar un cliente.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          type="button"
+          onClick={onCancel}
+          className="!rounded-xl !border-white/20 !bg-transparent !text-[#E6E9EA] hover:!bg-white/5 focus:!ring-2 focus:!ring-[#A30862]/40"
+        >
           Cerrar
         </Button>
       </div>
 
+      <div className="mx-6 my-4 h-px bg-white/10" />
+
       {error && (
-        <div className="mb-3 rounded-md bg-danger px-4 py-2 text-sm text-white">
+        <div className="mx-6 mb-4 rounded-2xl border border-[#6C0F1C]/40 bg-[#6C0F1C]/15 px-4 py-3 text-sm text-[#F7C6CF]">
           {error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-        <LabeledInput 
-          placeholder="Juan Perez"
+      <div className="grid grid-cols-1 gap-4 px-6 pb-2 sm:grid-cols-3">
+        <LabeledInput
           label="Nombre"
-          className="border-b-2"
+          placeholder="Juan Pérez"
           value={nombre}
-          onChange={(e: { target: { value: React.SetStateAction<string>; }; }) => setNombre(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNombre(e.target.value)}
+          className="rounded-2xl border border-white/10 bg-[#1C2224] focus:ring-2 focus:ring-[#A30862]/40"
         />
 
-          <LabeledInput 
-            placeholder="Correo electrónico"
-            value={email}
-            type="email"
-            label="correo@company.com"
-            onChange={(e) => setEmail(e.target.value)}
-            className="border-b-2"
-          />
+        <LabeledInput
+          label="Email"
+          type="email"
+          placeholder="correo@company.com"
+          value={email}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+          className="rounded-2xl border border-white/10 bg-[#1C2224] focus:ring-2 focus:ring-[#A30862]/40"
+        />
 
         <Field label="Estado">
           <select
             value={estado}
             onChange={(e) => setEstado(e.target.value as Estado)}
-            className="rounded-xl border border-gray-700 bg-white/5 px-3 py-2 text-sm text-white! outline-none transition focus:border-gray-500"
+            className="w-full rounded-2xl border border-white/10 bg-[#1C2224] px-3 py-2 text-sm outline-none transition
+                       focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
           >
-            <option className="text-gray-900 dark:text-gray-100">Activo</option>
-            <option className="text-gray-900 dark:text-gray-100">Inactivo</option>
+            <option value="Activo">Activo</option>
+            <option value="Inactivo">Inactivo</option>
           </select>
         </Field>
-        
-        
-        <LabeledInput 
-            label="Telefono"
-            value={telefono}
-            onChange={(e) => setTelefono(e.target.value)}
-            placeholder="87654123"
-            className="border-b-2"
-          />
 
-        <LabeledInput 
-          label="Identificacion"
-          value={identificacion}
-          onChange={(e) => setIdentificacion(e.target.value)}
-          placeholder="112341234"
-          className="border-b-2"
+        <LabeledInput
+          label="Teléfono"
+          placeholder="8765 4123"
+          value={telefono}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTelefono(e.target.value)}
+          className="rounded-2xl border border-white/10 bg-[#1C2224] focus:ring-2 focus:ring-[#A30862]/40"
         />
 
-        <Field label="Tipo De Persona">
+        <LabeledInput
+          label="Identificación"
+          placeholder="1-1234-1234"
+          value={identificacion}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIdentificacion(e.target.value)}
+          className="rounded-2xl border border-white/10 bg-[#1C2224] focus:ring-2 focus:ring-[#A30862]/40"
+        />
+
+        <Field label="Tipo de persona">
           <select
             value={tipoPersona}
             onChange={(e) => setTipoPersona(e.target.value as TipoDePersona)}
-            className="rounded-xl border border-gray-700 bg-white/5 px-3 py-2 text-sm text-white! outline-none transition focus:border-gray-500"
+            className="w-full rounded-2xl border border-white/10 bg-[#1C2224] px-3 py-2 text-sm outline-none transition
+                       focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
           >
-            <option className="text-gray-900 dark:text-gray-100">Natural</option>
-            <option className="text-gray-900 dark:text-gray-100">Juridica</option>
+            <option value="Natural">Natural</option>
+            <option value="Juridica">Jurídica</option>
           </select>
         </Field>
 
-        <LabeledInput 
-          label="Codigo Cliente"
-          value={codigoCliente}
-          onChange={(e) => setCodigoCliente(e.target.value)}
+        <LabeledInput
+          label="Código cliente"
           placeholder="EJMPL-123"
-          className="border-b-2"
+          value={codigoCliente}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCodigoCliente(e.target.value)}
+          className="rounded-2xl border border-white/10 bg-[#1C2224] focus:ring-2 focus:ring-[#A30862]/40 sm:col-span-2"
         />
-        <LabeledInput 
-          label="Direccion"
-          value={direccion}
-          onChange={(e) => setDireccion(e.target.value)}
+
+        <LabeledInput
+          label="Dirección"
           placeholder="Heredia, CR"
-          className="border-b-2"
+          value={direccion}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDireccion(e.target.value)}
+          className="rounded-2xl border border-white/10 bg-[#1C2224] focus:ring-2 focus:ring-[#A30862]/40 sm:col-span-3"
         />
       </div>
 
-      <div className="mt-6 flex justify-end gap-2">
-        <Button variant="outline" type="button" onClick={onCancel}>
+      <div className="mx-6 mt-4 mb-6 flex items-center justify-end gap-2">
+        <Button
+          variant="outline"
+          type="button"
+          onClick={onCancel}
+          className="!rounded-2xl !border-white/20 !bg-transparent !text-[#E6E9EA] hover:!bg-white/5 focus:!ring-2 focus:!ring-[#A30862]/40"
+        >
           Cancelar
         </Button>
-        <Button variant="primary" type="submit">
+        <Button
+          variant="primary"
+          type="submit"
+          className="!rounded-2xl !bg-[#A30862] !text-white hover:!opacity-95 focus:!ring-2 focus:!ring-[#A30862]/40"
+        >
           Guardar
         </Button>
       </div>
     </form>
   );
-}
-
-
+};
 
 export default ClienteForm;

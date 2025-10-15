@@ -32,9 +32,7 @@ export default function BodegasPage() {
     return {
       total: list.length,
       activas: list.filter((b) =>
-        typeof b.isActive === "number"
-          ? b.isActive === 1
-          : Boolean(b.isActive)
+        typeof b.isActive === "number" ? b.isActive === 1 : Boolean(b.isActive)
       ).length,
     };
   }, [bodegas]);
@@ -48,11 +46,7 @@ export default function BodegasPage() {
       const codigo = (b.codigo ?? "").toLowerCase();
       const nombre = (b.nombre ?? "").toLowerCase();
       const direccion = (b.direccion ?? "").toLowerCase();
-      return (
-        codigo.includes(term) ||
-        nombre.includes(term) ||
-        direccion.includes(term)
-      );
+      return codigo.includes(term) || nombre.includes(term) || direccion.includes(term);
     });
   }, [bodegas, q]);
 
@@ -68,18 +62,35 @@ export default function BodegasPage() {
       />
 
       <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Buscar por código, nombre o dirección"
-          className="w-full rounded-xl border border-gray-200 bg-white/70 px-3 py-2 text-sm outline-none transition focus:border-gray-400 md:w-72"
-        />
+        <div className="relative w-full md:w-80">
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Buscar por código, nombre o dirección"
+            className="
+              w-full rounded-xl border border-white/10 bg-white/5
+              pl-9 pr-3 py-2 text-sm text-white placeholder:text-white/40
+              outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20
+            "
+          />
+          <svg
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/50"
+            viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+          >
+            <path d="m21 21-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z" />
+          </svg>
+        </div>
 
         <button
           onClick={safeReload}
           disabled={!!loading}
-          className="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
           title="Refrescar"
+          className="
+            inline-flex items-center justify-center rounded-xl
+            border border-white/10 bg-white/5 px-3 py-2 text-sm
+            text-white hover:bg-white/10 disabled:opacity-60
+            focus:outline-none focus:ring-2 focus:ring-white/20
+          "
         >
           {loading ? "Actualizando…" : "Refrescar"}
         </button>
@@ -98,13 +109,13 @@ export default function BodegasPage() {
       )}
 
       {!loading && !error && filtered.length === 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white/60 p-6 text-center text-sm text-gray-500">
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-sm text-white/70">
           No se encontraron bodegas
         </div>
       )}
 
       {!loading && !error && filtered.length > 0 && (
-        <BodegasTable rows={filtered} />
+        <BodegasTable rows={filtered as any} />
       )}
     </div>
   );

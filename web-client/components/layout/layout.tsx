@@ -1,33 +1,52 @@
-import React from 'react';
-import {useLockedBody} from '../hooks/useBodyLock';
-import {NavbarWrapper} from '../navbar/navbar';
-import {SidebarWrapper} from '../sidebar/sidebar';
-import {SidebarContext} from './layout-context';
-import {WrapperLayout} from './layout.styles';
+import React from "react";
+import { useLockedBody } from "../hooks/useBodyLock";
+import { NavbarWrapper } from "../navbar/navbar";
+import SidebarWrapper from "../sidebar/sidebar"; 
 
-interface Props {
-   children: React.ReactNode;
-}
+import { SidebarContext } from "./layout-context";
+import { WrapperLayout } from "./layout.styles";
 
-export const Layout = ({children}: Props) => {
-   const [sidebarOpen, setSidebarOpen] = React.useState(false);
-   const [_, setLocked] = useLockedBody(false);
-   const handleToggleSidebar = () => {
-      setSidebarOpen(!sidebarOpen);
-      setLocked(!sidebarOpen);
-   };
+type LayoutProps = {
+  children: React.ReactNode;
+  noChrome?: boolean;
+};
 
-   return (
-      <SidebarContext.Provider
-         value={{
-            collapsed: sidebarOpen,
-            setCollapsed: handleToggleSidebar,
-         }}
+export const Layout: React.FC<LayoutProps> = ({ children, noChrome = false }) => {
+  if (noChrome) {
+    const bg = "var(--color-background, #0B0F0E)";
+    const fg = "var(--color-secondary, #E6E9EA)";
+    return (
+      <div
+        className="min-h-screen"
+        style={{ background: bg, color: fg }}
       >
-         <WrapperLayout>
-            <SidebarWrapper />
-            <NavbarWrapper>{children}</NavbarWrapper>
-         </WrapperLayout>
-      </SidebarContext.Provider>
-   );
+        {children}
+      </div>
+    );
+  }
+
+  const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [, setLocked] = useLockedBody(false);
+
+  const handleToggleSidebar = () => {
+    setSidebarOpen((prev) => {
+      const next = !prev;
+      setLocked(next); 
+      return next;
+    });
+  };
+
+  return (
+    <SidebarContext.Provider
+      value={{
+        collapsed: sidebarOpen,    
+        setCollapsed: handleToggleSidebar,
+      }}
+    >
+      <WrapperLayout>
+        <SidebarWrapper />
+        <NavbarWrapper>{children}</NavbarWrapper>
+      </WrapperLayout>
+    </SidebarContext.Provider>
+  );
 };

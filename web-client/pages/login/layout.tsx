@@ -3,6 +3,5 @@ export default function LoginLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Aquí no incluyes Header, Sidebar ni nada global
   return <>{children}</>;
 }

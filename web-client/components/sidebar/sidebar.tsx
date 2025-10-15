@@ -1,9 +1,10 @@
 ﻿import React from "react";
-import { Box } from "../styles/box";
-import { Sidebar } from "./sidebar.styles";
-import { Avatar, Tooltip } from "@nextui-org/react";
-import { Flex } from "../styles/flex";
-import { CompaniesDropdown } from "./companies-dropdown";
+import { useRouter } from "next/router";
+import { useSidebarContext } from "../layout/layout-context";
+import { useSession } from "@/hooks/useSession";
+
+import { CompaniesDropdown } from "../sidebar/companies-dropdown";
+import { SidebarItem } from "../sidebar/sidebar-item";
 
 import { HomeIcon } from "../icons/sidebar/home-icon";
 import { PaymentsIcon } from "../icons/sidebar/payments-icon";
@@ -12,15 +13,9 @@ import { CustomersIcon } from "../icons/sidebar/customers-icon";
 import { ProductsIcon } from "../icons/sidebar/products-icon";
 import { ReportsIcon } from "../icons/sidebar/reports-icon";
 import { SettingsIcon } from "../icons/sidebar/settings-icon";
-import { SidebarItem } from "./sidebar-item";
-import { FilterIcon } from "../icons/sidebar/filter-icon";
 import { ChangeLogIcon } from "../icons/sidebar/changelog-icon";
 
-import { useSidebarContext } from "../layout/layout-context";
-import { useRouter } from "next/router";
-import { useSession } from "@/hooks/useSession";
-
-export const SidebarWrapper = () => {
+const Sidebar: React.FC = () => {
   const router = useRouter();
   const { collapsed, setCollapsed } = useSidebarContext();
   const { logout } = useSession();
@@ -34,29 +29,36 @@ export const SidebarWrapper = () => {
   };
 
   return (
-    <Box
-      as="aside"
-      css={{
-        height: "100vh",
-        zIndex: 202,
-        position: "sticky",
-        top: "0",
-      }}
-    >
-      {collapsed ? <Sidebar.Overlay onClick={setCollapsed} /> : null}
+    <>
+      {collapsed && (
+        <div
+          onClick={setCollapsed}
+          className="fixed inset-0 z-[201] bg-black/50 backdrop-blur-[1px] md:hidden"
+        />
+      )}
 
-      <Sidebar collapsed={collapsed}>
-        <Sidebar.Header>
+      <aside
+        className={[
+          "fixed inset-y-0 left-0 z-[202] w-64 flex-shrink-0",
+          "bg-neutral-950 border-r border-white/10 text-gray-200",
+          "py-10 px-6 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+          "transform transition-transform duration-200 ease-out",
+          collapsed ? "translate-x-0" : "-translate-x-full",
+          "md:static md:h-screen md:translate-x-0",
+        ].join(" ")}
+      >
+        <div className="flex items-center gap-4 px-4">
           <CompaniesDropdown />
-        </Sidebar.Header>
+        </div>
 
-        <Flex direction={"column"} justify={"between"} css={{ height: "100%" }}>
-          <Sidebar.Body className="body sidebar">
+        <div className="mt-8 flex h-[calc(100%-110px)] flex-col justify-between">
+          <nav className="flex flex-col gap-2 px-2">
             <SidebarItem
               title="Inicio"
               icon={<HomeIcon />}
               isActive={router.pathname === "/"}
               href="/"
+              onClickItem={setCollapsed}
             />
 
             <SidebarItem
@@ -64,6 +66,7 @@ export const SidebarWrapper = () => {
               icon={<AccountsIcon />}
               isActive={router.pathname === "/accounts"}
               href="/accounts"
+              onClickItem={setCollapsed}
             />
 
             <SidebarItem
@@ -71,13 +74,26 @@ export const SidebarWrapper = () => {
               icon={<CustomersIcon />}
               isActive={router.pathname === "/customers"}
               href="/customers"
+              onClickItem={setCollapsed}
             />
 
             <SidebarItem
               title="Operaciones"
               icon={<PaymentsIcon />}
-              isActive={router.pathname.startsWith("/compras") || router.pathname.startsWith("/ventas")}
+              isActive={
+                router.pathname.startsWith("/compras") ||
+                router.pathname.startsWith("/ventas")
+              }
               href="/compras/ordenes"
+              onClickItem={setCollapsed}
+            />
+
+            <SidebarItem
+              title="Registrar venta"
+              icon={<PaymentsIcon />}
+              isActive={router.pathname === "/ventas/registrar"}
+              href="/ventas/registrar"
+              onClickItem={setCollapsed}
             />
 
             <SidebarItem
@@ -85,6 +101,7 @@ export const SidebarWrapper = () => {
               icon={<ProductsIcon />}
               isActive={router.pathname.startsWith("/inventario")}
               href="/inventario/inventario"
+              onClickItem={setCollapsed}
             />
 
             <SidebarItem
@@ -92,6 +109,7 @@ export const SidebarWrapper = () => {
               icon={<ReportsIcon />}
               isActive={router.pathname.startsWith("/reportes")}
               href="/reportes/ventas"
+              onClickItem={setCollapsed}
             />
 
             <SidebarItem
@@ -99,6 +117,7 @@ export const SidebarWrapper = () => {
               icon={<ReportsIcon />}
               isActive={router.pathname.startsWith("/vencimientos")}
               href="/vencimientos/gestionar"
+              onClickItem={setCollapsed}
             />
 
             <SidebarItem
@@ -106,6 +125,7 @@ export const SidebarWrapper = () => {
               icon={<SettingsIcon />}
               isActive={router.pathname === "/settings"}
               href="/settings"
+              onClickItem={setCollapsed}
             />
 
             <SidebarItem
@@ -113,30 +133,46 @@ export const SidebarWrapper = () => {
               icon={<ChangeLogIcon />}
               isActive={router.pathname === "/changelog"}
               href="/changelog"
+              onClickItem={setCollapsed}
             />
-          </Sidebar.Body>
+          </nav>
 
-          <Sidebar.Footer>
-            <Tooltip content={"Ajustes"} rounded color="primary">
+          <div className="flex items-center justify-center gap-3 px-4 pt-6">
+            <button
+              type="button"
+              title="Ajustes"
+              className="grid h-8 w-8 place-items-center rounded-md text-gray-300 hover:bg-white/5 hover:text-white"
+              onClick={() => router.push("/settings")}
+            >
               <SettingsIcon />
-            </Tooltip>
-            <Tooltip content={"Filtros"} rounded color="primary">
-              <FilterIcon />
-            </Tooltip>
-            <Tooltip content={"Perfil"} rounded color="primary">
-              <Avatar src="https://i.pravatar.cc/150?u=a042581f4e29026704d" size={"sm"} />
-            </Tooltip>
+            </button>
+
+            <button
+              type="button"
+              title="Perfil"
+              className="inline-grid h-8 w-8 overflow-hidden rounded-full ring-1 ring-white/10"
+              onClick={() => router.push("/settings")}
+            >
+              <img
+                src="https://i.pravatar.cc/150?u=a042581f4e29026704d"
+                alt="Perfil"
+                className="h-full w-full object-cover"
+              />
+            </button>
 
             <button
               onClick={onLogout}
-              className="ml-2 rounded-md px-2 py-1 text-xs bg-red-500 text-white hover:opacity-90"
+              className="ml-2 rounded-md bg-red-500 px-2 py-1 text-xs text-white transition hover:opacity-90"
               title="Cerrar sesión"
+              type="button"
             >
               Salir
             </button>
-          </Sidebar.Footer>
-        </Flex>
-      </Sidebar>
-    </Box>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 };
+
+export default Sidebar;

@@ -7,48 +7,71 @@ export type FeatureCardProps = {
   href: string;
   cta: string;
   icon: React.ReactNode;
+  color?: "magenta" | "lima" | "vino";
 };
 
-const FeatureCard: React.FC<FeatureCardProps> = ({ title, desc, href, cta, icon }) => {
+const PALETTE = {
+  magenta: { hex: "#A30862", glow: "rgba(163,8,98,0.08)", ring: "rgba(163,8,98,0.40)" },
+  lima:    { hex: "#95B64F", glow: "rgba(149,182,79,0.10)", ring: "rgba(149,182,79,0.35)" },
+  vino:    { hex: "#6C0F1C", glow: "rgba(108,15,28,0.12)", ring: "rgba(108,15,28,0.40)" },
+} as const;
+
+const FeatureCard: React.FC<FeatureCardProps> = ({
+  title,
+  desc,
+  href,
+  cta,
+  icon,
+  color = "magenta",
+}) => {
+  const { hex, glow, ring } = PALETTE[color];
+
   return (
     <div
       className="
         group relative rounded-2xl
-        bg-white/5 dark:bg-white/5
-        border border-black/5 dark:border-white/10
-        shadow-sm backdrop-blur
-        p-5
-        transition
-        hover:-translate-y-0.5 hover:shadow-lg
-        hover:bg-white/10
-        focus-within:ring-2 focus-within:ring-emerald-400/60
+        border border-white/10
+        bg-[#121618] text-[#E6E9EA]
+        shadow-[0_20px_60px_rgba(0,0,0,.35)]
+        p-5 transition
+        hover:-translate-y-0.5 hover:shadow-[0_25px_70px_rgba(0,0,0,.45)]
+        focus-within:outline-none
       "
     >
       <div className="flex items-start gap-4">
         <div
-          className="rounded-xl p-3 bg-emerald-500/10 ring-1 ring-emerald-500/20 group-hover:bg-emerald-500/15"
           aria-hidden
+          className="rounded-xl p-3 transition"
+          style={{
+            background: glow,
+            border: `1px solid ${hex}`,
+            boxShadow: "inset 0 1px 0 rgba(255,255,255,.05)",
+          }}
         >
-          {icon}
+          <div className="text-[18px]" style={{ color: hex }}>
+            {icon}
+          </div>
         </div>
 
         <div className="min-w-0">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h3>
-          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">{desc}</p>
+          <h3 className="text-lg font-semibold tracking-wide">{title}</h3>
+          <p className="mt-1 text-sm text-[#8B9AA0]">{desc}</p>
         </div>
       </div>
 
       <div className="mt-4">
-        <Link href={href}>
+        <Link href={href} className="inline-block focus:outline-none">
           <span
             className="
               inline-flex items-center gap-2
               rounded-xl px-4 py-2 text-sm font-medium
-              bg-emerald-600 text-white
-              hover:bg-emerald-700
-              focus:outline-none focus:ring-2 focus:ring-emerald-400/60
               transition
             "
+            style={{
+              background: hex,
+              color: "#ffffff",
+              boxShadow: "0 6px 16px rgba(0,0,0,.35)",
+            }}
           >
             {cta}
             <svg
@@ -62,9 +85,18 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ title, desc, href, cta, icon 
         </Link>
       </div>
 
-      <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition">
-        <div className="absolute inset-0 rounded-2xl bg-emerald-500/5 blur-xl" />
-      </div>
+      <div
+        className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition group-hover:opacity-100"
+        style={{ background: glow, filter: "blur(16px)" }}
+      />
+
+      <style jsx>{`
+        .group:focus-within {
+          box-shadow:
+            0 20px 60px rgba(0,0,0,.45),
+            0 0 0 2px ${ring};
+        }
+      `}</style>
     </div>
   );
 };

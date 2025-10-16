@@ -1,4 +1,3 @@
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 export type Rol = "Administrador" | "Empleado";
@@ -85,6 +84,7 @@ export function useSession() {
         setMe(meData);
       }
     } catch {
+      // ignore
     }
 
     setReady(true);

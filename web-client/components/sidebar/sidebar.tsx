@@ -1,7 +1,7 @@
 ﻿import React from "react";
 import { useRouter } from "next/router";
 import { useSidebarContext } from "../layout/layout-context";
-import { useSession } from "@/hooks/useSession";
+import { useSession } from "../hooks/useSession"; 
 
 import { CompaniesDropdown } from "../sidebar/companies-dropdown";
 import { SidebarItem } from "../sidebar/sidebar-item";

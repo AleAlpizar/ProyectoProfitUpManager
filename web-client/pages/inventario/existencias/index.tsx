@@ -1,8 +1,8 @@
 "use client";
 import React, { useState } from "react";
-import SectionHeader from "@/components/SectionHeader";
-import ProductosTable from "@/components/productos/ProductosTable";
-import { useProductosMini } from "@/components/hooks/useProductosMini";
+import SectionHeader from "../../../components/SectionHeader";
+import ProductosTable from "../../../components/productos/ProductosTable";
+import { useProductosMini } from "../../../components/hooks/useProductosMini";
 
 export default function ProductosPage() {
   const { data: productos, loading } = useProductosMini();

@@ -1,6 +1,7 @@
 import React from "react";
-import FeatureCard from "@/components/inventario/FeatureCard";
-import InventoryHeader from "@/components/inventario/InventoryHeader";
+import FeatureCard from "../../../components/inventario/FeatureCard";
+import InventoryHeader from "../../../components/inventario/InventoryHeader";
+
 
 export default function InventarioHubPage() {
   return (

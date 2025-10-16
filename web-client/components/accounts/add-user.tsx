@@ -2,7 +2,7 @@ import React from "react";
 import Button from "../buttons/button";
 import Modal from "../modals/Modal";
 import { createUser, RegisterInput, Role } from "./accounts.api";
-import { useSession } from "@/hooks/useSession";
+import { useSession } from "../hooks/useSession";
 
 type Props = {
   onCreated?: (u: {
@@ -26,6 +26,7 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
   });
   const [loading, setLoading] = React.useState<boolean>(false);
   const [error, setError] = React.useState<string | null>(null);
+
   const { authHeader } = useSession();
 
   const open = () => setVisible(true);
@@ -114,28 +115,10 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
             )}
 
             <div className="grid grid-cols-1 gap-4 px-6 pb-2 md:grid-cols-2">
-              <Field
-                label="Primer nombre"
-                value={form.nombre}
-                onChange={onChange("nombre")}
-                autoFocus
-              />
-              <Field
-                label="Apellidos"
-                value={form.apellido ?? ""}   
-                onChange={onChange("apellido")}
-              />
-              <Field
-                label="Email"
-                type="email"
-                value={form.correo}
-                onChange={onChange("correo")}
-              />
-              <Field
-                label="Teléfono"
-                value={form.telefono ?? ""}   
-                onChange={onChange("telefono")}
-              />
+              <Field label="Primer nombre" value={form.nombre} onChange={onChange("nombre")} autoFocus />
+              <Field label="Apellidos" value={form.apellido ?? ""} onChange={onChange("apellido")} />
+              <Field label="Email" type="email" value={form.correo} onChange={onChange("correo")} />
+              <Field label="Teléfono" value={form.telefono ?? ""} onChange={onChange("telefono")} />
               <Field
                 label="Contraseña"
                 type="password"
@@ -143,6 +126,7 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
                 onChange={onChange("password")}
                 helper="Mínimo 6 caracteres."
               />
+
               <label className="space-y-1">
                 <span className="text-xs text-[#8B9AA0]">Rol</span>
                 <select
@@ -165,6 +149,7 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
               >
                 Cancelar
               </Button>
+
               <Button
                 type="submit"
                 disabled={loading}
@@ -191,7 +176,7 @@ const Field: React.FC<{
   <label className="space-y-1">
     <span className="text-xs text-[#8B9AA0]">{label}</span>
     <input
-      autoFocus={autoFocus}
+      autoFocus={!!autoFocus}
       type={type}
       value={value}
       onChange={onChange}

@@ -1,6 +1,8 @@
 import React from "react";
-import SectionHeader from "@/components/SectionHeader";
-import ProductoCreateForm from "@/components/productos/ProductoCreateForm";
+import SectionHeader from "../../../components/SectionHeader";
+
+import ProductoCreateForm from "../../../components/productos/ProductoCreateForm";
+
 
 export default function RegistrarProductoPage() {
   return (

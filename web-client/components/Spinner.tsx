@@ -1,3 +1,8 @@
+"use client";
+import React from "react";
+
 export default function Spinner() {
-  return <div className="animate-spin h-5 w-5 border-2 border-neutral-300 border-t-neutral-600 rounded-full" />;
+  return (
+    <div className="inline-block h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+  );
 }

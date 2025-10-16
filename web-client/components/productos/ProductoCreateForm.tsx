@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import { useProductoCreate } from "@/components/hooks/useProductoCreate";
-import { useUnidades } from "@/components/hooks/useUnidades";
-import { useBodegas } from "@/components/hooks/useBodegas";
+import { useProductoCreate } from "../hooks/useProductoCreate";
+import { useUnidades } from "../hooks/useUnidades";
+import { useBodegas } from "../hooks/useBodegas";
 import LabeledInput from "../Inputs/LabeledInput";
 
 export default function ProductoCreateForm() {
@@ -19,7 +19,7 @@ export default function ProductoCreateForm() {
   } = useProductoCreate();
 
   const { data: unidadesRaw, loading: loadingUnits, error: unidadesError } = useUnidades();
-  const { data: bodegasRaw, loading: loadingBodegas, error: bodegasError } = useBodegas();
+  const { data: bodegasRaw,  loading: loadingBodegas, error: bodegasError } = useBodegas();
 
   const unidades = useMemo(() => unidadesRaw ?? [], [unidadesRaw]);
   const bodegas  = useMemo(() => bodegasRaw  ?? [], [bodegasRaw]);
@@ -44,6 +44,13 @@ export default function ProductoCreateForm() {
       }
     };
 
+  // === NUEVO: mostrar errores solo si no hay datos cargados ===
+  const showUnidadesError =
+    !!unidadesError && !loadingUnits && unidades.length === 0;
+
+  const showBodegasError =
+    !!bodegasError && !loadingBodegas && bodegas.length === 0;
+
   return (
     <div className="space-y-4">
       {successId && (
@@ -53,17 +60,17 @@ export default function ProductoCreateForm() {
       )}
       {serverError && (
         <div role="alert" className="rounded-xl border border-red-400/40 bg-red-400/10 p-3 text-sm text-red-300">
-           {serverError}
+          {serverError}
         </div>
       )}
-      {unidadesError && (
+      {showUnidadesError && (
         <div role="alert" className="rounded-xl border border-red-400/40 bg-red-400/10 p-3 text-sm text-red-300">
-           Error al cargar unidades: {unidadesError}
+          Error al cargar unidades: {unidadesError}
         </div>
       )}
-      {bodegasError && (
+      {showBodegasError && (
         <div role="alert" className="rounded-xl border border-red-400/40 bg-red-400/10 p-3 text-sm text-red-300">
-           Error al cargar bodegas: {bodegasError}
+          Error al cargar bodegas: {bodegasError}
         </div>
       )}
 
@@ -93,6 +100,7 @@ export default function ProductoCreateForm() {
           onChange={(e) => setField("codigoInterno", e.target.value)}
           className="rounded-xl border border-white/10 bg-white/5 text-gray-100 focus:ring-2"
         />
+
         <div className="flex flex-col gap-1">
           <label className="text-sm text-gray-300">Unidad de almacenamiento*</label>
           <select

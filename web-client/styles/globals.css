@@ -1,15 +1,12 @@
-/* --- Tailwind v3 directives --- */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* === Tokens (Light) — compatibles con TW, sin @apply/@theme === */
 :root {
-  /* Paleta principal */
-  --color-primary: #A30862;                  /* magenta */
+  --color-primary: #A30862;                  
   --color-primary-foreground: #ffffff;
 
-  --color-secondary: #1E2E13;                /* verde bosque oscuro para textos/acentos */
+  --color-secondary: #1E2E13;             
 
   --color-background: #ffffff;
   --color-surface: #f8fafc;

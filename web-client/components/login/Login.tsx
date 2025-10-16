@@ -1,6 +1,6 @@
 import React from "react";
 import { useRouter } from "next/router";
-import { useSession } from "@/hooks/useSession";
+import { useSession } from "../hooks/useSession";
 
 export default function LoginPage() {
   const router = useRouter();

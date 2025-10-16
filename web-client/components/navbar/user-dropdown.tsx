@@ -1,14 +1,14 @@
 import React from "react";
-import { Avatar, Dropdown, Navbar, Text, Switch } from "@nextui-org/react";
+import { Avatar, Dropdown, Navbar, Text } from "@nextui-org/react";
 import { useRouter } from "next/router";
-import { useSession } from "@/hooks/useSession";
+import { useSession } from "../hooks/useSession";
 
-const SURFACE  = "#121618";              
-const SURFACE2 = "#1A2022";           
+const SURFACE  = "#121618";
+const SURFACE2 = "#1A2022";
 const BORDER   = "rgba(255,255,255,0.10)";
-const TEXT     = "#E6E9EA";               
-const MUTED    = "#8B9AA0";               
-const MAGENTA  = "#A30862";               
+const TEXT     = "#E6E9EA";
+const MUTED    = "#8B9AA0";
+const MAGENTA  = "#A30862";
 
 export const UserDropdown: React.FC = () => {
   const router = useRouter();
@@ -28,42 +28,18 @@ export const UserDropdown: React.FC = () => {
 
   const onAction = async (key: React.Key) => {
     switch (key) {
-      case "profile":
-        router.push("/perfil");
-        break;
-      case "settings":
-        router.push("/ajustes");
-        break;
-      case "team_settings":
-        router.push("/equipo/ajustes");
-        break;
-      case "analytics":
-        router.push("/analytics");
-        break;
-      case "system":
-        router.push("/sistema");
-        break;
-      case "configurations":
-        router.push("/configuracion");
-        break;
-      case "help_and_feedback":
-        router.push("/ayuda");
-        break;
+      case "profile":        router.push("/perfil"); break;
+      case "settings":       router.push("/ajustes"); break;
+      case "team_settings":  router.push("/equipo/ajustes"); break;
+      case "analytics":      router.push("/analytics"); break;
+      case "system":         router.push("/sistema"); break;
+      case "configurations": router.push("/configuracion"); break;
+      case "help_and_feedback": router.push("/ayuda"); break;
       case "logout":
         try { await logout(); } finally { router.replace("/login"); }
         break;
-      default:
-        break;
+      default: break;
     }
-  };
-
-  const [dark, setDark] = React.useState<boolean>(() =>
-    typeof document !== "undefined" ? document.documentElement.classList.contains("dark") : true
-  );
-  const toggleTheme = () => {
-    const root = document.documentElement;
-    root.classList.toggle("dark");
-    setDark(root.classList.contains("dark"));
   };
 
   return (
@@ -92,21 +68,13 @@ export const UserDropdown: React.FC = () => {
           boxShadow: "0 20px 60px rgba(0,0,0,.45)",
           color: TEXT,
           overflow: "hidden",
-          "& .nextui-dropdown-section-title": {
-            color: MUTED
-          },
+          "& .nextui-dropdown-section-title": { color: MUTED },
           "& .nextui-dropdown-item": {
             py: "$4",
-            "& .nextui-dropdown-item-content": {
-              color: TEXT,
-            },
-            "&:hover": {
-              bg: SURFACE2,
-            },
+            "& .nextui-dropdown-item-content": { color: TEXT },
+            "&:hover": { bg: SURFACE2 }
           },
-          "& .nextui-dropdown-item--with-divider": {
-            borderTop: `1px solid ${BORDER}`,
-          },
+          "& .nextui-dropdown-item--with-divider": { borderTop: `1px solid ${BORDER}` }
         }}
       >
         <Dropdown.Item key="header" css={{ py: "$6" }}>
@@ -114,10 +82,16 @@ export const UserDropdown: React.FC = () => {
             <Avatar size="sm" src={avatarSrc} text={!avatarSrc ? initials : undefined} bordered />
             <div className="min-w-0">
               <Text size={"$xs"} css={{ color: MUTED }}>
-                { isAuthenticated ? "Conectado como" : "Invitado" }
+                {isAuthenticated ? "Conectado como" : "Invitado"}
               </Text>
               <Text
-                style={{ fontWeight: 600, color: TEXT, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
+                style={{
+                  fontWeight: 600,
+                  color: TEXT,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap"
+                }}
                 title={displayName}
               >
                 {displayName}
@@ -126,29 +100,13 @@ export const UserDropdown: React.FC = () => {
           </div>
         </Dropdown.Item>
 
-        <Dropdown.Item key="profile" withDivider>
-          Mi perfil
-        </Dropdown.Item>
-        <Dropdown.Item key="settings">
-          Mis ajustes
-        </Dropdown.Item>
-        <Dropdown.Item key="team_settings">
-          Ajustes del equipo
-        </Dropdown.Item>
-        <Dropdown.Item key="analytics" withDivider>
-          Analítica
-        </Dropdown.Item>
-        <Dropdown.Item key="system">
-          Sistema
-        </Dropdown.Item>
-        <Dropdown.Item key="configurations">
-          Configuración
-        </Dropdown.Item>
-        <Dropdown.Item key="help_and_feedback" withDivider>
-          Ayuda y comentarios
-        </Dropdown.Item>
-
-       
+        <Dropdown.Item key="profile" withDivider>Mi perfil</Dropdown.Item>
+        <Dropdown.Item key="settings">Mis ajustes</Dropdown.Item>
+        <Dropdown.Item key="team_settings">Ajustes del equipo</Dropdown.Item>
+        <Dropdown.Item key="analytics" withDivider>Analítica</Dropdown.Item>
+        <Dropdown.Item key="system">Sistema</Dropdown.Item>
+        <Dropdown.Item key="configurations">Configuración</Dropdown.Item>
+        <Dropdown.Item key="help_and_feedback" withDivider>Ayuda y comentarios</Dropdown.Item>
 
         <Dropdown.Item key="logout" withDivider>
           <span style={{ color: MAGENTA, fontWeight: 600 }}>Cerrar sesión</span>

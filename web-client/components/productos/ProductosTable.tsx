@@ -1,12 +1,14 @@
 "use client";
 
 import React from "react";
+
+// ✅ Importes relativos (desde components/productos/*)
 import {
   useProductosMini,
   type ProductoMini,
-} from "@/components/hooks/useProductosMini";
-import { useProductoUpdate } from "@/components/hooks/useProductoUpdate";
-import { useProductoDetalle } from "@/components/hooks/useProductoDetalle";
+} from "../hooks/useProductosMini";
+import { useProductoUpdate } from "../hooks/useProductoUpdate";
+import { useProductoDetalle } from "../hooks/useProductoDetalle";
 
 type Props = { filtroId: number | "" };
 
@@ -22,6 +24,7 @@ export default function ProductosTable({ filtroId }: Props) {
   const [detalleId, setDetalleId] = React.useState<number | null>(null);
 
   React.useEffect(() => {
+    // Carga inicial
     load().catch(() => {});
   }, [load]);
 
@@ -34,7 +37,7 @@ export default function ProductosTable({ filtroId }: Props) {
 
   const startEditing = (p: ProductoMini) => {
     setEditingId(p.productoID);
-    setEditValues({ nombre: p.nombre, descripcion: p.descripcion });
+    setEditValues({ nombre: p.nombre, descripcion: p.descripcion ?? "" });
   };
 
   const cancelEditing = () => {
@@ -43,16 +46,17 @@ export default function ProductosTable({ filtroId }: Props) {
   };
 
   const saveEditing = async (id: number) => {
-    if (!editValues.nombre || !editValues.nombre.trim()) {
+    const nombre = (editValues.nombre ?? "").trim();
+    const descripcion = (editValues.descripcion ?? "").trim();
+
+    if (!nombre) {
       alert("El nombre no puede estar vacío.");
       return;
     }
-    const ok = await updateProducto(id, {
-      nombre: editValues.nombre?.trim(),
-      descripcion: (editValues.descripcion ?? "").trim(),
-    });
+
+    const ok = await updateProducto(id, { nombre, descripcion });
     if (ok) {
-      await load(); // recarga desde backend, no mutamos el array del hook
+      await load(); // refresca tabla
       setEditingId(null);
       setEditValues({});
     } else {
@@ -73,7 +77,6 @@ export default function ProductosTable({ filtroId }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [detalleId]);
 
-  // normaliza posibles nombres de descripción que pueda devolver la API
   const descripcionDet: string | null = React.useMemo(() => {
     if (!detalle) return null;
     const anyDet = detalle as any;
@@ -132,7 +135,7 @@ export default function ProductosTable({ filtroId }: Props) {
                   className="border-t border-white/10 hover:bg-white/[0.03]"
                 >
                   <Td>{p.productoID}</Td>
-                  <Td mono>{p.sku}</Td>
+                  <Td mono>{p.sku ?? "—"}</Td>
 
                   <Td>
                     {isEditing ? (
@@ -208,12 +211,11 @@ export default function ProductosTable({ filtroId }: Props) {
         </tbody>
       </table>
 
-      {/* Modal detalle */}
       {detalleId !== null && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
           onMouseDown={(e) => {
-            if (e.target === e.currentTarget) closeDetalle(); // click fuera
+            if (e.target === e.currentTarget) closeDetalle();
           }}
         >
           <div className="relative w-full max-w-2xl rounded-2xl border border-white/10 bg-neutral-900 p-6 shadow-2xl">
@@ -261,8 +263,6 @@ export default function ProductosTable({ filtroId }: Props) {
     </div>
   );
 }
-
-/* ——— UI helpers ——— */
 
 const Th: React.FC<React.PropsWithChildren> = ({ children }) => (
   <th className="px-4 py-2 text-xs font-semibold uppercase tracking-wide">

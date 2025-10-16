@@ -1,10 +1,9 @@
-
 import type { AppProps } from "next/app";
 import React from "react";
 
-import "@/styles/globals.css";
-import { Layout } from "@/components/layout/layout";
-import { useSession } from "@/hooks/useSession";
+import "../styles/globals.css";                 
+import { Layout } from "../components/layout/layout";
+import { useSession } from "../components/hooks/useSession";
 
 function SessionGate({ children }: { children: React.ReactNode }) {
   const { ready } = useSession();

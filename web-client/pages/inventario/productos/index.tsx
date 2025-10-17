@@ -16,6 +16,15 @@ export default function ProductosHomePage() {
             </p>
           </div>
         </Link>
+
+        <Link href="/inventario/productos/gestion" className="block">
+          <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 transition hover:bg-amber-400/20">
+            <h3 className="text-lg font-semibold text-amber-300">Gestionar inventario</h3>
+            <p className="mt-1 text-sm text-gray-300">
+              Asigna productos a bodegas, ajusta cantidades e inactiva artículos.
+            </p>
+          </div>
+        </Link>
       </div>
     </div>
   );

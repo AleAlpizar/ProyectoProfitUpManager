@@ -1,177 +1,55 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Domain.Inventory.Dto;
-using System.Security.Claims;
-using System.IdentityModel.Tokens.Jwt;
-using ProfitManagerApp.Api.Dtos;
 
-
-namespace ProfitManagerApp.Api.Controllers
+[ApiController]
+[Route("api/[controller]")] 
+public class InventarioController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    [Authorize]
-    public class InventarioController : ControllerBase
+    private readonly IInventarioRepository _repo;
+    public InventarioController(IInventarioRepository repo) => _repo = repo;
+
+    [HttpGet("cantidad")]
+    public async Task<IActionResult> GetCantidad([FromQuery] int productoID, [FromQuery] int bodegaID)
     {
-        private readonly IInventarioRepository _repo;
-        public InventarioController(IInventarioRepository repo) => _repo = repo;
+        var cant = await _repo.GetCantidadActualAsync(productoID, bodegaID);
+        return Ok(new { cantidad = cant });
+    }
 
-        private int? GetUserId()
-        {
-            var v =
-                User.FindFirstValue("uid") ??
-                User.FindFirstValue(ClaimTypes.NameIdentifier) ??
-                User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+    [HttpPost("cantidad/set")]
+    public async Task<IActionResult> SetCantidad([FromBody] InventarioSetCantidadDto dto)
+    {
+        if (dto is null) return BadRequest(new { code = "BODY_REQUIRED" });
+        if (dto.NuevaCantidad < 0) return Problem(title: "INVALID_QTY", statusCode: 400);
 
-            return int.TryParse(v, out var id) ? id : (int?)null;
-        }
+        int? userId = null;
+        var idClaim = User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (int.TryParse(idClaim, out var idVal)) userId = idVal;
 
-        [HttpGet("acceso")]
-        public async Task<IActionResult> Acceso([FromQuery] string modulo = "Inventario", [FromQuery] string accion = "Leer")
-        {
-            var uid = GetUserId();
-            if (uid is null) return Unauthorized();
+        await _repo.SetCantidadAbsolutaAsync(dto, userId);
+        return NoContent();
+    }
 
-            var allowed = await _repo.PuedeAccederModuloAsync(uid.Value, modulo, accion);
-            if (!allowed) return Forbid();
+    [HttpPost("asignaciones")]
+    [HttpPost("asignar")]
+    [HttpPost("asignar-producto")]
+    public async Task<IActionResult> Asignar([FromBody] AsignacionCreateDto dto)
+    {
+        if (dto is null) return BadRequest(new { code = "BODY_REQUIRED" });
+        if (dto.ProductoID <= 0 || dto.BodegaID <= 0)
+            return BadRequest(new { code = "INVALID_IDS" });
 
-            return Ok(new { allowed = true });
-        }
+        if (!await _repo.ExisteProductoAsync(dto.ProductoID))
+            return NotFound(new { code = "PRODUCTO_NOT_FOUND_OR_INACTIVE" });
 
-        [HttpGet("stock")]
-        public async Task<IActionResult> GetStock([FromQuery] int? productoId = null, [FromQuery] int? bodegaId = null)
-        {
-            var uid = GetUserId();
-            if (uid is null) return Unauthorized();
+        if (!await _repo.ExisteBodegaAsync(dto.BodegaID))
+            return NotFound(new { code = "BODEGA_NOT_FOUND_OR_INACTIVE" });
 
-            var allowed = await _repo.PuedeAccederModuloAsync(uid.Value, "Inventario", "Leer");
-            if (!allowed) return Forbid();
+        var ya = await _repo.ExisteAsignacionAsync(dto.ProductoID, dto.BodegaID);
+        if (!ya)
+            await _repo.AsignarProductoBodegaAsync(dto.ProductoID, dto.BodegaID);
 
-            var stock = await _repo.GetStockAsync(productoId, bodegaId);
-            return Ok(stock); 
-        }
-
-        [HttpGet("productos")]
-        public async Task<IActionResult> GetProductos()
-        {
-            var productos = await _repo.GetProductosAsync();
-            return Ok(productos);
-        }
-
-        [HttpPost("ajuste")]
-        public async Task<IActionResult> Ajuste([FromBody] AjusteInventarioDto dto)
-        {
-            var uid = GetUserId();
-            if (uid is null) return Unauthorized();
-
-            var allowed = await _repo.PuedeAccederModuloAsync(uid.Value, "Inventario", "Escribir");
-            if (!allowed) return Forbid();
-
-            try
-            {
-                await _repo.AjusteAsync(dto, uid);
-                return Ok(new { message = "Ajuste aplicado" });
-            }
-            catch (Exception ex) when (ex.Message == "INVALID_QTY")
-            {
-                return BadRequest(new { error = "Cantidad inválida" });
-            }
-            catch (Exception ex) when (ex.Message == "STOCK_INSUFICIENTE")
-            {
-                return BadRequest(new { error = "Stock insuficiente para la salida" });
-            }
-        }
-        [HttpGet("bodegas")]
-        [AllowAnonymous]
-        public async Task<IActionResult> GetBodegas()
-        {
-            var list = await _repo.GetBodegasAsync();
-            return Ok(list);
-        }
-        [HttpGet("debug/db")]
-        [AllowAnonymous] 
-        public async Task<IActionResult> DebugDb()
-        {
-            var info = await _repo.DebugDbAsync();
-            return Ok(new { info.Server, info.Database, info.ProcId });
-        }
-
-        [HttpGet("unidades")]
-        [AllowAnonymous] 
-        public async Task<IActionResult> GetUnidades()
-        {
-            var list = await _repo.GetUnidadesAsync();
-            return Ok(list);
-        }
-
-        [HttpGet("debug/unidades")]
-        [AllowAnonymous]   
-        public async Task<IActionResult> DebugUnidades()
-        {
-            var info = await _repo.DebugUnidadesAsync();
-            return Ok(new { info.Server, info.Database, info.ProcId });
-        }
-        [HttpGet("productos/mini")]
-        public async Task<IActionResult> GetProductosMini()
-        {
-            var uid = GetUserId();
-            if (uid is null) return Unauthorized();
-
-            var allowed = await _repo.PuedeAccederModuloAsync(uid.Value, "Inventario", "Leer");
-            if (!allowed) return Forbid();
-
-            var rows = await _repo.GetProductosAsync(); 
-            return Ok(rows);
-        }
-
-        [HttpGet("access")]
-        public async Task<IActionResult> Access(
-    [FromQuery] string module = "Inventario",
-    [FromQuery] string action = "Leer")
-        {
-            var uid = GetUserId();
-            if (uid is null) return Unauthorized();
-
-            var ok = await _repo.PuedeAccederModuloAsync(uid.Value, module, action);
-            return Ok(ok);
-        }
-
-        [HttpPut("productos/{id}")]
-        public async Task<IActionResult> UpdateProducto(int id, [FromBody] ProductoUpdateDto dto)
-        {
-            var uid = GetUserId();
-            if (uid is null) return Unauthorized();
-
-            // Validar permisos
-            var allowed = await _repo.PuedeAccederModuloAsync(uid.Value, "Inventario", "Escribir");
-            if (!allowed) return Forbid();
-
-            try
-            {
-                await _repo.UpdateProductoAsync(id, dto);
-                return Ok(new { message = "Producto actualizado" });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new { error = ex.Message });
-            }
-        }
-
-        [HttpGet("productos/detalle/{id}")]
-        public async Task<IActionResult> GetProductoDetalle(int id)
-        {
-            var uid = GetUserId();
-            if (uid is null) return Unauthorized();
-
-            var allowed = await _repo.PuedeAccederModuloAsync(uid.Value, "Inventario", "Leer");
-            if (!allowed) return Forbid();
-
-            var detalle = await _repo.GetProductoDetalleAsync(id);
-            if (detalle == null) return NotFound();
-
-            return Ok(detalle);
-        }
-
+        return NoContent(); 
     }
 }

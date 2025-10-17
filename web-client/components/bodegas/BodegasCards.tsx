@@ -7,7 +7,7 @@ type Props = {
   error: string | null;
   onEdit: (b: BodegaDto) => void;
   inactivate: (id: number) => Promise<boolean>;
-  activate: (id: number) => Promise<boolean>; // 👈 nueva prop
+  activate: (id: number) => Promise<boolean>; 
 };
 
 export default function BodegasCards({
@@ -16,7 +16,7 @@ export default function BodegasCards({
   error,
   onEdit,
   inactivate,
-  activate, // 👈 nueva
+  activate, 
 }: Props) {
   if (error) {
     return (
@@ -45,7 +45,7 @@ export default function BodegasCards({
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       {items.map((b) => {
-        const isActive = !!b.isActive; // por si viene como 0/1
+        const isActive = !!b.isActive; 
         return (
           <article
             key={b.bodegaID}

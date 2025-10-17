@@ -1,14 +1,16 @@
 "use client";
 
 import React from "react";
+import EditarCantidadModal from "@/components/inventario/EditarCantidadModal";
 
-// ✅ Importes relativos (desde components/productos/*)
 import {
   useProductosMini,
   type ProductoMini,
 } from "../hooks/useProductosMini";
 import { useProductoUpdate } from "../hooks/useProductoUpdate";
 import { useProductoDetalle } from "../hooks/useProductoDetalle";
+import { useProductoInactivar } from "../hooks/useProductoInactivar";
+import { useBodegas } from "../hooks/useBodegas";
 
 type Props = { filtroId: number | "" };
 
@@ -16,15 +18,24 @@ export default function ProductosTable({ filtroId }: Props) {
   const { data: productos, load, loading, error } = useProductosMini();
   const { updateProducto, loading: updating, error: updateError } = useProductoUpdate();
   const { detalle, loadDetalle, loading: detalleLoading, error: detalleError } = useProductoDetalle();
+  const { inactivar, loading: inactivando } = useProductoInactivar();
+
+  const { data: bodegas = [], loading: loadingBodegas } = useBodegas();
 
   const [editingId, setEditingId] = React.useState<number | null>(null);
   const [editValues, setEditValues] = React.useState<
     Partial<Pick<ProductoMini, "nombre" | "descripcion">>
   >({});
+
   const [detalleId, setDetalleId] = React.useState<number | null>(null);
 
+  const [openEditarStock, setOpenEditarStock] = React.useState<{
+    productoID: number;
+    bodegaID?: number | null;
+    productoNombre?: string;
+  } | null>(null);
+
   React.useEffect(() => {
-    // Carga inicial
     load().catch(() => {});
   }, [load]);
 
@@ -48,15 +59,13 @@ export default function ProductosTable({ filtroId }: Props) {
   const saveEditing = async (id: number) => {
     const nombre = (editValues.nombre ?? "").trim();
     const descripcion = (editValues.descripcion ?? "").trim();
-
     if (!nombre) {
       alert("El nombre no puede estar vacío.");
       return;
     }
-
     const ok = await updateProducto(id, { nombre, descripcion });
     if (ok) {
-      await load(); // refresca tabla
+      await load();
       setEditingId(null);
       setEditValues({});
     } else {
@@ -87,6 +96,20 @@ export default function ProductosTable({ filtroId }: Props) {
       null
     );
   }, [detalle]);
+
+  const abrirModalStock = (row: ProductoMini) => {
+    setOpenEditarStock({
+      productoID: row.productoID,
+      productoNombre: row.nombre,
+      bodegaID: null,
+    });
+  };
+
+  const confirmarInactivar = async (row: ProductoMini) => {
+    if (!confirm(`¿Inactivar el producto "${row.nombre}"?`)) return;
+    const { ok } = await inactivar(row.productoID);
+    if (ok) await load();
+  };
 
   return (
     <div className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-white/5">
@@ -170,7 +193,7 @@ export default function ProductosTable({ filtroId }: Props) {
 
                   <Td>
                     {isEditing ? (
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <button
                           onClick={() => saveEditing(p.productoID)}
                           disabled={updating}
@@ -187,12 +210,29 @@ export default function ProductosTable({ filtroId }: Props) {
                         </button>
                       </div>
                     ) : (
-                      <button
-                        onClick={() => startEditing(p)}
-                        className="rounded-md border border-white/10 px-3 py-1 text-xs font-semibold text-[#A30862] transition hover:bg-[#A30862]/10"
-                      >
-                        Editar
-                      </button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button
+                          onClick={() => startEditing(p)}
+                          className="rounded-md border border-white/10 px-3 py-1 text-xs font-semibold text-[#A30862] transition hover:bg-[#A30862]/10"
+                        >
+                          Editar
+                        </button>
+                        <button
+                          onClick={() => abrirModalStock(p)}
+                          className="rounded-md border border-white/10 px-3 py-1 text-xs font-semibold text-amber-300 transition hover:bg-amber-300/10"
+                          title="Editar stock por bodega"
+                        >
+                          Editar stock
+                        </button>
+                        <button
+                          onClick={() => confirmarInactivar(p)}
+                          disabled={inactivando}
+                          className="rounded-md bg-red-600/80 px-3 py-1 text-xs font-semibold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
+                          title="Inactivar producto"
+                        >
+                          {inactivando ? "…" : "Inactivar"}
+                        </button>
+                      </div>
                     )}
                   </Td>
 
@@ -259,6 +299,21 @@ export default function ProductosTable({ filtroId }: Props) {
             ) : null}
           </div>
         </div>
+      )}
+
+      {openEditarStock !== null && (
+        <EditarCantidadModal
+          open={openEditarStock !== null}
+          onClose={() => setOpenEditarStock(null)}
+          productoID={openEditarStock.productoID}
+          productoNombre={openEditarStock.productoNombre ?? ""}
+          bodegas={bodegas}
+          initialBodegaID={openEditarStock.bodegaID ?? null}
+          onSaved={async () => {
+            await load();
+            setOpenEditarStock(null);
+          }}
+        />
       )}
     </div>
   );

@@ -1,32 +1,27 @@
-"use client";
-
+import * as React from "react";
 import { useApi } from "./useApi";
-import { useCallback, useEffect, useState } from "react";
 
-export type ProductoMini = {
-  productoID: number;
-  nombre: string;
-  sku: string | null;
-  descripcion: string | null;
-};
+export type ProductoMini = { productoID: number; sku?: string; nombre: string; descripcion?: string };
 
 export function useProductosMini() {
-  const { call, loading, error, ready } = useApi();
-  const [data, setData] = useState<ProductoMini[]>([]);
+  const { get } = useApi();
+  const [data, setData] = React.useState<ProductoMini[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    const rows = await call<ProductoMini[]>("/api/inventario/productos/mini", {
-      method: "GET",
-    });
-    setData(rows);
-  }, [call]);
+  const load = React.useCallback(async () => {
+    setLoading(true); setError(null);
+    try {
+      const items = await get<ProductoMini[]>("/api/productos/mini");
+      setData(items ?? []);
+    } catch (e: any) {
+      setError(e?.message ?? "No se pudo cargar productos");
+    } finally {
+      setLoading(false);
+    }
+  }, [get]);
 
-  useEffect(() => {
-    if (ready) load().catch(() => {});
-  }, [ready, load]);
+  React.useEffect(() => { load().catch(() => {}); }, [load]);
 
   return { data, load, loading, error };
 }
-
-
-

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import * as React from "react";
 import { useApi } from "./useApi";
 
 export type BodegaDto = {
@@ -14,40 +14,23 @@ type Paged<T> = { items: T[]; total: number; page: number; pageSize: number };
 
 export function useBodegas() {
   const { get } = useApi();
-  const [data, setData] = useState<BodegaDto[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
+  const [data, setData] = React.useState<BodegaDto[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const load = async () => {
-    abortRef.current?.abort("reload");
-    const ctrl = new AbortController();
-    abortRef.current = ctrl;
-
-    setLoading(true);
-    setError(null);
-
+  const load = React.useCallback(async () => {
+    setLoading(true); setError(null);
     try {
-      const res = await get<Paged<BodegaDto>>(
-        "/api/bodegas?soloActivas=false",
-        { signal: ctrl.signal }
-      );
-      setData(res.items ?? []);
+      const res = await get<Paged<BodegaDto>>("/api/bodegas?soloActivas=true&page=1&pageSize=1000");
+      setData(res?.items ?? []);
     } catch (e: any) {
-      if (e?.name === "AbortError") return; 
-      setError(e?.message || "Error al cargar bodegas");
-      setData([]);
+      setError(e?.message ?? "No se pudo cargar bodegas");
     } finally {
-      if (abortRef.current === ctrl) setLoading(false);
+      setLoading(false);
     }
-  };
+  }, [get]);
 
-  useEffect(() => {
-    load();
-    return () => abortRef.current?.abort("unmount");
-  }, []);
+  React.useEffect(() => { load().catch(() => {}); }, [load]);
 
-  return { data, loading, error, reload: load };
+  return { data, load, loading, error };
 }
-
-export default useBodegas;

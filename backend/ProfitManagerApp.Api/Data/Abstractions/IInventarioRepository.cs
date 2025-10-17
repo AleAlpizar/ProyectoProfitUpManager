@@ -1,35 +1,26 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-using ProfitManagerApp.Api.Dto;                   
-using ProfitManagerApp.Api.Dtos;
+﻿using ProfitManagerApp.Api.Dtos;
 using ProfitManagerApp.Domain.Inventory.Dto;
 
 namespace ProfitManagerApp.Data.Abstractions
 {
     public interface IInventarioRepository
     {
-        Task<bool> PuedeAccederModuloAsync(int usuarioId, string modulo, string accion);
-
-        Task<int> CrearProductoAsync(ProductoCreateDto dto, int? createdBy);
-
-        Task<IEnumerable<StockRowDto>> GetStockAsync(int? productoId, int? bodegaId);
-
-        Task AjusteAsync(AjusteInventarioDto dto, int? usuarioId);
-
-        Task<IEnumerable<BodegaDto>> GetBodegasAsync();   
-
-        Task<IEnumerable<ProductoRowDto>> GetProductosAsync();
-
-        Task<(string Server, string Database, int? ProcId)> DebugDbAsync();
-
-        Task<IEnumerable<UnidadDto>> GetUnidadesAsync();
-
-        Task<(string Server, string Database, int? ProcId)> DebugUnidadesAsync();
-
-        Task<IEnumerable<ProductoMiniDto>> GetProductosMiniAsync();
-
+        Task<int> CrearProductoAsync(ProductoCreateDto dto, int? userId);
+        Task AjusteAsync(AjusteInventarioDto dto, int? userId);
+        Task<ProductoDetalleDto?> GetProductoDetalleAsync(int productoId);
         Task UpdateProductoAsync(int id, ProductoUpdateDto dto);
 
-        Task<ProductoDetalleDto?> GetProductoDetalleAsync(int productoId);
+        Task<bool> ExisteProductoAsync(int productoId);
+        Task<bool> ExisteBodegaAsync(int bodegaId);
+        Task<bool> ExisteAsignacionAsync(int productoId, int bodegaId);
+        Task AsignarProductoBodegaAsync(int productoId, int bodegaId);
+
+        Task<decimal> GetCantidadActualAsync(int productoId, int bodegaId);
+
+        Task SetCantidadAbsolutaAsync(InventarioSetCantidadDto dto, int? userId);
+
+        Task InactivarProductoYRetirarStockAsync(int productoId, int? userId);
+        Task<IReadOnlyList<ProductoMiniDto>> GetProductosMiniAsync();
+
     }
 }

@@ -3,7 +3,7 @@ import React, { useMemo, useState } from "react";
 
 import { useBodegas, type BodegaDto } from "@/hooks/useBodegas";
 import { useBodegaDelete } from "@/hooks/useBodegaDelete";
-import { useBodegaActivate } from "@/hooks/useBodegaActivate"; // 👈 nuevo
+import { useBodegaActivate } from "@/hooks/useBodegaActivate"; 
 
 import SectionHeader from "@/components/SectionHeader";
 import BodegasCards from "@/components/bodegas/BodegasCards";

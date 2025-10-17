@@ -11,13 +11,15 @@ export type ProductoDetalle = {
   unidadAlmacenamientoID?: number;
   precioCosto?: number;
   precioVenta?: number;
+  descripcion?: string | null;
 };
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
+const TOKEN_KEY = "auth_token";
 
 function parseServerError(raw: string): string {
   if (!raw) return "No se pudo cargar el detalle del producto.";
-  if (raw.toUpperCase().includes("NOT FOUND")) return "Producto no encontrado";
+  if (raw.toUpperCase().includes("NOT FOUND")) return "Producto no encontrado.";
   return raw;
 }
 
@@ -29,14 +31,14 @@ export function useProductoDetalle() {
   const loadDetalle = useCallback(async (id: number) => {
     setError(null);
     setDetalle(null);
+    setLoading(true);
     try {
-      setLoading(true);
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
 
-      const res = await fetch(`${API_BASE}/api/inventario/productos/detalle/${id}`, {
+      const res = await fetch(`${API_BASE}/api/productos/detalle/${id}`, {
         method: "GET",
         headers: {
-          "Content-Type": "application/json",
+          "Accept": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });

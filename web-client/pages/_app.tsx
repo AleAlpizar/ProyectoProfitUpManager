@@ -1,39 +1,26 @@
-import "../styles/globals.css";
 import type { AppProps } from "next/app";
-import { createTheme, NextUIProvider } from "@nextui-org/react";
-import { ThemeProvider as NextThemesProvider } from "next-themes";
-import { Layout as DefaultLayout } from "../components/layout/layout";
+import React from "react";
 
-const lightTheme = createTheme({
-  type: "light",
-  theme: {
-    colors: {},
-  },
-});
+import "../styles/globals.css";                 
+import { Layout } from "../components/layout/layout";
+import { useSession } from "../components/hooks/useSession";
 
-const darkTheme = createTheme({
-  type: "dark",
-  theme: {
-    colors: {},
-  },
-});
-
-function MyApp({ Component, pageProps }: AppProps) {
-  const getLayout =
-    (Component as any).getLayout ||
-    ((page: React.ReactNode) => <DefaultLayout>{page}</DefaultLayout>);
-  return (
-    <NextThemesProvider
-      defaultTheme="system"
-      attribute="class"
-      value={{
-        light: lightTheme.className,
-        dark: darkTheme.className,
-      }}
-    >
-      <NextUIProvider>{getLayout(<Component {...pageProps} />)}</NextUIProvider>
-    </NextThemesProvider>
-  );
+function SessionGate({ children }: { children: React.ReactNode }) {
+  const { ready } = useSession();
+  if (!ready) return <div style={{ minHeight: "100vh", background: "#0B0F0E" }} />;
+  return <>{children}</>;
 }
 
-export default MyApp;
+type WithNoChrome = AppProps["Component"] & { noChrome?: boolean };
+
+export default function App({ Component, pageProps }: AppProps) {
+  const noChrome = (Component as WithNoChrome).noChrome === true;
+
+  return (
+    <SessionGate>
+      <Layout noChrome={noChrome}>
+        <Component {...pageProps} />
+      </Layout>
+    </SessionGate>
+  );
+}

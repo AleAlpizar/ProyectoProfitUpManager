@@ -1,48 +1,53 @@
-"use client";
+import { useEffect, useRef, useState } from "react";
+import { useApi } from "./useApi";
 
-import { useEffect, useState } from "react";
-
-export type Bodega = {
+export type BodegaDto = {
   bodegaID: number;
-  codigo: string | null;
+  codigo?: string | null;
   nombre: string;
   direccion?: string | null;
   contacto?: string | null;
-  isActive: boolean;
+  isActive: boolean | number;
 };
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
+type Paged<T> = { items: T[]; total: number; page: number; pageSize: number };
 
 export function useBodegas() {
-  const [data, setData] = useState<Bodega[]>([]);
+  const { get } = useApi();
+  const [data, setData] = useState<BodegaDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  const load = async () => {
+    abortRef.current?.abort("reload");
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await get<Paged<BodegaDto>>(
+        "/api/bodegas?soloActivas=false",
+        { signal: ctrl.signal }
+      );
+      setData(res.items ?? []);
+    } catch (e: any) {
+      if (e?.name === "AbortError") return; 
+      setError(e?.message || "Error al cargar bodegas");
+      setData([]);
+    } finally {
+      if (abortRef.current === ctrl) setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        setLoading(true);
-        const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-        const res = await fetch(`${API_BASE}/api/inventario/bodegas`, {
-          headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-        });
-        if (!res.ok) {
-          const t = await res.text();
-          throw new Error(t || `HTTP ${res.status}`);
-        }
-        const json = (await res.json()) as Bodega[];
-        if (mounted) setData(json);
-      } catch (e: any) {
-        if (mounted) setError(e?.message || "No se pudo cargar bodegas.");
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => {
-      mounted = false;
-    };
+    load();
+    return () => abortRef.current?.abort("unmount");
   }, []);
 
-  return { data, loading, error };
+  return { data, loading, error, reload: load };
 }
+
+export default useBodegas;

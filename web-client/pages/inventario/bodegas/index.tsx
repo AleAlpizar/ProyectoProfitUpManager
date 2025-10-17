@@ -1,110 +1,95 @@
 "use client";
-
 import React, { useMemo, useState } from "react";
-import { useBodegas } from "@/components/hooks/useBodegas";
-import BodegasTable from "@/components/bodegas/BodegasTable";
-import SectionHeader from "@/components/SectionHeader";
-import Spinner from "@/components/Spinner";
-import Alert from "@/components/Alert";
 
-type Bodega = {
-  bodegaID?: number;
-  codigo?: string | null;
-  nombre?: string | null;
-  direccion?: string | null;
-  isActive?: boolean | number | null;
-};
+import { useBodegas, type BodegaDto } from "@/hooks/useBodegas";
+import { useBodegaDelete } from "@/hooks/useBodegaDelete";
+import { useBodegaActivate } from "@/hooks/useBodegaActivate"; // 👈 nuevo
+
+import SectionHeader from "@/components/SectionHeader";
+import BodegasCards from "@/components/bodegas/BodegasCards";
+import BodegaForm from "@/components/bodegas/BodegaForm";
 
 export default function BodegasPage() {
-  const hook = useBodegas() as {
-    data: Bodega[];
-    loading: boolean;
-    error: string | null;
-    reload?: () => void;
-  };
-
-  const { data: bodegas, loading, error } = hook;
+  const { data, loading, error, reload } = useBodegas();
+  const { inactivate, loading: inactLoading, error: inactError } = useBodegaDelete();
+  const { activate, loading: actLoading,   error: actError   } = useBodegaActivate();
 
   const [q, setQ] = useState("");
-
-  const stats = useMemo(() => {
-    const list = bodegas ?? [];
-    return {
-      total: list.length,
-      activas: list.filter((b) =>
-        typeof b.isActive === "number"
-          ? b.isActive === 1
-          : Boolean(b.isActive)
-      ).length,
-    };
-  }, [bodegas]);
+  const [editing, setEditing] = useState<BodegaDto | null>(null);
 
   const filtered = useMemo(() => {
-    const list = bodegas ?? [];
     const term = q.trim().toLowerCase();
-    if (!term) return list;
+    if (!term) return data;
+    return data.filter(
+      (b) =>
+        (b.codigo ?? "").toLowerCase().includes(term) ||
+        (b.nombre ?? "").toLowerCase().includes(term) ||
+        (b.direccion ?? "").toLowerCase().includes(term)
+    );
+  }, [q, data]);
 
-    return list.filter((b) => {
-      const codigo = (b.codigo ?? "").toLowerCase();
-      const nombre = (b.nombre ?? "").toLowerCase();
-      const direccion = (b.direccion ?? "").toLowerCase();
-      return (
-        codigo.includes(term) ||
-        nombre.includes(term) ||
-        direccion.includes(term)
-      );
-    });
-  }, [bodegas, q]);
+  const handleInactivate = async (id: number) => {
+    const ok = await inactivate(id);
+    if (ok) reload();
+    return ok;
+  };
 
-  const safeReload = () => {
-    if (typeof hook.reload === "function") hook.reload();
+  const handleActivate = async (id: number) => {
+    const ok = await activate(id);
+    if (ok) reload();
+    return ok;
+  };
+
+  const onSaved = () => {
+    setEditing(null);
+    reload();
   };
 
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-6">
-      <SectionHeader
-        title="Bodegas"
-        subtitle={`Total: ${stats.total} · Activas: ${stats.activas}`}
-      />
+      <SectionHeader title="Bodegas" subtitle={`Total: ${data.length}`} />
 
-      <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="mb-4 flex items-center gap-3">
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Buscar por código, nombre o dirección"
-          className="w-full rounded-xl border border-gray-200 bg-white/70 px-3 py-2 text-sm outline-none transition focus:border-gray-400 md:w-72"
+          className="w-full max-w-sm rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/20 focus:ring-2 focus:ring-white/20"
         />
-
-        <button
-          onClick={safeReload}
-          disabled={!!loading}
-          className="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-60"
-          title="Refrescar"
-        >
-          {loading ? "Actualizando…" : "Refrescar"}
+        <button onClick={reload} className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white">
+          Refrescar
+        </button>
+        <button onClick={() => setEditing({} as BodegaDto)} className="rounded-xl bg-[#A30862] px-3 py-2 text-sm text-white">
+          Nueva bodega
         </button>
       </div>
 
-      {loading && (
-        <div className="mb-3">
-          <Spinner />
+      {(inactError || actError) && (
+        <div className="mb-3 rounded-md border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-200">
+          {inactError || actError}
         </div>
       )}
 
-      {!loading && error && (
-        <div className="mb-3">
-          <Alert type="error">{error}</Alert>
-        </div>
-      )}
+      <BodegasCards
+        items={filtered}
+        loading={loading || inactLoading || actLoading}
+        error={error}
+        onEdit={(b) => setEditing(b)}
+        inactivate={handleInactivate}
+        activate={handleActivate} 
+      />
 
-      {!loading && !error && filtered.length === 0 && (
-        <div className="rounded-xl border border-gray-200 bg-white/60 p-6 text-center text-sm text-gray-500">
-          No se encontraron bodegas
+      {editing && (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setEditing(null);
+          }}
+        >
+          <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#121618] p-5">
+            <BodegaForm initial={editing} onSaved={onSaved} onClose={() => setEditing(null)} />
+          </div>
         </div>
-      )}
-
-      {!loading && !error && filtered.length > 0 && (
-        <BodegasTable rows={filtered} />
       )}
     </div>
   );

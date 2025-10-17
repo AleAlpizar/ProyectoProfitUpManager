@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using ProfitManagerApp.Api.Dto;                   
 using ProfitManagerApp.Api.Dtos;
 using ProfitManagerApp.Domain.Inventory.Dto;
 
@@ -15,7 +16,7 @@ namespace ProfitManagerApp.Data.Abstractions
 
         Task AjusteAsync(AjusteInventarioDto dto, int? usuarioId);
 
-        Task<IEnumerable<BodegaDto>> GetBodegasAsync();
+        Task<IEnumerable<BodegaDto>> GetBodegasAsync();   
 
         Task<IEnumerable<ProductoRowDto>> GetProductosAsync();
 
@@ -30,6 +31,5 @@ namespace ProfitManagerApp.Data.Abstractions
         Task UpdateProductoAsync(int id, ProductoUpdateDto dto);
 
         Task<ProductoDetalleDto?> GetProductoDetalleAsync(int productoId);
-
     }
 }

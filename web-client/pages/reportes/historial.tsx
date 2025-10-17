@@ -2,70 +2,130 @@
 import SectionHeader from "../../components/SectionHeader";
 
 export default function HistorialReportesPage() {
-    return (
-        <div className="p-6">
-            <SectionHeader
-                title="Historial de reportes"
-                subtitle="Consultar qué reportes se han emitido, cuándo y por quién"
+  return (
+    <div className="mx-auto max-w-6xl p-4 md:p-6">
+      <SectionHeader
+        title="Historial de reportes"
+        subtitle="Consultar qué reportes se han emitido, cuándo y por quién"
+      />
+
+      <section className="mb-4 rounded-2xl border border-white/10 bg-white/5 p-4">
+        <h2 className="text-base font-semibold text-white/90">Filtros</h2>
+
+        <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-4">
+          <div>
+            <label
+              htmlFor="tipo"
+              className="mb-1 block text-xs font-medium text-white/70"
+            >
+              Tipo de reporte
+            </label>
+            <select
+              id="tipo"
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition placeholder:text-white/40 focus:border-white/20 focus:ring-2 focus:ring-white/20"
+              defaultValue="Ventas"
+            >
+              <option>Ventas</option>
+              <option>Inventario</option>
+              <option>Órdenes de compra</option>
+            </select>
+          </div>
+
+          <div>
+            <label
+              htmlFor="usuario"
+              className="mb-1 block text-xs font-medium text-white/70"
+            >
+              Usuario
+            </label>
+            <input
+              id="usuario"
+              placeholder="Ej: admin@empresa.com"
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
             />
+          </div>
 
-            <div className="card" style={{ marginBottom: 16 }}>
-                <h2>Filtros</h2>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginTop: 12 }}>
-                    <div>
-                        <label className="text-gray" style={{ fontSize: 12 }}>Tipo de reporte</label>
-                        <select className="card" style={inputLike}>
-                            <option>Ventas</option>
-                            <option>Inventario</option>
-                            <option>Órdenes de compra</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="text-gray" style={{ fontSize: 12 }}>Usuario</label>
-                        <input className="card" style={inputLike} placeholder="Ej: admin@empresa.com" />
-                    </div>
-                    <div>
-                        <label className="text-gray" style={{ fontSize: 12 }}>Desde</label>
-                        <input type="date" className="card" style={inputLike} />
-                    </div>
-                    <div>
-                        <label className="text-gray" style={{ fontSize: 12 }}>Hasta</label>
-                        <input type="date" className="card" style={inputLike} />
-                    </div>
-                </div>
-            </div>
+          <div>
+            <label
+              htmlFor="desde"
+              className="mb-1 block text-xs font-medium text-white/70"
+            >
+              Desde
+            </label>
+            <input
+              id="desde"
+              type="date"
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+            />
+          </div>
 
-            <div className="card">
-                <h2>Registro</h2>
-                <div style={{ overflowX: "auto", marginTop: 8 }}>
-                    <table style={{ width: "100%", borderCollapse: "collapse" }}>
-                        <thead>
-                            <tr style={{ background: "#F5F5F5" }}>
-                                <th style={th}>Fecha</th>
-                                <th style={th}>Usuario</th>
-                                <th style={th}>Tipo</th>
-                                <th style={th}>Parámetros</th>
-                                <th style={th}>Formato</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr style={tr}>
-                                <td style={td}>2025-08-21 12:45</td>
-                                <td style={td}>admin@empresa.com</td>
-                                <td style={td}>Ventas</td>
-                                <td style={td}>Producto: Vino ; Fechas: 01–31 Ago</td>
-                                <td style={tdStrong}>PDF</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+          <div>
+            <label
+              htmlFor="hasta"
+              className="mb-1 block text-xs font-medium text-white/70"
+            >
+              Hasta
+            </label>
+            <input
+              id="hasta"
+              type="date"
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+            />
+          </div>
         </div>
-    );
+      </section>
+
+      <section className="rounded-2xl border border-white/10 bg-white/5">
+        <div className="px-4 py-3 text-sm font-semibold text-white/90">Registro</div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-t border-white/10 text-sm">
+            <thead>
+              <tr className="bg-white/5 text-left text-xs uppercase tracking-wide text-white/60">
+                <Th>Fecha</Th>
+                <Th>Usuario</Th>
+                <Th>Tipo</Th>
+                <Th>Parámetros</Th>
+                <Th>Formato</Th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/10">
+              <tr className="hover:bg-white/5">
+                <Td>2025-08-21 12:45</Td>
+                <Td>admin@empresa.com</Td>
+                <Td>Ventas</Td>
+                <Td>Producto: Vino ; Fechas: 01–31 Ago</Td>
+                <Td strong>
+                  <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-xs font-semibold text-emerald-300 ring-1 ring-emerald-500/30">
+                    PDF
+                  </span>
+                </Td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  );
 }
 
-const th: React.CSSProperties = { padding: "10px 12px", textAlign: "left", fontWeight: 600, fontSize: 14, color: "#333" };
-const tr: React.CSSProperties = { borderTop: "1px solid #EAEAEA" };
-const td: React.CSSProperties = { padding: "10px 12px", color: "#555", fontSize: 14 };
-const tdStrong: React.CSSProperties = { ...td, color: "#333", fontWeight: 600 };
-const inputLike: React.CSSProperties = { padding: 10, borderRadius: 8, border: "1px solid #E0E0E0", outline: "none", width: "100%" };
+const Th: React.FC<React.PropsWithChildren<{ className?: string }>> = ({
+  className = "",
+  children,
+}) => (
+  <th className={["px-3 py-2 font-semibold", className].join(" ")}>{children}</th>
+);
+
+const Td: React.FC<
+  React.PropsWithChildren<{ className?: string; strong?: boolean }>
+> = ({ className = "", strong = false, children }) => (
+  <td
+    className={[
+      "px-3 py-2",
+      strong ? "font-semibold text-white/90" : "text-white/80",
+      className,
+    ].join(" ")}
+  >
+    {children}
+  </td>
+);

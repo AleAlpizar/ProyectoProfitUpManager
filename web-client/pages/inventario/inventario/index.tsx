@@ -1,67 +1,87 @@
 import React from "react";
-import Link from "next/link";
-import SectionHeader from "@/components/SectionHeader";
+import FeatureCard from "../../../components/inventario/FeatureCard";
+import InventoryHeader from "../../../components/inventario/InventoryHeader";
 
-type CardProps = {
-  title: string;
-  desc: string;
-  href: string;
-  cta: string;
-};
-
-function FeatureCard({ title, desc, href, cta }: CardProps) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-5 shadow-sm transition hover:border-white/20 hover:bg-white/[0.07]">
-      <h3 className="text-lg font-semibold text-white">{title}</h3>
-      <p className="mt-1 text-sm text-gray-400">{desc}</p>
-
-      <Link href={href} legacyBehavior>
-        <a className="mt-4 inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-400/60">
-          {cta}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
-            <path d="M5 12h14M13 5l7 7-7 7" />
-          </svg>
-        </a>
-      </Link>
-    </div>
-  );
-}
 
 export default function InventarioHubPage() {
   return (
-    <div className="mx-auto max-w-6xl p-6">
-      <SectionHeader
-        title="Inventario"
-        subtitle="Gestión de productos y movimientos"
-      />
+    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6">
+      <InventoryHeader />
 
-      <div className="mt-6 grid gap-5 md:grid-cols-3">
+      <div className="mt-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
+        Accede rápidamente a los módulos de inventario.
+      </div>
+
+      <section
+        aria-label="Accesos de inventario"
+        className="mt-6 grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-3"
+        role="list"
+      >
         <FeatureCard
           title="Productos"
           desc="Alta y gestión de artículos."
           href="/inventario/productos"
           cta="Ir a Productos"
+          icon={
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-emerald-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d="M3 7h18M3 12h18M3 17h18" />
+            </svg>
+          }
         />
+
         <FeatureCard
           title="Bodegas"
           desc="Centros de almacenamiento."
           href="/inventario/bodegas"
           cta="Ver Bodegas"
+          icon={
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-emerald-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d="M3 9l9-6 9 6v9a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3z" />
+              <path d="M9 22V12h6v10" />
+            </svg>
+          }
         />
+
         <FeatureCard
           title="Existencias"
           desc="Stock por producto y bodega."
           href="/inventario/existencias"
           cta="Ver Existencias"
+          icon={
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-emerald-400"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+              focusable="false"
+            >
+              <path d="M3 3v18h18" />
+              <path d="M7 13l3 3 7-7" />
+            </svg>
+          }
         />
-      </div>
+      </section>
     </div>
   );
 }

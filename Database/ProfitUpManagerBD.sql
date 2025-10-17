@@ -1,3 +1,4 @@
++
 IF DB_ID(N'ProfitUpManagerBD') IS NULL
 BEGIN
     CREATE DATABASE ProfitUpManagerBD;
@@ -86,7 +87,51 @@ CREATE TABLE dbo.PasswordReset (
     CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
     CONSTRAINT FK_PasswordReset_Usuario FOREIGN KEY (UsuarioID) REFERENCES dbo.Usuario(UsuarioID)
 );
+
+----------------------------------------------------------------------------NUEVO
 GO
+BEGIN TRY
+    BEGIN TRAN;
+
+
+    DECLARE @fkname SYSNAME;
+    SELECT @fkname = fk.name
+    FROM sys.foreign_keys fk
+    WHERE fk.parent_object_id = OBJECT_ID('dbo.PasswordReset');
+
+    IF @fkname IS NOT NULL
+    BEGIN
+        DECLARE @sql NVARCHAR(400);
+        SET @sql = N'ALTER TABLE dbo.PasswordReset DROP CONSTRAINT [' + @fkname + N']';
+        EXEC sp_executesql @sql;
+    END
+
+
+    IF OBJECT_ID('dbo.PasswordReset','U') IS NOT NULL
+        DROP TABLE dbo.PasswordReset;
+
+    CREATE TABLE dbo.PasswordReset (
+        PasswordResetID UNIQUEIDENTIFIER NOT NULL PRIMARY KEY DEFAULT NEWID(),
+        UsuarioID INT NOT NULL,
+        TokenHash NVARCHAR(88) NOT NULL, 
+        ExpireAt DATETIME2 NOT NULL,
+        Used BIT NOT NULL DEFAULT (0),
+        CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT FK_PasswordReset_Usuario 
+            FOREIGN KEY (UsuarioID) REFERENCES dbo.Usuario(UsuarioID)
+    );
+
+
+    CREATE UNIQUE INDEX UX_PasswordReset_TokenHash
+        ON dbo.PasswordReset(TokenHash);
+
+    COMMIT TRAN;
+END TRY
+BEGIN CATCH
+    IF @@TRANCOUNT > 0 ROLLBACK TRAN;
+    THROW;
+END CATCH;
+----------------------------------------------------------------------------NUEVO
 
 --Clientes
 CREATE TABLE dbo.Cliente (
@@ -983,5 +1028,50 @@ END
 GO
 
 
+
+
+----------------------------------------------------------------NUEVO
+-- Crea la tabla si no existe (con las columnas correctas)
+IF OBJECT_ID('dbo.PasswordReset','U') IS NULL
+BEGIN
+    CREATE TABLE dbo.PasswordReset
+    (
+        PasswordResetID UNIQUEIDENTIFIER PRIMARY KEY DEFAULT NEWID(),
+        UsuarioID INT NOT NULL,
+        Token NVARCHAR(512) NOT NULL,
+        ExpireAt DATETIME2 NOT NULL,
+        Used BIT NOT NULL DEFAULT 0,
+        CreatedAt DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME(),
+        CONSTRAINT FK_PasswordReset_Usuario FOREIGN KEY (UsuarioID) REFERENCES dbo.Usuario(UsuarioID)
+    );
+END
+ELSE
+BEGIN
+    -- Agrega Token si falta
+    IF COL_LENGTH('dbo.PasswordReset', 'Token') IS NULL
+        ALTER TABLE dbo.PasswordReset ADD Token NVARCHAR(512) NULL; -- lo dejamos NULL para no fallar con filas viejas
+
+    -- Agrega ExpireAt si falta
+    IF COL_LENGTH('dbo.PasswordReset', 'ExpireAt') IS NULL
+        ALTER TABLE dbo.PasswordReset ADD ExpireAt DATETIME2 NULL;
+
+    -- Agrega Used si falta
+    IF COL_LENGTH('dbo.PasswordReset', 'Used') IS NULL
+        ALTER TABLE dbo.PasswordReset ADD Used BIT NULL;
+
+    -- Agrega CreatedAt si falta
+    IF COL_LENGTH('dbo.PasswordReset', 'CreatedAt') IS NULL
+        ALTER TABLE dbo.PasswordReset ADD CreatedAt DATETIME2 NULL;
+
+    -- Normaliza defaults si quieres (opcional y seguro si ya existen filas)
+    IF COL_LENGTH('dbo.PasswordReset', 'Used') IS NOT NULL
+        ALTER TABLE dbo.PasswordReset ADD  CONSTRAINT DF_PasswordReset_Used DEFAULT(0) FOR Used;
+
+    IF COL_LENGTH('dbo.PasswordReset', 'CreatedAt') IS NOT NULL
+        ALTER TABLE dbo.PasswordReset ADD  CONSTRAINT DF_PasswordReset_CreatedAt DEFAULT(SYSUTCDATETIME()) FOR CreatedAt;
+END;
+SELECT DB_NAME() db, SCHEMA_NAME(schema_id) schema_name, name
+FROM sys.objects
+WHERE name = 'PasswordReset';
 
 

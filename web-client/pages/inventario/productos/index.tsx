@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import SectionHeader from "@/components/SectionHeader";
+import SectionHeader from "../../../components/SectionHeader";
 
 export default function ProductosHomePage() {
   return (

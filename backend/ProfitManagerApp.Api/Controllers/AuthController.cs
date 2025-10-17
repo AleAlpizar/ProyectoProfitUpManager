@@ -3,6 +3,7 @@ using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using ProfitManagerApp.Api.Auth;
 using static AuthService;
 
 [ApiController]
@@ -55,9 +56,7 @@ public class AuthController : ControllerBase
 
         var (token, expireAt) = _jwt.CreateToken(u.Value.userId, u.Value.correo, u.Value.rol);
         await _auth.CreateSessionAsync(
-            u.Value.userId,
-            token,
-            expireAt,
+            u.Value.userId, token, expireAt,
             Request.Headers["User-Agent"].ToString(),
             HttpContext.Connection.RemoteIpAddress?.ToString()
         );
@@ -100,6 +99,40 @@ public class AuthController : ControllerBase
         await _auth.UpdateUserRoleAsync(usuarioId, rol, by);
         return Ok(new { usuarioId, rol });
     }
+
+    public record ChangePasswordDto(string CurrentPassword, string NewPassword);
+
+    [HttpPost("password/change")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(dto.CurrentPassword) || string.IsNullOrWhiteSpace(dto.NewPassword))
+            return BadRequest(new { message = "Contraseña actual y nueva son obligatorias." });
+
+        if (dto.NewPassword.Length < 8 || !dto.NewPassword.Any(char.IsUpper) || !dto.NewPassword.Any(char.IsLower) || !dto.NewPassword.Any(char.IsDigit))
+            return BadRequest(new { message = "La nueva contraseña debe tener al menos 8 caracteres, mayúsculas, minúsculas y números." });
+
+        var userId = GetUserId();
+        if (userId is null) return Unauthorized();
+
+        var bearer = Request.Headers["Authorization"].ToString();
+        var currentToken = bearer?.Split(' ').LastOrDefault();
+
+        var ok = await _auth.ChangePasswordAsync(userId.Value, dto.CurrentPassword, dto.NewPassword, currentToken);
+        if (!ok) return Unauthorized(new { message = "La contraseña actual no es válida." });
+
+        return Ok(new { message = "Contraseña actualizada correctamente." });
+    }
+    public record ForgotPasswordDto(string Correo);
+
+    [HttpPost("password/forgot")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto, [FromServices] PasswordResetService svc)
+    {
+        await svc.SendTemporaryPasswordAsync(dto.Correo);
+        return Ok(new { message = "Si el correo existe, se enviará una contraseña temporal." });
+    }
+
 
     [HttpGet("users")]
     [Authorize(Roles = "Administrador")]

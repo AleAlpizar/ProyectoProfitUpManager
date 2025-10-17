@@ -1,24 +1,36 @@
-"use client";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
+import { useApi } from "./useApi";
 
-export type UnidadDto = { unidadID: number; codigo: string; nombre: string; activo: boolean; };
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
+export type UnidadDto = {
+  unidadID: number;
+  codigo: string | null;
+  nombre: string | null;
+  activo: boolean | number;
+};
 
 export function useUnidades() {
+  const { get } = useApi();
   const [data, setData] = useState<UnidadDto[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true); setError(null);
+  const load = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/inventario/unidades`, { cache: "no-store" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
-      setData(await res.json());
-    } catch (e: any) { setError(e?.message ?? "Error al cargar unidades"); }
-    finally { setLoading(false); }
-  }, []);
+      const res = await get<UnidadDto[]>("/api/unidades");
+      setData(res ?? []);
+    } catch (e: any) {
+      setError(e?.message || "Error al cargar unidades");
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, []);
+
   return { data, loading, error, reload: load };
 }
+
+export default useUnidades;

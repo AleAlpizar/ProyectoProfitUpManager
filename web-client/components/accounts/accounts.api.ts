@@ -1,4 +1,4 @@
-import { apiJson } from "@/helpers/apiClient";
+import { apiJson } from "../../helpers/apiClient"
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL!;
 

@@ -32,20 +32,16 @@ namespace ProfitManagerApp.Api.Controllers
             {
                 var productoId = await _inventarioRepository.CrearProductoAsync(dto, userId);
 
-                var tieneBodega = dto.BodegaID.HasValue;
-                var stockIni = dto.StockInicial.GetValueOrDefault(0m);
-
-                if (tieneBodega && stockIni > 0m)
+                if (dto.BodegaID.HasValue && dto.StockInicial.GetValueOrDefault(0) > 0)
                 {
                     var ajuste = new AjusteInventarioDto
                     {
                         ProductoID = productoId,
-                        BodegaID = dto.BodegaID!.Value,
+                        BodegaID = dto.BodegaID.Value,
                         TipoMovimiento = "Entrada",
-                        Cantidad = stockIni,
+                        Cantidad = dto.StockInicial.Value,
                         Motivo = "Stock inicial (alta de producto)"
                     };
-
                     await _inventarioRepository.AjusteAsync(ajuste, userId);
                 }
 
@@ -79,6 +75,10 @@ namespace ProfitManagerApp.Api.Controllers
             if (string.IsNullOrWhiteSpace(dto.Nombre))
                 return Problem(title: "FIELD_REQUIRED:Nombre", statusCode: 400);
 
+            int? userId = null;
+            var idClaim = User?.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (int.TryParse(idClaim, out var idVal)) userId = idVal;
+
             try
             {
                 await _inventarioRepository.UpdateProductoAsync(id, dto);
@@ -92,6 +92,7 @@ namespace ProfitManagerApp.Api.Controllers
                 return Problem(ex.Message);
             }
         }
+
         [HttpPost("{id:int}/inactivar")]
         public async Task<IActionResult> Inactivar([FromRoute] int id)
         {
@@ -112,12 +113,13 @@ namespace ProfitManagerApp.Api.Controllers
                 return Problem(title: "ERROR_INACTIVAR_PRODUCTO", detail: ex.Message, statusCode: 500);
             }
         }
+
         [HttpGet("mini")]
         public async Task<IActionResult> Mini()
         {
             var items = await _inventarioRepository.GetProductosMiniAsync();
             return Ok(items);
         }
-
     }
 }
+

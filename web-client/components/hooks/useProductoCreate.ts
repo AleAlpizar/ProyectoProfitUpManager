@@ -1,5 +1,3 @@
-"use client";
-
 import { useCallback, useMemo, useState } from "react";
 
 export type ProductoCreate = {
@@ -11,6 +9,7 @@ export type ProductoCreate = {
   bodegaID?: number | null;               
   precioCosto: number | null;
   precioVenta: number | null;
+  descuento?: number | null;            // <-- NUEVO
   peso?: number | null;
   largo?: number | null;
   alto?: number | null;
@@ -30,8 +29,8 @@ function parseServerError(raw: string): string {
     return "La 'Unidad de almacenamiento' es obligatoria.";
   if (msg.includes("UNIDAD_NOT_FOUND"))
     return "La unidad seleccionada no existe. Actualiza la lista y vuelve a intentar.";
-  if (msg.includes("BODEGA_NOT_FOUND"))                      
-    return "La bodega seleccionada no existe.";              
+  if (msg.includes("BODEGA_NOT_FOUND"))
+    return "La bodega seleccionada no existe.";
   return raw || "No se pudo registrar el producto.";
 }
 
@@ -42,9 +41,10 @@ export function useProductoCreate() {
     descripcion: "",
     codigoInterno: "",
     unidadAlmacenamientoID: null,
-    bodegaID: null,                                          
+    bodegaID: null,
     precioCosto: null,
     precioVenta: null,
+    descuento: null,          // <-- inicializamos
     peso: null,
     largo: null,
     alto: null,
@@ -83,6 +83,13 @@ export function useProductoCreate() {
     if (values.precioVenta != null && Number(values.precioVenta) < 0)
       e.precioVenta = "No puede ser negativo";
 
+    // VALIDACIÓN DE DESCUENTO
+    if (values.descuento != null) {
+      if (isNaN(values.descuento)) e.descuento = "Debe ser un número";
+      else if (values.descuento < 0 || values.descuento > 100)
+        e.descuento = "Debe estar entre 0 y 100";
+    }
+
     setErrors(e);
     return Object.keys(e).length === 0;
   }, [values]);
@@ -96,9 +103,10 @@ export function useProductoCreate() {
       descripcion: "",
       codigoInterno: "",
       unidadAlmacenamientoID: null,
-      bodegaID: null,                                        
+      bodegaID: null,
       precioCosto: null,
       precioVenta: null,
+      descuento: null,
       peso: null,
       largo: null,
       alto: null,
@@ -112,15 +120,12 @@ export function useProductoCreate() {
     setServerError(null);
     setSuccessId(null);
 
-    if (!validate()) {
-      return { ok: false, reason: "validation" as const };
-    }
+    if (!validate()) return { ok: false, reason: "validation" as const };
 
     try {
       setLoading(true);
 
-      const token =
-        typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
       const res = await fetch(`${API_BASE}/api/productos`, {
         method: "POST",
@@ -134,9 +139,10 @@ export function useProductoCreate() {
           descripcion: values.descripcion?.trim() || null,
           codigoInterno: values.codigoInterno?.trim() || null,
           unidadAlmacenamientoID: values.unidadAlmacenamientoID ?? null,
-          bodegaID: values.bodegaID ?? null,                 // <--
+          bodegaID: values.bodegaID ?? null,
           precioCosto: Number(values.precioCosto),
           precioVenta: Number(values.precioVenta),
+          descuento: values.descuento != null ? Number(values.descuento) : null, // <-- descuento
           peso: values.peso != null ? Number(values.peso) : null,
           largo: values.largo != null ? Number(values.largo) : null,
           alto: values.alto != null ? Number(values.alto) : null,

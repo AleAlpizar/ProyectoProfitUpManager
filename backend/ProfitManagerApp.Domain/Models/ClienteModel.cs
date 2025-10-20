@@ -22,5 +22,7 @@ namespace ProfitManagerApp.Domain.Models
     public int? CreatedBy { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public int? UpdatedBy { get; set; }
+    public decimal DescuentoPorcentaje { get; set; }
+    public string ? DescuentoDescripcion { get; set; }
   }
 }

@@ -14,6 +14,6 @@ public interface IClienteRepository
         int id,
         string nombre, string? codigoCliente, string? tipoPersona,
         string? identificacion, string? correo, string? telefono, string? direccion,
-        bool isActive, int? updatedBy, DateTime whenUtc, CancellationToken ct);
+        bool isActive, decimal descuentoPorcentaje, string? descuentoDescripcion, int? updatedBy, DateTime whenUtc, CancellationToken ct);
 
 }

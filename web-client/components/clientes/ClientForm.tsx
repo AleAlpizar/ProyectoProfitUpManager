@@ -4,6 +4,8 @@ import Field from "../Inputs/fields";
 import { Cliente, Estado, TipoDePersona } from "./types";
 import LabeledInput from "../Inputs/LabeledInput";
 
+const clamp = (n: number, min = 0, max = 100) => Math.min(max, Math.max(min, n));
+
 const ClienteForm = ({
   initial,
   onCancel,
@@ -22,6 +24,8 @@ const ClienteForm = ({
   const [email, setEmail] = useState(initial?.correo ?? "");
   const [estado, setEstado] = useState<Estado>(initial?.isActive ? "Activo" : "Inactivo");
   const [error, setError] = useState<string | null>(null);
+  const [descuentoPorcentaje, setDescuentoPorcentaje] = useState<number>(initial?.descuentoPorcentaje ?? 0);
+  const [descuentoDescripcion, setDescuentoDescripcion] = useState<string>(initial?.descuentoDescripcion ?? "");
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +42,15 @@ const ClienteForm = ({
       tipoPersona,
       identificacion,
       telefono,
+      descuentoPorcentaje,
+      descuentoDescripcion
     });
+  };
+
+  const setDescuentoPorcentajeSafe = (raw: number | string) => {
+    const n = typeof raw === "string" ? parseFloat(raw) : raw;
+    if (Number.isNaN(n)) return setDescuentoPorcentaje(0);
+    setDescuentoPorcentaje(clamp(n));
   };
 
   return (
@@ -149,6 +161,49 @@ const ClienteForm = ({
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDireccion(e.target.value)}
           className="rounded-2xl border border-white/10 bg-[#1C2224] focus:ring-2 focus:ring-[#A30862]/40 sm:col-span-3"
         />
+
+        <div className="space-y-2 sm:col-span-2">
+          <label className="text-xs text-[#8B9AA0]">Porcentaje (%)</label>
+          <div className="flex items-center gap-3">
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={descuentoPorcentaje}
+              onChange={(e) => setDescuentoPorcentajeSafe(e.target.value)}
+              className="w-full accent-[#A30862]"
+            />
+            <input
+              type="number"
+              min={0}
+              max={100}
+              step={1}
+              value={Number.isNaN(descuentoPorcentaje) ? 0 : descuentoPorcentaje}
+              onChange={(e) => setDescuentoPorcentaje(parseFloat(e.target.value))}
+              onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()} // evita scroll accidental
+              className="w-20 rounded-2xl border border-white/10 bg-[#1C2224] px-2 py-2 text-sm outline-none
+                         focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
+            />
+          </div>
+
+          {/* Preview */}
+          <div className="mt-1 flex items-center justify-between text-xs text-[#8B9AA0]">
+            <span>Actual: <b className="text-white">{initial?.descuentoPorcentaje}%</b></span>
+            <span>Nuevo: <b className="text-white">{Math.round(descuentoPorcentaje)}%</b></span>
+          </div>
+        </div>
+
+        {/* Notas */}
+        <Field label="Notas (opcional)">
+          <input
+            placeholder="Escribe aquí tus notas…"
+            value={descuentoDescripcion}
+            onChange={(e) => setDescuentoDescripcion(e.target.value)}
+            className="w-full rounded-2xl border border-white/10 bg-[#1C2224] px-3 py-2 text-sm outline-none
+                       placeholder:text-[#8B9AA0] focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
+          />
+        </Field>
       </div>
 
       <div className="mx-6 mt-4 mb-6 flex items-center justify-end gap-2">

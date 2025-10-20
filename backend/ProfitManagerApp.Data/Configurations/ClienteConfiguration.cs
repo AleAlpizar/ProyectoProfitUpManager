@@ -33,5 +33,12 @@ public class ClienteRowConfiguration : IEntityTypeConfiguration<ClienteRow>
         .HasColumnType("datetime2")
         .ValueGeneratedOnAdd()
         .HasDefaultValueSql("sysutcdatetime()");
+
+    b.Property(x => x.DescuentoPorcentaje)
+       .HasPrecision(5, 2)
+       .HasDefaultValue(0);
+
+    b.Property(x => x.DescuentoDescripcion)
+      .HasDefaultValue("");
   }
 }

@@ -45,7 +45,7 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
         model.ClienteID, model.CodigoCliente, model.Nombre, model.TipoPersona,
         model.Identificacion, model.Correo, model.Telefono, model.Direccion,
         model.FechaRegistro, model.IsActive, model.CreatedAt,
-        model.CreatedBy, model.UpdatedAt, model.UpdatedBy
+        model.CreatedBy, model.UpdatedAt, model.UpdatedBy, model.DescuentoPorcentaje, model.DescuentoDescripcion
     );
 
     return CreatedAtAction(nameof(GetById), new { id = model.ClienteID }, read);
@@ -62,7 +62,7 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
         model.ClienteID, model.CodigoCliente, model.Nombre, model.TipoPersona,
         model.Identificacion, model.Correo, model.Telefono, model.Direccion,
         model.FechaRegistro, model.IsActive, model.CreatedAt,
-        model.CreatedBy, model.UpdatedAt, model.UpdatedBy
+        model.CreatedBy, model.UpdatedAt, model.UpdatedBy, model.DescuentoPorcentaje, model.DescuentoDescripcion
     );
 
     return Ok(read);
@@ -105,7 +105,7 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
       var model = await handlers.ActualizarAsync(
           id,
           dto.Nombre, dto.CodigoCliente, dto.TipoPersona, dto.Identificacion,
-          dto.Correo, dto.Telefono, dto.Direccion, dto.IsActive,
+          dto.Correo, dto.Telefono, dto.Direccion, dto.IsActive, dto.DescuentoPorcentaje ?? 0, dto.DescuentoDescripcion ?? "",
           User, ct);
 
       if (model is null) return NotFound();
@@ -114,7 +114,8 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
           model.ClienteID, model.CodigoCliente, model.Nombre, model.TipoPersona,
           model.Identificacion, model.Correo, model.Telefono, model.Direccion,
           model.FechaRegistro, model.IsActive, model.CreatedAt,
-          model.CreatedBy, model.UpdatedAt, model.UpdatedBy
+          model.CreatedBy, model.UpdatedAt, model.UpdatedBy,
+          model.DescuentoPorcentaje, model.DescuentoDescripcion
       );
 
       return Ok(read); 

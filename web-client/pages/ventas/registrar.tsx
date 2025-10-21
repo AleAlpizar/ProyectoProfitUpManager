@@ -1,9 +1,32 @@
-﻿import React, { useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import SectionHeader from "../../components/SectionHeader";
 import ConfirmDialog from "../../components/ConfirmDialog";
+import { useApi } from "@/components/hooks/useApi";
+import { Cliente } from "@/components/clientes/types";
+import { ProductoMini } from "@/components/hooks/useProductosMini";
 
 export default function RegistrarVentaPage() {
+  const { call } = useApi();
+
   const [showCancel, setShowCancel] = useState(false);
+  const [clients, setClients] = useState<Cliente[]>([]);
+  const [products, setProducts] = useState<ProductoMini[]>([]);
+  const [clientSelected, setClientSelected] = useState(null);
+
+  const fetchPageData = async () => {
+    const clientData = await call<Cliente[]>(`/api/clientes`, {
+      method: "GET",
+    });
+    const productsData = await call<ProductoMini[]>(`/api/productos/mini`, {
+      method: "GET",
+    });
+    if (clientData) setClients(clientData);
+    if (productsData) setProducts(productsData);
+  };
+
+  useEffect(() => {
+    fetchPageData().catch(console.error);
+  }, []);
 
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-6">
@@ -17,9 +40,12 @@ export default function RegistrarVentaPage() {
           <div>
             <Label>Cliente</Label>
             <select className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20">
-              <option className="text-black">Cliente VIP #1001</option>
-              <option className="text-black">Cliente Regular #2033</option>
-              <option className="text-black">Cliente Frecuente #3044</option>
+              {clients &&
+                clients.map((client) => (
+                  <option key={client.codigoCliente} className="text-black">
+                    {client.nombre} - {client.codigoCliente}
+                  </option>
+                ))}
             </select>
           </div>
 
@@ -68,7 +94,9 @@ export default function RegistrarVentaPage() {
 
       <section className="rounded-2xl border border-white/10 bg-white/5">
         <div className="flex items-center justify-between px-4 py-3">
-          <h2 className="text-sm font-semibold text-white/90">Productos vendidos</h2>
+          <h2 className="text-sm font-semibold text-white/90">
+            Productos vendidos
+          </h2>
           <button
             type="button"
             className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
@@ -91,12 +119,18 @@ export default function RegistrarVentaPage() {
             </thead>
             <tbody className="divide-y divide-white/10">
               <tr className="hover:bg-white/5">
+              {/* Producto */}
                 <Td>
-                  <input
-                    placeholder="Producto A"
-                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
-                  />
+                  <select className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20">
+                    {clients &&
+                      products.map((product) => (
+                        <option key={product.sku} className="text-black">
+                          {product.nombre} - {product.sku}
+                        </option>
+                      ))}
+                  </select>
                 </Td>
+                {/* Cantidad */}
                 <Td>
                   <input
                     type="number"
@@ -104,13 +138,15 @@ export default function RegistrarVentaPage() {
                     className="w-24 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
                   />
                 </Td>
+                {/* Precio */}
                 <Td>
                   <input
                     type="number"
-                    defaultValue={250}
+                    defaultValue={products[0] ? products[0].precioVenta : 0}
                     className="w-32 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
                   />
                 </Td>
+                {/* Descuento */}
                 <Td>
                   <input
                     type="number"
@@ -118,6 +154,7 @@ export default function RegistrarVentaPage() {
                     className="w-28 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
                   />
                 </Td>
+                {/* Subtotal */}
                 <Td className="font-semibold text-white/90">$225.00</Td>
                 <Td className="text-right">
                   <button
@@ -174,29 +211,52 @@ export default function RegistrarVentaPage() {
   );
 }
 
-const Label: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ className = "", children }) => (
-  <label className={["mb-1 block text-xs font-medium text-white/70", className].join(" ")}>{children}</label>
-);
-
-const Th: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ className = "", children }) => (
-  <th className={["px-3 py-2 font-semibold", className].join(" ")}>{children}</th>
-);
-
-const Td: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ className = "", children }) => (
-  <td className={["px-3 py-2 text-white/80", className].join(" ")}>{children}</td>
-);
-
-const Badge: React.FC<React.PropsWithChildren<{ tone?: "success" | "warn" | "danger" }>> = ({
-  tone = "success",
+const Label: React.FC<React.PropsWithChildren<{ className?: string }>> = ({
+  className = "",
   children,
-}) => {
+}) => (
+  <label
+    className={["mb-1 block text-xs font-medium text-white/70", className].join(
+      " "
+    )}
+  >
+    {children}
+  </label>
+);
+
+const Th: React.FC<React.PropsWithChildren<{ className?: string }>> = ({
+  className = "",
+  children,
+}) => (
+  <th className={["px-3 py-2 font-semibold", className].join(" ")}>
+    {children}
+  </th>
+);
+
+const Td: React.FC<React.PropsWithChildren<{ className?: string }>> = ({
+  className = "",
+  children,
+}) => (
+  <td className={["px-3 py-2 text-white/80", className].join(" ")}>
+    {children}
+  </td>
+);
+
+const Badge: React.FC<
+  React.PropsWithChildren<{ tone?: "success" | "warn" | "danger" }>
+> = ({ tone = "success", children }) => {
   const map: Record<string, string> = {
     success: "bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-400/25",
-    warn:    "bg-yellow-400/15  text-yellow-300  ring-1 ring-yellow-400/25",
-    danger:  "bg-red-400/15     text-red-300     ring-1 ring-red-400/25",
+    warn: "bg-yellow-400/15  text-yellow-300  ring-1 ring-yellow-400/25",
+    danger: "bg-red-400/15     text-red-300     ring-1 ring-red-400/25",
   };
   return (
-    <span className={["inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold", map[tone]].join(" ")}>
+    <span
+      className={[
+        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
+        map[tone],
+      ].join(" ")}
+    >
       {children}
     </span>
   );

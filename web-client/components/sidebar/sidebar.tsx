@@ -81,8 +81,7 @@ const Sidebar: React.FC = () => {
               title="Operaciones"
               icon={<PaymentsIcon />}
               isActive={
-                router.pathname.startsWith("/compras") ||
-                router.pathname.startsWith("/ventas")
+                router.pathname.startsWith("/compras/ordenes")
               }
               href="/compras/ordenes"
               onClickItem={setCollapsed}

@@ -300,6 +300,7 @@ WHEN NOT MATCHED THEN
                         ProductoID = Convert.ToInt32(rd["ProductoID"]),
                         SKU = rd["SKU"] as string ?? string.Empty,
                         Nombre = rd["Nombre"] as string ?? string.Empty,
+                        PrecioVenta = (decimal?)(rd["PrecioVenta"])
                     });
                 }
                 return list;

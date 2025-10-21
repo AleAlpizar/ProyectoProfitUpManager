@@ -63,7 +63,6 @@ export default function ClientesPage() {
 
   // Handlers
   const onSaveCliente = async (payload: Cliente) => {
-    console.log("!!!!!",payload);
     await call<Cliente>(`/api/clientes${edit ? `/${payload.clienteID}` : ""}`, {
       method: edit ? "PUT" : "POST",
       body: JSON.stringify(payload),

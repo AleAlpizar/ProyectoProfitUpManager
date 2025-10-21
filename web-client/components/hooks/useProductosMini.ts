@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useApi } from "./useApi";
 
-export type ProductoMini = { productoID: number; sku?: string; nombre: string; descripcion?: string };
+export type ProductoMini = { productoID: number; sku?: string; nombre: string; descripcion?: string, precioVenta?: number };
 
 export function useProductosMini() {
   const { get } = useApi();

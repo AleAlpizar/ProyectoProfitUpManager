@@ -1,7 +1,7 @@
 import React from "react";
 
 type ButtonProps = React.PropsWithChildren<{
-  variant?: "primary" | "outline" | "outline-primary" | "danger" | "ghost";
+  variant?: "primary" | "outline" | "outline-primary" | "danger" | "ghost" | "solid-emerald";
   disabled?: boolean;
   type?: "button" | "submit" | "reset";
   onClick?: () => void;
@@ -34,6 +34,7 @@ const Button: React.FC<ButtonProps> = ({
     ghost:
       "bg-transparent text-[#111827] hover:bg-black/5 focus-visible:ring-black/10 " +
       "dark:text-[#E6E9EA] dark:hover:bg-white/5 dark:focus-visible:ring-white/20",
+    "solid-emerald": "inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700",
   };
 
   return (

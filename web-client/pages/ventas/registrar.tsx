@@ -4,6 +4,16 @@ import ConfirmDialog from "../../components/ConfirmDialog";
 import { useApi } from "@/components/hooks/useApi";
 import { Cliente } from "@/components/clientes/types";
 import { ProductoMini } from "@/components/hooks/useProductosMini";
+import { getFormattedDate } from "@/helpers/dateHelper";
+import Button from "@/components/buttons/button";
+import { formatMoney } from "@/helpers/ui-helpers";
+interface Line {
+  lineId: string;
+  producto?: ProductoMini;
+  cantidad?: number;
+  descuento?: number;
+  subtotal?: number;
+}
 
 export default function RegistrarVentaPage() {
   const { call } = useApi();
@@ -11,7 +21,8 @@ export default function RegistrarVentaPage() {
   const [showCancel, setShowCancel] = useState(false);
   const [clients, setClients] = useState<Cliente[]>([]);
   const [products, setProducts] = useState<ProductoMini[]>([]);
-  const [clientSelected, setClientSelected] = useState(null);
+  const [lines, setLines] = useState<Line[]>([]);
+  const [clientSelected, setClientSelected] = useState<Cliente>();
 
   const fetchPageData = async () => {
     const clientData = await call<Cliente[]>(`/api/clientes`, {
@@ -28,6 +39,44 @@ export default function RegistrarVentaPage() {
     fetchPageData().catch(console.error);
   }, []);
 
+  const patchLine = (lineId: string, patch: Partial<Line>) => {
+    setLines((prev) =>
+      prev.map((l) => (l.lineId === lineId ? { ...l, ...patch } : l))
+    );
+  };
+
+  const handleProductChange = (lineId: string) => {
+    return (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const sku = e.target.value;
+      const product = products.find((p) => p.sku === sku);
+      if (!product) return;
+
+      patchLine(lineId, {
+        producto: product,
+        cantidad: 1,
+        descuento: 0,
+        subtotal: product.precioVenta,
+      });
+    };
+  };
+
+  const handleCantidadChange = (line: Line, newQty: number) => {
+    const precioBatch = newQty * (line.producto?.precioVenta ?? 0);
+    patchLine(line.lineId, {
+      cantidad: newQty,
+      subtotal: precioBatch - (precioBatch / 100) * (line.descuento ?? 0),
+    });
+  };
+
+  const handleDescuentoChange = (line: Line, newDiscount: number) => {
+    const precioBatch =
+      (line.cantidad ?? 0) * (line.producto?.precioVenta ?? 0);
+    patchLine(line.lineId, {
+      descuento: newDiscount,
+      subtotal: precioBatch - (precioBatch / 100) * (newDiscount ?? 0),
+    });
+  };
+
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-6">
       <SectionHeader
@@ -35,11 +84,17 @@ export default function RegistrarVentaPage() {
         subtitle="Formulario visual: cliente, productos, descuentos e inventario"
       />
 
-      <section className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+      <section
+        about="bill-info"
+        className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-4"
+      >
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
           <div>
             <Label>Cliente</Label>
-            <select className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20">
+            <select
+              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+              onChange={(e) => setClientSelected(e.target.value as any)}
+            >
               {clients &&
                 clients.map((client) => (
                   <option key={client.codigoCliente} className="text-black">
@@ -48,10 +103,10 @@ export default function RegistrarVentaPage() {
                 ))}
             </select>
           </div>
-
           <div>
             <Label>Fecha</Label>
             <input
+              value={getFormattedDate(new Date())}
               type="date"
               className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
             />
@@ -66,18 +121,18 @@ export default function RegistrarVentaPage() {
           </div>
 
           <div className="flex items-end justify-end">
-            <button
+            <Button
               type="button"
               onClick={() => setShowCancel(true)}
-              className="inline-flex items-center justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              variant="danger"
             >
               Anular venta
-            </button>
+            </Button>
           </div>
         </div>
       </section>
 
-      <section className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
+      {/* <section className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
           <div className="mb-1 text-xs text-white/60">Vínculo a cliente</div>
           <Badge tone="success">Venta vinculada a cliente — (Lucia)</Badge>
@@ -90,19 +145,22 @@ export default function RegistrarVentaPage() {
           <div className="mb-1 text-xs text-white/60">Reducción de stock</div>
           <Badge tone="success">Reducción automática</Badge>
         </div>
-      </section>
+      </section> */}
 
       <section className="rounded-2xl border border-white/10 bg-white/5">
         <div className="flex items-center justify-between px-4 py-3">
           <h2 className="text-sm font-semibold text-white/90">
             Productos vendidos
           </h2>
-          <button
+          <Button
             type="button"
-            className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-3 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+            variant="solid-emerald"
+            onClick={() =>
+              setLines((prev) => [...prev, { lineId: crypto.randomUUID() }])
+            }
           >
             + Agregar producto
-          </button>
+          </Button>
         </div>
 
         <div className="overflow-x-auto border-t border-white/10">
@@ -117,86 +175,126 @@ export default function RegistrarVentaPage() {
                 <Th className="text-right">—</Th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/10">
-              <tr className="hover:bg-white/5">
-              {/* Producto */}
-                <Td>
-                  <select className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20">
-                    {clients &&
-                      products.map((product) => (
-                        <option key={product.sku} className="text-black">
-                          {product.nombre} - {product.sku}
-                        </option>
-                      ))}
-                  </select>
-                </Td>
-                {/* Cantidad */}
-                <Td>
-                  <input
-                    type="number"
-                    defaultValue={1}
-                    className="w-24 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
-                  />
-                </Td>
-                {/* Precio */}
-                <Td>
-                  <input
-                    type="number"
-                    defaultValue={products[0] ? products[0].precioVenta : 0}
-                    className="w-32 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
-                  />
-                </Td>
-                {/* Descuento */}
-                <Td>
-                  <input
-                    type="number"
-                    defaultValue={10}
-                    className="w-28 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
-                  />
-                </Td>
-                {/* Subtotal */}
-                <Td className="font-semibold text-white/90">$225.00</Td>
-                <Td className="text-right">
-                  <button
-                    type="button"
-                    className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white hover:bg-white/10"
-                  >
-                    Quitar
-                  </button>
-                </Td>
-              </tr>
-            </tbody>
+            {lines && lines.length > 0 ? (
+              <tbody className="divide-y divide-white/10">
+                {lines.map((line) => (
+                  <>
+                    <tr className="hover:bg-white/5">
+                      {/* Producto */}
+                      <Td>
+                        <select
+                          className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+                          onChange={handleProductChange(line.lineId)}
+                        >
+                          {clients &&
+                            products.map((product) => (
+                              <option
+                                key={product.sku}
+                                value={product.sku || ""}
+                                className="text-black"
+                              >
+                                {product.nombre} - {product.sku}
+                              </option>
+                            ))}
+                        </select>
+                      </Td>
+                      {/* Cantidad */}
+                      <Td>
+                        <input
+                          type="number"
+                          defaultValue={1}
+                          onChange={(e) =>
+                            handleCantidadChange(line, Number(e.target.value))
+                          }
+                          className="w-24 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+                        />
+                      </Td>
+                      {/* Precio */}
+                      <Td>
+                        <span className="w-32 rounded-xl px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20">
+                          {" "}
+                          {formatMoney(line.producto?.precioVenta ?? 0)}{" "}
+                        </span>
+                      </Td>
+                      {/* Descuento */}
+                      <Td>
+                        <input
+                          type="number"
+                          defaultValue={line.descuento ?? 0}
+                          onChange={(e) =>
+                            handleDescuentoChange(line, Number(e.target.value))
+                          }
+                          className="w-28 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+                        />
+                      </Td>
+                      {/* Subtotal */}
+                      <Td className="font-semibold text-white/90">
+                        {formatMoney(line.subtotal ?? 0)}
+                      </Td>
+                      <Td className="text-right">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setLines((prev) =>
+                              prev.filter((l) => l.lineId !== line.lineId)
+                            )
+                          }
+                          className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white hover:bg-white/10"
+                        >
+                          Quitar
+                        </button>
+                      </Td>
+                    </tr>
+                  </>
+                ))}
+              </tbody>
+            ) : (
+              <tbody className="divide-y divide-white/10">
+                <tr aria-colspan={42}>
+                  <span className="text-left text-xs tracking-wide text-white/30 w-full m-4">
+                    Agrega una columna a para iniciar.
+                  </span>
+                </tr>
+              </tbody>
+            )}
           </table>
         </div>
 
-        <div className="flex flex-col items-end gap-6 px-4 py-4 sm:flex-row sm:justify-end">
-          <div className="text-right">
-            <div className="text-xs text-white/60">Subtotal</div>
-            <div className="font-semibold text-white/90">$225.00</div>
+        {lines && lines.length > 0 && (
+          <div className="flex flex-col items-end gap-6 px-4 py-4 sm:flex-row sm:justify-end">
+            <div className="text-right">
+              <div className="text-xs text-white/60">Subtotal</div>
+              <div className="font-semibold text-white/90">
+                {formatMoney(
+                  lines.map((l) => l.subtotal ?? 0).reduce((x, y) => x + y)
+                )}
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-white/60">Impuestos</div>
+              <div className="font-semibold text-white/90">{formatMoney(lines.map((l) => l.subtotal ?? 0).reduce((x, y) => x + y) * 0.13)}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-xs text-white/60">Total</div>
+              <div className="text-lg font-bold text-white">{formatMoney(lines.map((l) => l.subtotal ?? 0).reduce((x, y) => x + y) * 1.13)}</div>
+            </div>
           </div>
-          <div className="text-right">
-            <div className="text-xs text-white/60">Impuestos</div>
-            <div className="font-semibold text-white/90">$29.25</div>
-          </div>
-          <div className="text-right">
-            <div className="text-xs text-white/60">Total</div>
-            <div className="text-lg font-bold text-white">$254.25</div>
-          </div>
-        </div>
+        )}
 
         <div className="flex items-center justify-end gap-2 border-t border-white/10 px-4 py-3">
-          <button
+          {/* <button
             type="button"
             className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
           >
             Guardar borrador
-          </button>
-          <button
+          </button> */}
+          <Button
             type="button"
-            className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700"
+            variant="solid-emerald"
+            disabled={!lines || lines.length === 0}
           >
             Registrar venta
-          </button>
+          </Button>
         </div>
       </section>
 

@@ -10,5 +10,6 @@ export type Cliente = {
   telefono: string;
   direccion: string;
   isActive: boolean;
-
+  descuentoPorcentaje: number;
+  descuentoDescripcion: string;
 };

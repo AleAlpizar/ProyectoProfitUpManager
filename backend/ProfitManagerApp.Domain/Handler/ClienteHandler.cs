@@ -23,7 +23,9 @@ public class ClienteHandler(IClienteRepository repo)
     CreatedAt = r.CreatedAt,
     CreatedBy = r.CreatedBy,
     UpdatedAt = r.UpdatedAt,
-    UpdatedBy = r.UpdatedBy
+    UpdatedBy = r.UpdatedBy,
+    DescuentoDescripcion = r.DescuentoDescripcion,
+    DescuentoPorcentaje = r.DescuentoPorcentaje
   };
 
   private static ClienteRow ToRowForCreate(
@@ -96,7 +98,7 @@ public class ClienteHandler(IClienteRepository repo)
         int id,
         string nombre, string? codigoCliente, string? tipoPersona,
         string? identificacion, string? correo, string? telefono, string? direccion,
-        bool isActive, ClaimsPrincipal? user, CancellationToken ct)
+        bool isActive, decimal descuentoPorcentaje, string descuentoDescripcion, ClaimsPrincipal? user, CancellationToken ct)
   {
 
     // ver que el codigo nos se repita
@@ -121,7 +123,7 @@ public class ClienteHandler(IClienteRepository repo)
     var whenUtc = DateTime.UtcNow;
 
     var ok = await repo.UpdateAsync(id, nombre, codigoCliente, tipoPersona,
-        identificacion, correo, telefono, direccion, isActive, updatedBy, whenUtc, ct);
+        identificacion, correo, telefono, direccion, isActive, descuentoPorcentaje, descuentoDescripcion, updatedBy, whenUtc, ct);
     if (!ok) return null;
 
     var row = await repo.GetByIdAsync(id, ct);

@@ -10,7 +10,9 @@ public record ClienteCreateDto(
     [EmailAddress, MaxLength(200)] string? Correo,
     [MaxLength(50)]  string? Telefono,
     [MaxLength(300)] string? Direccion,
-    bool? IsActive
+    bool? IsActive,
+    [Range(0, 100)] decimal? DescuentoPorcentaje,
+    string? DescuentoDescripcion
 );
 
 public record ClienteReadDto(
@@ -27,7 +29,9 @@ public record ClienteReadDto(
     DateTime CreatedAt,
     int? CreatedBy,
     DateTime? UpdatedAt,
-    int? UpdatedBy
+    int? UpdatedBy,
+    decimal DescuentoPorcentaje,
+    string? DescuentoDescripcion
 );
 
 public record class ClienteUpdateDto
@@ -40,6 +44,8 @@ public record class ClienteUpdateDto
   [MaxLength(50)] public string? Telefono { get; init; }
   [MaxLength(300)] public string? Direccion { get; init; }
   [Required] public bool IsActive { get; init; }
+  [Range(0, 100)] public decimal? DescuentoPorcentaje { get; init; }
+  public string? DescuentoDescripcion { get; init; }
 }
 
 public record class ClientePatchActivoDto

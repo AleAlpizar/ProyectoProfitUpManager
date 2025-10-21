@@ -4,7 +4,6 @@ import React, { useEffect } from "react";
 import Button from "../buttons/button";
 import { Cliente, Estado } from "./types";
 import ClientForm from "./ClientForm";
-import DiscountForm from "./DiscountForm";
 import Modal from "../modals/Modal";
 import { useApi } from "../hooks/useApi";
 
@@ -20,8 +19,6 @@ export default function ClientesPage() {
   const [formOpen, setFormOpen] = React.useState(false);
   const [edit, setEdit] = React.useState<Cliente | null>(null);
 
-  const [discountOpen, setDiscountOpen] = React.useState(false);
-  const [discountTarget, setDiscountTarget] = React.useState<Cliente | null>(null);
   const [confirm, setConfirm] = React.useState<{ id: string; to: Estado } | null>(null);
 
   const fetchClientData = async () => {
@@ -34,9 +31,9 @@ export default function ClientesPage() {
 
   // Bloquear scroll al abrir modales
   useEffect(() => {
-    const any = formOpen || discountOpen || !!confirm;
+    const any = formOpen || !!confirm;
     document.body.classList.toggle("overflow-hidden", any);
-  }, [formOpen, discountOpen, confirm]);
+  }, [formOpen, confirm]);
 
   // Derivados
   const filtered = React.useMemo(() => {
@@ -66,6 +63,7 @@ export default function ClientesPage() {
 
   // Handlers
   const onSaveCliente = async (payload: Cliente) => {
+    console.log("!!!!!",payload);
     await call<Cliente>(`/api/clientes${edit ? `/${payload.clienteID}` : ""}`, {
       method: edit ? "PUT" : "POST",
       body: JSON.stringify(payload),
@@ -73,17 +71,6 @@ export default function ClientesPage() {
     setFormOpen(false);
     setEdit(null);
     await fetchClientData();
-  };
-
-  const onSaveDiscount = (value: number) => {
-    if (!discountTarget) return;
-    setRows((prev) =>
-      prev.map((c) =>
-        c.clienteID === discountTarget.clienteID ? { ...c, descuento: value } : c
-      )
-    );
-    setDiscountOpen(false);
-    setDiscountTarget(null);
   };
 
   const onConfirmEstado = async () => {
@@ -179,12 +166,6 @@ export default function ClientesPage() {
                 <Td className="text-right">
                   <div className="inline-flex items-center gap-2">
                     <Button
-                      variant="outline-primary"
-                      onClick={() => { setDiscountTarget(r); setDiscountOpen(true); }}
-                    >
-                      Descuentos
-                    </Button>
-                    <Button
                       variant="ghost"
                       onClick={() => { setEdit(r); setFormOpen(true); }}
                       className="!rounded-xl !border-white/20 !bg-white/5 hover:!bg-white/10"
@@ -225,16 +206,6 @@ export default function ClientesPage() {
             initial={edit ?? undefined}
             onCancel={() => { setFormOpen(false); setEdit(null); }}
             onSave={onSaveCliente}
-          />
-        </Modal>
-      )}
-
-      {discountOpen && discountTarget && (
-        <Modal onClose={() => { setDiscountOpen(false); setDiscountTarget(null); }}>
-          <DiscountForm
-            cliente={discountTarget}
-            onCancel={() => { setDiscountOpen(false); setDiscountTarget(null); }}
-            onSave={onSaveDiscount}
           />
         </Modal>
       )}

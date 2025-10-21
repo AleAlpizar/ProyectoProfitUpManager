@@ -41,7 +41,7 @@ public class ClienteRepository(AppDbContext db) : IClienteRepository
         int id,
         string nombre, string? codigoCliente, string? tipoPersona,
         string? identificacion, string? correo, string? telefono, string? direccion,
-        bool isActive, int? updatedBy, DateTime whenUtc, CancellationToken ct)
+        bool isActive, decimal descuentoPorcentaje, string? descuentoDescripcion, int? updatedBy, DateTime whenUtc, CancellationToken ct)
   {
     var affected = await db.Clientes
         .Where(x => x.ClienteID == id)
@@ -55,6 +55,8 @@ public class ClienteRepository(AppDbContext db) : IClienteRepository
             .SetProperty(x => x.Direccion, direccion)
             .SetProperty(x => x.IsActive, isActive)
             .SetProperty(x => x.UpdatedAt, whenUtc)
+            .SetProperty(x => x.DescuentoPorcentaje, descuentoPorcentaje)
+            .SetProperty(x => x.DescuentoDescripcion, descuentoDescripcion)
             .SetProperty(x => x.UpdatedBy, updatedBy), ct);
     return affected > 0;
   }

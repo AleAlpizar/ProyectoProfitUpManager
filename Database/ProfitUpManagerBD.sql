@@ -1074,4 +1074,90 @@ SELECT DB_NAME() db, SCHEMA_NAME(schema_id) schema_name, name
 FROM sys.objects
 WHERE name = 'PasswordReset';
 
+------------Nuevo Cesar------------
+
+----Modificacion de tabla (se agrego descuento)
+ALTER TABLE [dbo].[Producto]
+ADD [Descuento] DECIMAL(5,2) NULL;
+
+
+----Modificacion de procedimiento (se agrego descuento)
+ALTER PROCEDURE [dbo].[usp_Producto_Create]
+  @Nombre NVARCHAR(250),
+  @PrecioVenta DECIMAL(18,2),
+  @SKU NVARCHAR(100) = NULL,
+  @Descripcion NVARCHAR(MAX) = NULL,
+  @CodigoInterno NVARCHAR(100) = NULL,
+  @UnidadAlmacenamientoID INT = NULL,
+  @PrecioCosto DECIMAL(18,2) = NULL,
+  @Peso DECIMAL(18,4) = NULL,
+  @Largo DECIMAL(18,4) = NULL,
+  @Alto DECIMAL(18,4) = NULL,
+  @Ancho DECIMAL(18,4) = NULL,
+  @BodegaID INT = NULL,             
+  @CreatedBy INT = NULL,
+  @Descuento DECIMAL(5,2) = 0
+AS
+BEGIN
+  SET NOCOUNT ON;
+
+  IF (@Nombre IS NULL OR LTRIM(RTRIM(@Nombre))='')
+  BEGIN RAISERROR('FIELD_REQUIRED:Nombre',16,1); RETURN; END
+
+  IF (@PrecioVenta IS NULL)
+  BEGIN RAISERROR('FIELD_REQUIRED:PrecioVenta',16,1); RETURN; END
+
+  IF @SKU IS NOT NULL AND EXISTS(SELECT 1 FROM dbo.Producto WHERE SKU=@SKU)
+  BEGIN RAISERROR('SKU_DUPLICATE',16,1); RETURN; END
+
+  IF @BodegaID IS NOT NULL AND NOT EXISTS(SELECT 1 FROM dbo.Bodega WHERE BodegaID=@BodegaID AND IsActive=1)
+  BEGIN RAISERROR('BODEGA_INVALIDA',16,1); RETURN; END
+
+  BEGIN TRY
+    INSERT INTO dbo.Producto
+    (SKU,Nombre,Descripcion,CodigoInterno,Peso,Largo,Alto,Ancho,UnidadAlmacenamientoID,
+     PrecioCosto,PrecioVenta,CreatedBy,Descuento)
+    VALUES (@SKU,@Nombre,@Descripcion,@CodigoInterno,@Peso,@Largo,@Alto,@Ancho,@UnidadAlmacenamientoID,
+            @PrecioCosto,@PrecioVenta,@CreatedBy,@Descuento);
+
+    DECLARE @NewID INT = SCOPE_IDENTITY();
+
+    IF @BodegaID IS NOT NULL
+    BEGIN
+      MERGE dbo.Inventario AS tgt
+      USING (SELECT @NewID AS ProductoID, @BodegaID AS BodegaID) AS src
+         ON tgt.ProductoID = src.ProductoID AND tgt.BodegaID = src.BodegaID
+      WHEN NOT MATCHED THEN
+        INSERT (ProductoID, BodegaID, Cantidad, CantidadReservada)
+        VALUES (src.ProductoID, src.BodegaID, 0, 0);
+    END
+
+    SELECT @NewID AS ProductoID;
+  END TRY
+  BEGIN CATCH
+    DECLARE @Num INT = ERROR_NUMBER(), @Msg NVARCHAR(2048)=ERROR_MESSAGE();
+    IF @Num IN (2601,2627) RAISERROR('SKU_DUPLICATE',16,1);
+    ELSE RAISERROR(@Msg,16,1);
+  END CATCH
+END
+
+-----Modificacion de procedimiento (se agrego descuento)
+ALTER   PROCEDURE [dbo].[usp_Producto_MiniList]
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SELECT ProductoID, SKU, Nombre, Descripcion, Descuento
+  FROM dbo.Producto
+  WHERE IsActive = 1
+  ORDER BY Nombre;
+END
+
+
+
+
+
+
+
+
+
 

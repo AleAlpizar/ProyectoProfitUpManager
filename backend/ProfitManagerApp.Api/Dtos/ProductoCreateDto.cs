@@ -24,5 +24,8 @@ namespace ProfitManagerApp.Domain.Inventory.Dto
         [Range(0, double.MaxValue)]
         public decimal? StockInicial { get; set; } = 0m;
 
+        [Range(0, 100)]
+        public decimal? Descuento { get; set; }
+
     }
 }

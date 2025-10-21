@@ -44,7 +44,6 @@ export default function ProductoCreateForm() {
       }
     };
 
-  // === NUEVO: mostrar errores solo si no hay datos cargados ===
   const showUnidadesError =
     !!unidadesError && !loadingUnits && unidades.length === 0;
 
@@ -170,6 +169,16 @@ export default function ProductoCreateForm() {
           onChange={(e) => setField("precioVenta", numOrNull(e.target.value))}
           onBlur={formatMoneyOnBlur("precioVenta")}
           error={errors.precioVenta}
+          className="rounded-xl border border-white/10 bg-white/5 text-gray-100 focus:ring-2"
+        />
+
+        <LabeledInput
+          label="Descuento (%)"
+          type="number"
+          step="0.01"
+          placeholder="0"
+          value={values.descuento ?? ""}
+          onChange={(e) => setField("descuento", e.target.value === "" ? null : Number(e.target.value))}
           className="rounded-xl border border-white/10 bg-white/5 text-gray-100 focus:ring-2"
         />
 

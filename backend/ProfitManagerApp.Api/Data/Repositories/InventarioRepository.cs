@@ -3,7 +3,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Domain.Inventory.Dto;
-using ProfitManagerApp.Api.Dtos; 
+using ProfitManagerApp.Api.Dtos;
 
 namespace ProfitManagerApp.Data
 {
@@ -14,8 +14,7 @@ namespace ProfitManagerApp.Data
         public InventarioRepository(IConfiguration cfg)
         {
             _cs = cfg.GetConnectionString("Default")
-    ?? throw new InvalidOperationException("Connection string 'Default' no configurada.");
-
+                  ?? throw new InvalidOperationException("Connection string 'Default' no configurada.");
         }
 
         public async Task<int> CrearProductoAsync(ProductoCreateDto dto, int? userId)
@@ -39,6 +38,7 @@ namespace ProfitManagerApp.Data
             cmd.Parameters.AddWithValue("@Ancho", (object?)dto.Ancho ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@BodegaID", (object?)dto.BodegaID ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@CreatedBy", (object?)userId ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@Descuento", (object?)dto.Descuento ?? DBNull.Value);
 
             var result = await cmd.ExecuteScalarAsync();
             if (result is null || result == DBNull.Value)
@@ -86,7 +86,7 @@ namespace ProfitManagerApp.Data
                 Ancho = rd["Ancho"] as decimal?,
                 UnidadAlmacenamientoID = rd["UnidadAlmacenamientoID"] as int?,
                 PrecioCosto = rd["PrecioCosto"] as decimal?,
-                PrecioVenta = rd["PrecioVenta"] as decimal?
+                PrecioVenta = rd["PrecioVenta"] as decimal?,
             };
         }
 
@@ -99,6 +99,7 @@ namespace ProfitManagerApp.Data
 UPDATE dbo.Producto
    SET Nombre = @Nombre,
        Descripcion = @Descripcion,
+       Descuento = COALESCE(@Descuento, Descuento),
        UpdatedAt = SYSUTCDATETIME()
  WHERE ProductoID = @Id AND IsActive = 1;
 
@@ -109,10 +110,10 @@ IF @@ROWCOUNT = 0
             cmd.Parameters.AddWithValue("@Id", id);
             cmd.Parameters.AddWithValue("@Nombre", dto.Nombre);
             cmd.Parameters.AddWithValue("@Descripcion", (object?)dto.Descripcion ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@Descuento", (object?)dto.Descuento ?? DBNull.Value);
 
             await cmd.ExecuteNonQueryAsync();
         }
-
 
         public async Task<bool> ExisteProductoAsync(int productoId)
         {
@@ -263,6 +264,7 @@ WHERE ProductoID=@p AND (Cantidad - CantidadReservada) > 0";
                 throw;
             }
         }
+
         public async Task AsignarProductoBodegaAsync(int productoId, int bodegaId)
         {
             await using var cn = new SqlConnection(_cs);
@@ -301,17 +303,19 @@ WHEN NOT MATCHED THEN
                         SKU = rd["SKU"] as string ?? string.Empty,
                         Nombre = rd["Nombre"] as string ?? string.Empty,
                         PrecioVenta = (decimal?)(rd["PrecioVenta"])
+                        Descripcion = rd["Descripcion"] as string,
+                        Descuento = rd["Descuento"] as decimal?
                     });
                 }
                 return list;
             }
-            catch (SqlException ex) when (ex.Number == 2812) 
+            catch (SqlException ex) when (ex.Number == 2812)
             {
                 const string sql = @"
-          SELECT ProductoID, SKU, Nombre
-          FROM dbo.Producto
-          WHERE IsActive = 1
-          ORDER BY Nombre;";
+SELECT ProductoID, SKU, Nombre, Descripcion, Descuento
+FROM dbo.Producto
+WHERE IsActive = 1
+ORDER BY Nombre;";
                 await using var cmd2 = new SqlCommand(sql, cn);
                 await using var rd2 = await cmd2.ExecuteReaderAsync();
                 while (await rd2.ReadAsync())
@@ -321,6 +325,8 @@ WHEN NOT MATCHED THEN
                         ProductoID = Convert.ToInt32(rd2["ProductoID"]),
                         SKU = rd2["SKU"] as string ?? string.Empty,
                         Nombre = rd2["Nombre"] as string ?? string.Empty,
+                        Descripcion = rd2["Descripcion"] as string,
+                        Descuento = rd2["Descuento"] as decimal?
                     });
                 }
                 return list;

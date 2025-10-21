@@ -10,6 +10,7 @@
    },
    "dependencies": {
       "@nextui-org/react": "^1.0.0-beta.10",
+      "@swc/helpers": "^0.5.17",
       "apexcharts": "^3.35.5",
       "next": "^12.3.7",
       "next-themes": "^0.2.1",

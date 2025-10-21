@@ -5,6 +5,7 @@ import { useState, useCallback } from "react";
 export type ProductoUpdateInput = {
   nombre?: string | null;
   descripcion?: string | null;
+  descuento?: number | null; 
 };
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/$/, "");
@@ -38,6 +39,7 @@ export function useProductoUpdate() {
         body: JSON.stringify({
           nombre: (values.nombre ?? "").trim(),
           descripcion: values.descripcion ?? null,
+          descuento: values.descuento ?? null,
         }),
       });
 

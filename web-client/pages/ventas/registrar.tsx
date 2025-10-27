@@ -13,7 +13,7 @@ interface Line {
   cantidad?: number;
   descuento?: number;
   subtotal?: number;
-  Bodega?: { nombre: string; id: string };
+  Bodega?: { nombre: string; id: string; cantidad: number };
 }
 
 export default function RegistrarVentaPage() {
@@ -50,10 +50,11 @@ export default function RegistrarVentaPage() {
 
       productsData.forEach((p) => {
         p.bodegas =
-          disponibilidadData.find((stock) => p.productoID === stock.id) ?? [];
+          disponibilidadData.find((stock) => p.productoID === stock.id)?.bodegas ?? [];
       });
     }
-    if (productsData) setProducts(productsData.filter(p => p.bodegas?.length ?? 0 > 0));
+    if (productsData)
+      setProducts(productsData.filter((p) => p.bodegas?.length ?? 0 > 0));
   };
 
   useEffect(() => {
@@ -72,11 +73,22 @@ export default function RegistrarVentaPage() {
       const product = products.find((p) => p.sku === sku);
       if (!product) return;
 
+      const firstBodega =
+        product.bodegas && product.bodegas.length > 0
+          ? product.bodegas[0]
+          : undefined;
       patchLine(lineId, {
         producto: product,
         cantidad: 1,
         descuento: 0,
         subtotal: product.precioVenta,
+        Bodega: firstBodega
+          ? {
+              id: String(firstBodega.id),
+              nombre: firstBodega.nombre,
+              cantidad: firstBodega.cantidad,
+            }
+          : undefined,
       });
     };
   };
@@ -96,6 +108,17 @@ export default function RegistrarVentaPage() {
       descuento: newDiscount,
       subtotal: precioBatch - (precioBatch / 100) * (newDiscount ?? 0),
     });
+  };
+
+  const handleBodegaChange = (lineId: string) => {
+    return (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const id = e.target.value;
+      const line = lines.find((l) => l.lineId === lineId);
+      const bodegas = line?.producto?.bodegas ?? [];
+      const b = bodegas.find((x) => String(x.id) === id);
+      if (!b) return;
+      patchLine(lineId, { Bodega: { id: String(b.id), nombre: b.nombre, cantidad: b.cantidad } });
+    };
   };
 
   function validateBeforePost() {
@@ -234,6 +257,7 @@ export default function RegistrarVentaPage() {
             <thead>
               <tr className="bg-white/5 text-left text-xs uppercase tracking-wide text-white/60">
                 <Th>Producto</Th>
+                <Th>Bodega</Th>
                 <Th>Cant.</Th>
                 <Th>Precio</Th>
                 <Th>Desc. (%)</Th>
@@ -250,8 +274,12 @@ export default function RegistrarVentaPage() {
                       <Td>
                         <select
                           className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+                          value={line.producto?.sku ?? ""}
                           onChange={handleProductChange(line.lineId)}
                         >
+                          <option value="" disabled className="text-black">
+                            Selecciona producto
+                          </option>
                           {clients &&
                             products.map((product) => (
                               <option
@@ -264,6 +292,28 @@ export default function RegistrarVentaPage() {
                             ))}
                         </select>
                       </Td>
+                      {/* Bodega */}
+                      <Td>
+                        <select
+                          className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+                          value={line.Bodega?.id ?? ""}
+                          onChange={handleBodegaChange(line.lineId)}
+                        >
+                          <option value="" disabled className="text-black">
+                            Selecciona bodega
+                          </option>
+                          {line.producto?.bodegas?.map((b) => (
+                            <option
+                              key={b.id}
+                              value={String(b.id)}
+                              className="text-black"
+                            >
+                              {`${b.nombre} (${b.cantidad})`}
+                            </option>
+                          ))}
+                        </select>
+                      </Td>
+
                       {/* Cantidad */}
                       <Td>
                         <input

@@ -20,6 +20,7 @@ export default function RegistrarVentaPage() {
   const { call } = useApi();
 
   const [showCancel, setShowCancel] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [clients, setClients] = useState<Cliente[]>([]);
   const [products, setProducts] = useState<ProductoInLine[]>([]);
   const [lines, setLines] = useState<Line[]>([]);
@@ -50,7 +51,8 @@ export default function RegistrarVentaPage() {
 
       productsData.forEach((p) => {
         p.bodegas =
-          disponibilidadData.find((stock) => p.productoID === stock.id)?.bodegas ?? [];
+          disponibilidadData.find((stock) => p.productoID === stock.id)
+            ?.bodegas ?? [];
       });
     }
     if (productsData)
@@ -117,7 +119,9 @@ export default function RegistrarVentaPage() {
       const bodegas = line?.producto?.bodegas ?? [];
       const b = bodegas.find((x) => String(x.id) === id);
       if (!b) return;
-      patchLine(lineId, { Bodega: { id: String(b.id), nombre: b.nombre, cantidad: b.cantidad } });
+      patchLine(lineId, {
+        Bodega: { id: String(b.id), nombre: b.nombre, cantidad: b.cantidad },
+      });
     };
   };
 
@@ -132,35 +136,34 @@ export default function RegistrarVentaPage() {
     return null;
   }
 
-  const registrarVenta = async () => {
-    setErrorMsg(null);
-    const err = validateBeforePost();
-    if (err) {
-      setErrorMsg(err);
-      return;
-    }
+  const realizarVenta = async () => {
+      // TODO: VALIDACIONES
+      // setErrorMsg(null);
+      // const err = validateBeforePost();
+      // if (err) {
+      //   setErrorMsg(err);
+      //   return;
+      // }
     const payload = {
       clienteCodigo: clientSelected!.codigoCliente,
       fecha: new Date(),
       observaciones: notes || undefined,
-      lineas: lines.map((l) => ({
-        sku: l.producto!.sku,
-        cantidad: l.cantidad ?? 1,
-        descuento: l.descuento ?? 0,
-      })),
+      lineas: lines,
     };
 
-    try {
-      const res = await call<{ id: string }>("/api/ventas", {
-        method: "POST",
-        body: JSON.stringify(payload),
-      });
-      setLines([]);
-      setNotes("");
-      console.log(res);
-    } catch (e: any) {
-      setErrorMsg(e?.message ?? "No se pudo registrar la venta.");
-    }
+    console.log(payload);
+    // try {
+    //   const res = await call<{ id: string }>("/api/ventas", {
+    //     method: "POST",
+    //     body: JSON.stringify(payload),
+    //   });
+    //   setLines([]);
+    //   setNotes("");
+    //   console.log(res);
+    // } catch (e: any) {
+    //   setErrorMsg(e?.message ?? "No se pudo registrar la venta.");
+    // }
+    setShowConfirm(false);
   };
 
   // const registrarVenta = () => {};
@@ -418,7 +421,7 @@ export default function RegistrarVentaPage() {
             type="button"
             variant="solid-emerald"
             disabled={!lines || lines.length === 0}
-            onClick={registrarVenta}
+            onClick={() => setShowConfirm(true)}
           >
             Registrar venta
           </Button>
@@ -427,10 +430,19 @@ export default function RegistrarVentaPage() {
 
       <ConfirmDialog
         open={showCancel}
-        title="Anular venta"
-        message="¿Deseas anular esta venta? Se restauraría el inventario si aplica."
+        title="  Anular venta(s) →"
+        message="¿Deseas salir de esta venta para anular existentes?"
         onClose={() => setShowCancel(false)}
         confirmText="Anular"
+      />
+
+      <ConfirmDialog
+        open={showConfirm}
+        title="  Confirmar venta"
+        message="La venta es correcta?"
+        onClose={() => setShowConfirm(false)}
+        confirmText="Anular"
+        onConfirm={realizarVenta}
       />
     </div>
   );

@@ -1,6 +1,7 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
+using ProfitManagerApp.Api.Data.Abstractions;
 using ProfitManagerApp.Api.Dtos;
 using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Domain.Inventory.Dto;

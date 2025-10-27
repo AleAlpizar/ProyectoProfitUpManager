@@ -1,7 +1,7 @@
 ﻿using ProfitManagerApp.Api.Dtos;
 using ProfitManagerApp.Domain.Inventory.Dto;
 
-namespace ProfitManagerApp.Data.Abstractions
+namespace ProfitManagerApp.Api.Data.Abstractions
 {
     public interface IInventarioRepository
     {
@@ -21,6 +21,9 @@ namespace ProfitManagerApp.Data.Abstractions
 
         Task InactivarProductoYRetirarStockAsync(int productoId, int? userId);
         Task<IReadOnlyList<ProductoMiniDto>> GetProductosMiniAsync();
+        Task<Dictionary<int, List<BodegaStockDto>>> GetBodegasConStockPorProductoAsync(
+            IEnumerable<int> productoIds,
+            CancellationToken ct = default);
 
-    }
+  }
 }

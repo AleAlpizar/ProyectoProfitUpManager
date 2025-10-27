@@ -3,16 +3,17 @@ import SectionHeader from "../../components/SectionHeader";
 import ConfirmDialog from "../../components/ConfirmDialog";
 import { useApi } from "@/components/hooks/useApi";
 import { Cliente } from "@/components/clientes/types";
-import { ProductoMini } from "@/components/hooks/useProductosMini";
 import { getFormattedDate } from "@/helpers/dateHelper";
 import Button from "@/components/buttons/button";
 import { formatMoney } from "@/helpers/ui-helpers";
+import { ProductoDisponibilidadDto, ProductoInLine } from "./types";
 interface Line {
   lineId: string;
-  producto?: ProductoMini;
+  producto?: ProductoInLine;
   cantidad?: number;
   descuento?: number;
   subtotal?: number;
+  Bodega?: { nombre: string; id: string };
 }
 
 export default function RegistrarVentaPage() {
@@ -20,19 +21,39 @@ export default function RegistrarVentaPage() {
 
   const [showCancel, setShowCancel] = useState(false);
   const [clients, setClients] = useState<Cliente[]>([]);
-  const [products, setProducts] = useState<ProductoMini[]>([]);
+  const [products, setProducts] = useState<ProductoInLine[]>([]);
   const [lines, setLines] = useState<Line[]>([]);
+  const [notes, setNotes] = useState("");
   const [clientSelected, setClientSelected] = useState<Cliente>();
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const fetchPageData = async () => {
     const clientData = await call<Cliente[]>(`/api/clientes`, {
       method: "GET",
     });
-    const productsData = await call<ProductoMini[]>(`/api/productos/mini`, {
+    const productsData = await call<ProductoInLine[]>(`/api/productos/mini`, {
       method: "GET",
     });
+    const productIds = productsData.map((p) => p.productoID);
+
     if (clientData) setClients(clientData);
-    if (productsData) setProducts(productsData);
+
+    if (productIds.length > 0) {
+      const qs = new URLSearchParams();
+      for (const id of productIds) qs.append("productoIds", String(id));
+
+      const url = `/api/inventario/disponibilidad-por-productos?${qs.toString()}`;
+
+      const disponibilidadData = await call<any[]>(url, {
+        method: "GET",
+      });
+
+      productsData.forEach((p) => {
+        p.bodegas =
+          disponibilidadData.find((stock) => p.productoID === stock.id) ?? [];
+      });
+    }
+    if (productsData) setProducts(productsData.filter(p => p.bodegas?.length ?? 0 > 0));
   };
 
   useEffect(() => {
@@ -77,6 +98,50 @@ export default function RegistrarVentaPage() {
     });
   };
 
+  function validateBeforePost() {
+    if (!clientSelected?.codigoCliente) return "Selecciona un cliente.";
+    if (lines.length === 0) return "Agrega al menos un producto.";
+    for (const l of lines) {
+      if (!l.producto?.sku) return "Hay una línea sin producto.";
+      if (!l.cantidad || l.cantidad <= 0)
+        return "Hay una línea con cantidad inválida.";
+    }
+    return null;
+  }
+
+  const registrarVenta = async () => {
+    setErrorMsg(null);
+    const err = validateBeforePost();
+    if (err) {
+      setErrorMsg(err);
+      return;
+    }
+    const payload = {
+      clienteCodigo: clientSelected!.codigoCliente,
+      fecha: new Date(),
+      observaciones: notes || undefined,
+      lineas: lines.map((l) => ({
+        sku: l.producto!.sku,
+        cantidad: l.cantidad ?? 1,
+        descuento: l.descuento ?? 0,
+      })),
+    };
+
+    try {
+      const res = await call<{ id: string }>("/api/ventas", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      setLines([]);
+      setNotes("");
+      console.log(res);
+    } catch (e: any) {
+      setErrorMsg(e?.message ?? "No se pudo registrar la venta.");
+    }
+  };
+
+  // const registrarVenta = () => {};
+
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-6">
       <SectionHeader
@@ -116,6 +181,7 @@ export default function RegistrarVentaPage() {
             <Label>Observaciones</Label>
             <input
               placeholder="Opcional"
+              onChange={(e) => setNotes(e.target.value)}
               className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
             />
           </div>
@@ -272,11 +338,21 @@ export default function RegistrarVentaPage() {
             </div>
             <div className="text-right">
               <div className="text-xs text-white/60">Impuestos</div>
-              <div className="font-semibold text-white/90">{formatMoney(lines.map((l) => l.subtotal ?? 0).reduce((x, y) => x + y) * 0.13)}</div>
+              <div className="font-semibold text-white/90">
+                {formatMoney(
+                  lines.map((l) => l.subtotal ?? 0).reduce((x, y) => x + y) *
+                    0.13
+                )}
+              </div>
             </div>
             <div className="text-right">
               <div className="text-xs text-white/60">Total</div>
-              <div className="text-lg font-bold text-white">{formatMoney(lines.map((l) => l.subtotal ?? 0).reduce((x, y) => x + y) * 1.13)}</div>
+              <div className="text-lg font-bold text-white">
+                {formatMoney(
+                  lines.map((l) => l.subtotal ?? 0).reduce((x, y) => x + y) *
+                    1.13
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -292,6 +368,7 @@ export default function RegistrarVentaPage() {
             type="button"
             variant="solid-emerald"
             disabled={!lines || lines.length === 0}
+            onClick={registrarVenta}
           >
             Registrar venta
           </Button>

@@ -4,7 +4,7 @@ using ProfitManagerApp.Data.Rows;
 
 namespace ProfitManagerApp.Data.Repositories;
 
-public class ClienteRepository(AppDbContext db) : IClienteRepository
+public class ClienteRepository(AppDbContextIOld db) : IClienteRepository
 {
   public Task<bool> ExistsCodigoAsync(string codigo, CancellationToken ct) =>
       db.Clientes.AsNoTracking().AnyAsync(x => x.CodigoCliente == codigo, ct);

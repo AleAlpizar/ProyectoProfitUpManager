@@ -1,5 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using ProfitManagerApp.Api.Models;
+using ProfitManagerApp.Api.Models.Rows;
 
 namespace ProfitManagerApp.Api.Infrastructure;
 
@@ -12,8 +12,8 @@ public static class AppDbSeedExtensions
         if (!await db.Unidades.AnyAsync())
         {
             db.Unidades.AddRange(
-                new UnidadAlmacenamiento { Codigo = "UNI", Nombre = "Unidad", Activo = true },
-                new UnidadAlmacenamiento { Codigo = "CAJ", Nombre = "Caja", Activo = true }
+                new UnidadAlmacenamientoRow { Codigo = "UNI", Nombre = "Unidad", Activo = true },
+                new UnidadAlmacenamientoRow { Codigo = "CAJ", Nombre = "Caja", Activo = true }
             );
             await db.SaveChangesAsync();
         }

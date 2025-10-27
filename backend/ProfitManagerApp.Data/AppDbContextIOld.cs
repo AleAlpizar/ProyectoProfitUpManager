@@ -3,14 +3,16 @@ using ProfitManagerApp.Data.Rows;
 
 namespace ProfitManagerApp.Data;
 
-public class AppDbContext(DbContextOptions<AppDbContext> options)
+public class AppDbContextIOld(DbContextOptions<AppDbContextIOld> options)
     : DbContext(options)
 {
   public DbSet<ClienteRow> Clientes => Set<ClienteRow>();
 
+
   protected override void OnModelCreating(ModelBuilder modelBuilder)
   {
-    modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+    modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContextIOld).Assembly);
+
     base.OnModelCreating(modelBuilder);
   }
 }

@@ -1,20 +1,25 @@
-﻿using System.Data;
+﻿
+
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
-using ProfitManagerApp.Data.Abstractions;
-using ProfitManagerApp.Domain.Inventory.Dto;
 using ProfitManagerApp.Api.Dtos;
+using ProfitManagerApp.Api.Data.Abstractions;
+using ProfitManagerApp.Domain.Inventory.Dto;
+using System.Data;
+using ProfitManagerApp.Api.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 
 namespace ProfitManagerApp.Data
 {
     public sealed class InventarioRepository : IInventarioRepository
     {
         private readonly string _cs;
+        private readonly AppDbContext _db;
 
-        public InventarioRepository(IConfiguration cfg)
+        public InventarioRepository(IConfiguration cfg, AppDbContext db)
         {
             _cs = cfg.GetConnectionString("Default")
                   ?? throw new InvalidOperationException("Connection string 'Default' no configurada.");
+            _db = db;
         }
 
         public async Task<int> CrearProductoAsync(ProductoCreateDto dto, int? userId)
@@ -96,15 +101,15 @@ namespace ProfitManagerApp.Data
             await cn.OpenAsync();
 
             const string sql = @"
-UPDATE dbo.Producto
-   SET Nombre = @Nombre,
-       Descripcion = @Descripcion,
-       Descuento = COALESCE(@Descuento, Descuento),
-       UpdatedAt = SYSUTCDATETIME()
- WHERE ProductoID = @Id AND IsActive = 1;
+              UPDATE dbo.Producto
+                 SET Nombre = @Nombre,
+                     Descripcion = @Descripcion,
+                     Descuento = COALESCE(@Descuento, Descuento),
+                     UpdatedAt = SYSUTCDATETIME()
+               WHERE ProductoID = @Id AND IsActive = 1;
 
-IF @@ROWCOUNT = 0
-    THROW 51002, 'Producto no encontrado o inactivo', 1;";
+              IF @@ROWCOUNT = 0
+                  THROW 51002, 'Producto no encontrado o inactivo', 1;";
 
             await using var cmd = new SqlCommand(sql, cn);
             cmd.Parameters.AddWithValue("@Id", id);
@@ -180,9 +185,9 @@ IF @@ROWCOUNT = 0
             await cn.OpenAsync();
 
             const string ensureSql = @"
-IF NOT EXISTS (SELECT 1 FROM dbo.Inventario WHERE ProductoID=@p AND BodegaID=@b)
-    INSERT INTO dbo.Inventario(ProductoID,BodegaID,Cantidad,CantidadReservada)
-    VALUES(@p,@b,0,0);";
+              IF NOT EXISTS (SELECT 1 FROM dbo.Inventario WHERE ProductoID=@p AND BodegaID=@b)
+                  INSERT INTO dbo.Inventario(ProductoID,BodegaID,Cantidad,CantidadReservada)
+                  VALUES(@p,@b,0,0);";
             await using (var ensure = new SqlCommand(ensureSql, cn))
             {
                 ensure.Parameters.AddWithValue("@p", dto.ProductoID);
@@ -217,9 +222,9 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Inventario WHERE ProductoID=@p AND BodegaID=@b)
             try
             {
                 const string inactSql = @"
-UPDATE dbo.Producto
-   SET IsActive = 0, UpdatedAt = SYSUTCDATETIME()
- WHERE ProductoID = @p;";
+                  UPDATE dbo.Producto
+                     SET IsActive = 0, UpdatedAt = SYSUTCDATETIME()
+                   WHERE ProductoID = @p;";
                 await using (var cmdInact = new SqlCommand(inactSql, cn, (SqlTransaction)tx))
                 {
                     cmdInact.Parameters.AddWithValue("@p", productoId);
@@ -227,9 +232,9 @@ UPDATE dbo.Producto
                 }
 
                 const string selInv = @"
-SELECT BodegaID, (Cantidad - CantidadReservada) AS Disponible
-FROM dbo.Inventario
-WHERE ProductoID=@p AND (Cantidad - CantidadReservada) > 0";
+                  SELECT BodegaID, (Cantidad - CantidadReservada) AS Disponible
+                  FROM dbo.Inventario
+                  WHERE ProductoID=@p AND (Cantidad - CantidadReservada) > 0";
                 var retiros = new List<(int bodegaId, decimal cant)>();
                 await using (var cmdSel = new SqlCommand(selInv, cn, (SqlTransaction)tx))
                 {
@@ -271,12 +276,12 @@ WHERE ProductoID=@p AND (Cantidad - CantidadReservada) > 0";
             await cn.OpenAsync();
 
             const string sql = @"
-MERGE dbo.Inventario AS tgt
-USING (SELECT @p AS ProductoID, @b AS BodegaID) AS src
-   ON tgt.ProductoID = src.ProductoID AND tgt.BodegaID = src.BodegaID
-WHEN NOT MATCHED THEN
-    INSERT (ProductoID, BodegaID, Cantidad, CantidadReservada, FechaUltimaActualizacion)
-    VALUES (src.ProductoID, src.BodegaID, 0, 0, SYSUTCDATETIME());";
+              MERGE dbo.Inventario AS tgt
+              USING (SELECT @p AS ProductoID, @b AS BodegaID) AS src
+                  ON tgt.ProductoID = src.ProductoID AND tgt.BodegaID = src.BodegaID
+              WHEN NOT MATCHED THEN
+                  INSERT (ProductoID, BodegaID, Cantidad, CantidadReservada, FechaUltimaActualizacion)
+                  VALUES (src.ProductoID, src.BodegaID, 0, 0, SYSUTCDATETIME());";
 
             await using var cmd = new SqlCommand(sql, cn);
             cmd.Parameters.AddWithValue("@p", productoId);
@@ -312,10 +317,10 @@ WHEN NOT MATCHED THEN
             catch (SqlException ex) when (ex.Number == 2812)
             {
                 const string sql = @"
-SELECT ProductoID, SKU, Nombre, Descripcion, Descuento
-FROM dbo.Producto
-WHERE IsActive = 1
-ORDER BY Nombre;";
+                  SELECT ProductoID, SKU, Nombre, Descripcion, Descuento
+                  FROM dbo.Producto
+                  WHERE IsActive = 1
+                  ORDER BY Nombre;";
                 await using var cmd2 = new SqlCommand(sql, cn);
                 await using var rd2 = await cmd2.ExecuteReaderAsync();
                 while (await rd2.ReadAsync())
@@ -332,5 +337,36 @@ ORDER BY Nombre;";
                 return list;
             }
         }
-    }
+
+        public async Task<Dictionary<int, List<BodegaStockDto>>> GetBodegasConStockPorProductoAsync(
+            IEnumerable<int> productoIds,
+            CancellationToken ct = default)
+        {
+          var ids = productoIds.Distinct().ToList();
+          if (ids.Count == 0) return new();
+
+          
+
+          var rows = await (
+              from inv in _db.Inventarios.AsNoTracking()
+              join bod in _db.Bodegas.AsNoTracking() on inv.BodegaID equals bod.BodegaID
+              where ids.Contains(inv.ProductoID)
+                 && inv.Cantidad > 0
+                 && bod.IsActive
+              select new { inv.ProductoID, bod.BodegaID, bod.Nombre, inv.Cantidad }
+          ).ToListAsync(ct);
+
+          var dict = ids.ToDictionary(
+              pid => pid,
+              pid => rows.Where(r => r.ProductoID == pid)
+                         .OrderBy(r => r.Nombre)
+                         .Select(r => new BodegaStockDto(r.BodegaID, r.Nombre, r.Cantidad))
+                         .ToList()
+          );
+
+          return dict;
+        }
+
+
+  }
 }

@@ -11,7 +11,7 @@ public static class DependencyInjection
         var cs = cfg.GetConnectionString("Default")
             ?? throw new InvalidOperationException("ConnectionStrings:Default no configurado");
 
-        services.AddDbContext<AppDbContext>(opt =>
+        services.AddDbContext<AppDbContextIOld>(opt =>
         {
             opt.UseSqlServer(cs, sql => sql.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null));
         });

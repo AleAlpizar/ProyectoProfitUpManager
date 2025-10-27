@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using ProfitManagerApp.Api.Dto;
 using ProfitManagerApp.Api.Infrastructure;
 using ProfitManagerApp.Api.Models;
+using ProfitManagerApp.Api.Models.Rows;
 
 namespace ProfitManagerApp.Api.Controllers
 {
@@ -70,7 +71,7 @@ namespace ProfitManagerApp.Api.Controllers
                 if (dup) return Problem(title: "CODIGO_DUPLICATE", statusCode: 409);
             }
 
-            var entity = new Bodega
+            var entity = new BodegaRow
             {
                 Codigo = dto.Codigo?.Trim(),
                 Nombre = dto.Nombre.Trim(),

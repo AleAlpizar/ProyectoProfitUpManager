@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using ProfitManagerApp.Api.Auth;
+using ProfitManagerApp.Api.Data.Abstractions;
 using ProfitManagerApp.Api.Infrastructure;
 using ProfitManagerApp.Api.Mapping;
 using ProfitManagerApp.Application.Clientes;

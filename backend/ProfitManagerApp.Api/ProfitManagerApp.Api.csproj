@@ -32,6 +32,7 @@
 
 	<ItemGroup>
 		<Folder Include="Mapping\Converters\" />
+		<Folder Include="Service\NewFolder\" />
 	</ItemGroup>
 
 </Project>

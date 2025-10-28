@@ -11,6 +11,9 @@ namespace ProfitManagerApp.Api.Infrastructure
         public DbSet<UnidadAlmacenamientoRow> Unidades => Set<UnidadAlmacenamientoRow>();
         public DbSet<ProductoRow> Productos => Set<ProductoRow>();
         public DbSet<InventarioRow> Inventarios => Set<InventarioRow>();
+        public DbSet<VentaRow> Ventas => Set<VentaRow>();
+        public DbSet<VentaItemRow> VentaDetalles => Set<VentaItemRow>();
+
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -50,8 +53,7 @@ namespace ProfitManagerApp.Api.Infrastructure
           e.HasIndex(x => x.Sku).IsUnique();
           e.Property(x => x.Nombre).IsRequired().HasMaxLength(200);
           e.Property(x => x.IsActive).HasDefaultValue(true);
-          e.Property(x => x.PrecioUnitario).HasPrecision(18, 2);
-          e.Property(x => x.ImpuestoPorcentaje).HasPrecision(5, 2);
+          e.Property(x => x.PrecioVenta).HasPrecision(18, 2);
         });
 
         modelBuilder.Entity<InventarioRow>(e =>
@@ -62,6 +64,50 @@ namespace ProfitManagerApp.Api.Infrastructure
           e.Property(x => x.Cantidad).HasPrecision(18, 2);
           e.HasIndex(x => new { x.ProductoID, x.BodegaID }).IsUnique();
         });
+
+        modelBuilder.Entity<VentaRow>(e =>
+        {
+          e.ToTable("Venta", "dbo");
+          e.HasKey(x => x.VentaID);
+          e.Property(x => x.VentaID).ValueGeneratedOnAdd();
+
+          e.Property(x => x.ClienteID).IsRequired();
+          e.Property(x => x.Fecha).IsRequired();
+
+          e.Property(x => x.Subtotal).HasPrecision(18, 2);
+          e.Property(x => x.Descuento).HasPrecision(5, 2);
+          //e.Property(x => x.ImpuestoMonto).HasPrecision(18, 2);
+          e.Property(x => x.Total).HasPrecision(18, 2);
+
+          //e.Property(x => x.Observaciones).HasMaxLength(300);
+          //e.Property(x => x.IsActive).HasDefaultValue(true);
+
+          e.Property(x => x.CreatedAt).IsRequired();
+          //e.Property(x => x.CreatedBy);
+
+          e.HasIndex(x => x.Fecha);
+        });
+
+        modelBuilder.Entity<VentaItemRow>(e =>
+        {
+          e.ToTable("VentaItem", "dbo");
+          e.HasKey(x => x.VentaItemID);
+          e.Property(x => x.VentaItemID).ValueGeneratedOnAdd();
+
+          e.Property(x => x.VentaID).IsRequired();
+          e.Property(x => x.ProductoID);
+          e.Property(x => x.BodegaID).IsRequired();
+
+
+          e.Property(x => x.Cantidad).HasPrecision(18, 2);
+          e.Property(x => x.PrecioUnitario).HasPrecision(18, 2);
+
+          e.HasOne(x => x.Venta)
+              .WithMany(v => v.Detalles)
+              .HasForeignKey(x => x.VentaID)
+              .OnDelete(DeleteBehavior.Cascade);
+        });
+
       }
     }
 }

@@ -6,7 +6,7 @@ import { Cliente } from "@/components/clientes/types";
 import { getFormattedDate } from "@/helpers/dateHelper";
 import Button from "@/components/buttons/button";
 import { formatMoney } from "@/helpers/ui-helpers";
-import { ProductoDisponibilidadDto, ProductoInLine } from "./types";
+import { ProductoInLine } from "./types";
 interface Line {
   lineId: string;
   producto?: ProductoInLine;
@@ -137,32 +137,38 @@ export default function RegistrarVentaPage() {
   }
 
   const realizarVenta = async () => {
-      // TODO: VALIDACIONES
-      // setErrorMsg(null);
-      // const err = validateBeforePost();
-      // if (err) {
-      //   setErrorMsg(err);
-      //   return;
-      // }
+    // TODO: VALIDACIONES
+    // setErrorMsg(null);
+    // const err = validateBeforePost();
+    // if (err) {
+    //   setErrorMsg(err);
+    //   return;
+    // }
+    console.log(clientSelected);
     const payload = {
       clienteCodigo: clientSelected!.codigoCliente,
       fecha: new Date(),
       observaciones: notes || undefined,
-      lineas: lines,
+      lineas: lines.map((l) => ({
+        sku: l.producto!.sku,
+        cantidad: l.cantidad ?? 1,
+        descuento: l.descuento ?? 0,
+        bodega: { id: String(l.Bodega!.id) }, // mínimo necesario para backend actual
+      })),
     };
 
     console.log(payload);
-    // try {
-    //   const res = await call<{ id: string }>("/api/ventas", {
-    //     method: "POST",
-    //     body: JSON.stringify(payload),
-    //   });
-    //   setLines([]);
-    //   setNotes("");
-    //   console.log(res);
-    // } catch (e: any) {
-    //   setErrorMsg(e?.message ?? "No se pudo registrar la venta.");
-    // }
+    try {
+      const res = await call<{ id: string }>("/api/ventas", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
+      setLines([]);
+      setNotes("");
+      console.log(res);
+    } catch (e: any) {
+      setErrorMsg(e?.message ?? "No se pudo registrar la venta.");
+    }
     setShowConfirm(false);
   };
 
@@ -184,11 +190,23 @@ export default function RegistrarVentaPage() {
             <Label>Cliente</Label>
             <select
               className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
-              onChange={(e) => setClientSelected(e.target.value as any)}
+              value={clientSelected?.codigoCliente ?? ""}
+              onChange={(e) => {
+                setClientSelected(
+                  clients.find((c) => c.codigoCliente === e.target.value)
+                );
+              }}
             >
+              <option value="" disabled className="text-black">
+                Selecciona un cliente
+              </option>
               {clients &&
                 clients.map((client) => (
-                  <option key={client.codigoCliente} className="text-black">
+                  <option
+                    key={client.codigoCliente}
+                    value={client.codigoCliente}
+                    className="text-black"
+                  >
                     {client.nombre} - {client.codigoCliente}
                   </option>
                 ))}
@@ -441,7 +459,7 @@ export default function RegistrarVentaPage() {
         title="  Confirmar venta"
         message="La venta es correcta?"
         onClose={() => setShowConfirm(false)}
-        confirmText="Anular"
+        confirmText="Confirmar"
         onConfirm={realizarVenta}
       />
     </div>

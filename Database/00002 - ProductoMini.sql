@@ -6,11 +6,17 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-ALTER   PROCEDURE [dbo].[usp_Producto_MiniList]
+ALTER PROCEDURE [dbo].[usp_Producto_MiniList]
 AS
 BEGIN
   SET NOCOUNT ON;
-  SELECT ProductoID, SKU, Nombre, Descripcion, PrecioVenta
+  SELECT 
+      ProductoID, 
+      SKU, 
+      Nombre, 
+      Descripcion, 
+      Descuento,
+      PrecioVenta  
   FROM dbo.Producto
   WHERE IsActive = 1
   ORDER BY Nombre;

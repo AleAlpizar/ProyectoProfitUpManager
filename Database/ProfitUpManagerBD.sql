@@ -1154,6 +1154,21 @@ END
 
 
 
+ALTER PROCEDURE [dbo].[usp_Producto_MiniList]
+AS
+BEGIN
+  SET NOCOUNT ON;
+  SELECT 
+      ProductoID, 
+      SKU, 
+      Nombre, 
+      Descripcion, 
+      Descuento,
+      PrecioVenta   
+  FROM dbo.Producto
+  WHERE IsActive = 1
+  ORDER BY Nombre;
+END
 
 
 
@@ -1161,3 +1176,12 @@ END
 
 
 
+SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'UnidadAlmacenamiento';
+SELECT * FROM Cliente WHERE Nombre IS NULL OR TipoPersona IS NULL OR Correo IS NULL;
+
+
+ALTER TABLE Cliente
+ALTER COLUMN Nombre NVARCHAR(200) NOT NULL;
+
+ALTER TABLE Cliente
+ADD CONSTRAINT DF_Cliente_TipoPersona DEFAULT 'Natural' FOR TipoPersona;

@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using ProfitManagerApp.Api.Enums;
 using ProfitManagerApp.Api.Models.Rows;
 
 namespace ProfitManagerApp.Api.Infrastructure
@@ -86,6 +87,10 @@ namespace ProfitManagerApp.Api.Infrastructure
           e.Property(x => x.UsuarioID);
 
           e.HasIndex(x => x.Fecha);
+          e.Property(x => x.Estado)
+           .HasConversion<string>()
+           .HasMaxLength(20)
+           .HasDefaultValue(EstadoVentaEnum.Registrada);
         });
 
         modelBuilder.Entity<VentaItemRow>(e =>

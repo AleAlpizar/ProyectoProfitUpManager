@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProfitManagerApp.Api.Dtos;
+using ProfitManagerApp.Api.Enums;
 using ProfitManagerApp.Api.Infrastructure;
 using ProfitManagerApp.Api.Models;
 using ProfitManagerApp.Api.Models.Rows;
@@ -21,7 +22,7 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
   [Authorize]
   public async Task<IActionResult> GetById([FromRoute] int id, CancellationToken ct)
   {
-    // Proyección 1: traemos encabezado
+    // info del encabezado
     var head = await db.Ventas
         .AsNoTracking()
         .Where(v => v.VentaID == id)
@@ -33,12 +34,13 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
           v.Subtotal,
           v.Descuento,
           v.Total,
+          v.Estado,
         })
         .FirstOrDefaultAsync(ct);
 
     if (head is null) return NotFound();
 
-    // Proyección 2: detalles + subconsultas para Sku/Nombre (sin tocar Rows)
+    // detalles y consultas foraneas
     var detalles = await db.VentaDetalles
         .AsNoTracking()
         .Where(d => d.VentaID == id)
@@ -74,7 +76,8 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
       Subtotal = head.Subtotal,
       Descuento = head.Descuento,
       Total = head.Total,
-      Detalles = detalles
+      Detalles = detalles,
+      Estado = head.Estado
     };
 
     return Ok(dto);
@@ -206,7 +209,7 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
         //ImpuestoMonto = impuestoMonto,
         Total = total,
         //Observaciones = string.IsNullOrWhiteSpace(dto.Observaciones) ? null : dto.Observaciones.Trim(),
-        //IsActive = true,
+        Estado = EstadoVentaEnum.Registrada,
         CreatedAt = DateTime.UtcNow,
         UsuarioID = createdBy,
         Detalles = detalleRows
@@ -244,5 +247,20 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
       await trx.RollbackAsync(ct);
       throw;
     }
+  }
+
+  [HttpDelete("{id:int}")]
+  //[Authorize]
+  public async Task<IActionResult> Anular([FromRoute] int id, CancellationToken ct)
+  {
+    var venta = await db.Ventas.FirstOrDefaultAsync(v => v.VentaID == id, ct);
+    if (venta is null) return NotFound();
+
+    if (venta.Estado == EstadoVentaEnum.Anulada)
+      return NoContent(); 
+
+    venta.Estado = EstadoVentaEnum.Anulada;
+    await db.SaveChangesAsync(ct);
+    return NoContent();
   }
 }

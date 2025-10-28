@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using ProfitManagerApp.Api.Enums;
+using System.ComponentModel.DataAnnotations;
 
 namespace ProfitManagerApp.Api.Dtos
 {
@@ -42,9 +43,10 @@ namespace ProfitManagerApp.Api.Dtos
     public string ClienteNombre { get; set; }
     public DateTime Fecha { get; set; }
     public decimal Subtotal { get; set; }
-    public decimal Descuento { get; set; } // 0..100 (del Row)
+    public decimal Descuento { get; set; }
     public decimal Total { get; set; }
     public List<VentaDetalleDto> Detalles { get; set; } = new();
+    public EstadoVentaEnum Estado { get; internal set; }
   }
 
 }

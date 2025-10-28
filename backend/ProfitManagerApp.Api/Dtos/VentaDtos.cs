@@ -22,4 +22,29 @@ namespace ProfitManagerApp.Api.Dtos
   {
     public string? Id { get; set; } 
   }
+
+  public sealed class VentaDetalleDto
+  {
+    public int? ProductoID { get; set; }
+    public string Sku { get; set; } = "";
+    public string Descripcion { get; set; } = "—";
+    public decimal Cantidad { get; set; }
+    public decimal PrecioUnitario { get; set; }
+    public decimal DescuentoLineaPorcentaje { get; set; } = 0;
+    public decimal Importe { get; set; }
+    public int? BodegaID { get; set; }
+  }
+
+  public sealed class VentaGetDto
+  {
+    public int VentaID { get; set; }
+    public int ClienteID { get; set; }
+    public string ClienteNombre { get; set; }
+    public DateTime Fecha { get; set; }
+    public decimal Subtotal { get; set; }
+    public decimal Descuento { get; set; } // 0..100 (del Row)
+    public decimal Total { get; set; }
+    public List<VentaDetalleDto> Detalles { get; set; } = new();
+  }
+
 }

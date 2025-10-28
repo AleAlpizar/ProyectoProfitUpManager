@@ -83,7 +83,7 @@ namespace ProfitManagerApp.Api.Infrastructure
           //e.Property(x => x.IsActive).HasDefaultValue(true);
 
           e.Property(x => x.CreatedAt).IsRequired();
-          //e.Property(x => x.CreatedBy);
+          e.Property(x => x.UsuarioID);
 
           e.HasIndex(x => x.Fecha);
         });

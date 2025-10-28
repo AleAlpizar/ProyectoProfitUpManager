@@ -7,6 +7,7 @@ import { getFormattedDate } from "@/helpers/dateHelper";
 import Button from "@/components/buttons/button";
 import { formatMoney } from "@/helpers/ui-helpers";
 import { ProductoInLine } from "./types";
+import { useRouter } from "next/router";
 interface Line {
   lineId: string;
   producto?: ProductoInLine;
@@ -18,7 +19,7 @@ interface Line {
 
 export default function RegistrarVentaPage() {
   const { call } = useApi();
-
+  const router = useRouter();
   const [showCancel, setShowCancel] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [clients, setClients] = useState<Cliente[]>([]);
@@ -159,13 +160,15 @@ export default function RegistrarVentaPage() {
 
     console.log(payload);
     try {
-      const res = await call<{ id: string }>("/api/ventas", {
+      const res = await call<{ ventaID: string }>("/api/ventas", {
         method: "POST",
         body: JSON.stringify(payload),
       });
       setLines([]);
       setNotes("");
       console.log(res);
+      router.replace(`/ventas/${res.ventaID}`);
+      
     } catch (e: any) {
       setErrorMsg(e?.message ?? "No se pudo registrar la venta.");
     }

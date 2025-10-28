@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ProfitManagerApp.Api.Dtos;
 using ProfitManagerApp.Api.Infrastructure;
 using ProfitManagerApp.Api.Models;
 using ProfitManagerApp.Api.Models.Rows;
+using ProfitManagerApp.Application.Clientes;
 using ProfitManagerApp.Data;
 using System.Security.Claims;
 
@@ -11,9 +13,76 @@ namespace ProfitManagerApp.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class VentasController(AppDbContext db, AppDbContextIOld dbOld) : ControllerBase
+public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHandler clientHandler) : ControllerBase
 {
+
+
+  [HttpGet("{id:int}")]
+  [Authorize]
+  public async Task<IActionResult> GetById([FromRoute] int id, CancellationToken ct)
+  {
+    // Proyección 1: traemos encabezado
+    var head = await db.Ventas
+        .AsNoTracking()
+        .Where(v => v.VentaID == id)
+        .Select(v => new
+        {
+          v.VentaID,
+          v.ClienteID,
+          v.Fecha,
+          v.Subtotal,
+          v.Descuento,
+          v.Total,
+        })
+        .FirstOrDefaultAsync(ct);
+
+    if (head is null) return NotFound();
+
+    // Proyección 2: detalles + subconsultas para Sku/Nombre (sin tocar Rows)
+    var detalles = await db.VentaDetalles
+        .AsNoTracking()
+        .Where(d => d.VentaID == id)
+        .Select(d => new VentaDetalleDto
+        {
+          ProductoID = d.ProductoID,
+          // subquery segura en SQL: si no hay producto, devuelve null y usamos coalesce en C#
+          Sku = db.Productos
+                    .Where(p => p.ProductoID == d.ProductoID)
+                    .Select(p => p.Sku)
+                    .FirstOrDefault() ?? "",
+          Descripcion = db.Productos
+                    .Where(p => p.ProductoID == d.ProductoID)
+                    .Select(p => p.Nombre)
+                    .FirstOrDefault() ?? "—",
+          Cantidad = d.Cantidad,
+          PrecioUnitario = d.PrecioUnitario,
+          // no existe descuento por línea en el Row actual
+          DescuentoLineaPorcentaje = 0m,
+          Importe = d.Cantidad * d.PrecioUnitario,
+          BodegaID = d.BodegaID
+        })
+        .ToListAsync(ct);
+
+    var cliente = await clientHandler.ObtenerPorIdAsync(head.ClienteID, ct);
+
+    var dto = new VentaGetDto
+    {
+      VentaID = head.VentaID,
+      ClienteID = head.ClienteID,
+      ClienteNombre = cliente?.Nombre ?? "Nombre no encontrado.",
+      Fecha = head.Fecha,
+      Subtotal = head.Subtotal,
+      Descuento = head.Descuento,
+      Total = head.Total,
+      Detalles = detalles
+    };
+
+    return Ok(dto);
+  }
+
+
   [HttpPost]
+  [Authorize]
   public async Task<IActionResult> Create([FromBody] VentaFromUiDto dto, CancellationToken ct)
   {
     if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -139,7 +208,7 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld) : Control
         //Observaciones = string.IsNullOrWhiteSpace(dto.Observaciones) ? null : dto.Observaciones.Trim(),
         //IsActive = true,
         CreatedAt = DateTime.UtcNow,
-        //CreatedBy = createdBy,
+        UsuarioID = createdBy,
         Detalles = detalleRows
       };
 

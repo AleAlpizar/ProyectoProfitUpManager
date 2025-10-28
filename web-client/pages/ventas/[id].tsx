@@ -29,6 +29,7 @@ type VentaGetDto = {
   total: number;
   observaciones?: string | null; // TODO
   detalles: VentaDetalle[];
+  estado: "Registrada" | "Anulada"
 };
 
 export default function FacturaVentaPage() {
@@ -39,6 +40,7 @@ export default function FacturaVentaPage() {
   const [venta, setVenta] = useState<VentaGetDto | null>(null);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [anulando, setAnulando] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -65,6 +67,19 @@ export default function FacturaVentaPage() {
   const fechaFmt = (iso?: string) =>
     iso ? new Date(iso).toLocaleString() : "";
   const imprimir = () => window.print();
+
+  const anularVenta = async () => {
+    if (!venta?.ventaID) return;
+    try {
+      await call(`/api/ventas/${id}`, {
+        method: "DELETE",
+      });
+      setVenta({...venta, estado: "Anulada"});
+    } catch (e: any) {
+      setErr(e?.message ?? "No se pudo anular la venta.");
+    } finally {
+    }
+  };
 
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-6">
@@ -93,7 +108,7 @@ export default function FacturaVentaPage() {
                 Factura de venta
               </h2>
               <div className="text-xs text-white/60 print:text-black/70">
-                Venta #{venta.ventaID}
+                Venta #{venta.ventaID} {venta.estado === "Registrada" ? "" : " **Anulada**"}
               </div>
             </div>
             <Button type="button" onClick={imprimir} variant="solid-emerald">
@@ -154,6 +169,17 @@ export default function FacturaVentaPage() {
                 <Tot label={`Descuento`} value={venta.descuento ?? 0} />
               )}
             <Tot label="Total" value={venta.total} strong />
+          </div>
+
+          <div className="flex items-center justify-end gap-2 border-t border-white/10 px-4 py-4">
+            <Button
+              type="button"
+              variant="danger"
+              onClick={anularVenta}
+              disabled={anulando}
+            >
+              {anulando ? "Anulando…" : "Anular venta"}
+            </Button>
           </div>
         </section>
       )}

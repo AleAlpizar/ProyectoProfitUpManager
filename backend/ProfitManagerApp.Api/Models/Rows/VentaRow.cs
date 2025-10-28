@@ -1,4 +1,6 @@
-﻿namespace ProfitManagerApp.Api.Models.Rows
+﻿using ProfitManagerApp.Api.Enums;
+
+namespace ProfitManagerApp.Api.Models.Rows
 {
   public class VentaRow
   {
@@ -16,7 +18,7 @@
     public decimal Total { get; set; }
 
     //public string? Observaciones { get; set; }
-    //public bool IsActive { get; set; } = true;
+    public EstadoVentaEnum Estado { get; set; } = EstadoVentaEnum.Registrada;
 
     public DateTime CreatedAt { get; set; }
     public int? UsuarioID { get; set; }

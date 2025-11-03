@@ -45,7 +45,16 @@ public class AuthService
             using var sql = new SqlConnection(_cn);
             var usuarioId = await sql.ExecuteScalarAsync<int>(
                 "dbo.usp_Usuario_Create",
-                new { dto.Nombre, dto.Apellido, Correo = dto.Correo, PasswordHash = hash, Salt = (string?)salt, dto.Telefono, CreatedBy = createdBy },
+                new
+                {
+                    dto.Nombre,
+                    dto.Apellido,
+                    Correo = dto.Correo,
+                    PasswordHash = hash,
+                    Salt = (string?)salt,
+                    dto.Telefono,    
+                    CreatedBy = createdBy
+                },
                 commandType: CommandType.StoredProcedure
             );
 
@@ -54,6 +63,9 @@ public class AuthService
                 new { UsuarioID = usuarioId, NombreRol = dto.Rol, AssignedBy = createdBy },
                 commandType: CommandType.StoredProcedure
             );
+
+            await sql.ExecuteAsync(@"UPDATE dbo.Usuario SET EstadoUsuario = 'ACTIVE' WHERE UsuarioID = @uid",
+                new { uid = usuarioId });
 
             return usuarioId;
         }
@@ -106,15 +118,40 @@ public class AuthService
             commandType: CommandType.StoredProcedure);
     }
 
-    public record UserListItem(int UsuarioID, string Nombre, string? Apellido, string Correo, string Rol, bool IsActive);
+    public record UserListItem(
+        int UsuarioID,
+        string Nombre,
+        string? Apellido,
+        string Correo,
+        string? Telefono,
+        string Rol,
+        bool IsActive,
+        string EstadoUsuario 
+    );
 
     public async Task<IEnumerable<UserListItem>> GetUsersAsync()
     {
         using var sql = new SqlConnection(_cn);
-        var data = await sql.QueryAsync<UserListItem>(
-            "dbo.usp_Usuario_List",
-            commandType: CommandType.StoredProcedure
-        );
+
+        var data = await sql.QueryAsync<UserListItem>(@"
+            SELECT
+                u.UsuarioID,
+                u.Nombre,
+                u.Apellido,
+                u.Correo,
+                u.Telefono,
+                Rol = ISNULL((
+                    SELECT TOP (1) r.NombreRol
+                    FROM dbo.UsuarioRol ur
+                    JOIN dbo.Rol r ON r.RolID = ur.RolID
+                    WHERE ur.UsuarioID = u.UsuarioID
+                    ORDER BY ur.AssignedAt DESC
+                ), 'Empleado'),
+                u.IsActive,
+                u.EstadoUsuario
+            FROM dbo.Usuario u
+            ORDER BY u.UsuarioID DESC;
+        ");
         return data;
     }
 
@@ -175,6 +212,71 @@ public class AuthService
             UPDATE dbo.Sesion SET IsActive = 0
             WHERE UsuarioID = @uid AND IsActive = 1
         ", new { uid = userId }, tx);
+
+        tx.Commit();
+    }
+
+    private static int ToIsActive(string estado)
+        => estado == "ACTIVE" ? 1 : 0;
+
+    public async Task SetUserStatusAsync(int usuarioId, string estado, int? by)
+    {
+        if (estado != "ACTIVE" && estado != "PAUSED" && estado != "VACATION")
+            throw new ArgumentException("Estado inválido");
+
+        using var sql = new SqlConnection(_cn);
+        await sql.ExecuteAsync(@"
+            UPDATE dbo.Usuario
+               SET EstadoUsuario = @estado,
+                   IsActive = @isActive,
+                   UpdatedAt = SYSUTCDATETIME(),
+                   UpdatedBy = @by
+             WHERE UsuarioID = @usuarioId
+        ", new { usuarioId, estado, isActive = ToIsActive(estado), by });
+    }
+
+    public async Task UpdateUserBasicAsync(
+        int usuarioId,
+        string? nombre, string? apellido, string? correo, string? telefono,
+        string? rol, int? by)
+    {
+        using var sql = new SqlConnection(_cn);
+        await sql.OpenAsync();
+        using var tx = sql.BeginTransaction();
+
+        if (!string.IsNullOrWhiteSpace(correo))
+        {
+            var exists = await sql.ExecuteScalarAsync<int>(@"
+                SELECT COUNT(1)
+                FROM dbo.Usuario
+                WHERE Correo = @correo AND UsuarioID <> @usuarioId
+            ", new { correo, usuarioId }, tx);
+            if (exists > 0)
+            {
+                tx.Rollback();
+                throw new ApplicationException("EMAIL_DUPLICATE");
+            }
+        }
+
+        await sql.ExecuteAsync(@"
+            UPDATE dbo.Usuario
+               SET Nombre   = COALESCE(@nombre, Nombre),
+                   Apellido = COALESCE(@apellido, Apellido),
+                   Correo   = COALESCE(@correo, Correo),
+                   Telefono = COALESCE(@telefono, Telefono),
+                   UpdatedAt = SYSUTCDATETIME(),
+                   UpdatedBy = @by
+             WHERE UsuarioID = @usuarioId
+        ", new { usuarioId, nombre, apellido, correo, telefono, by }, tx);
+
+        if (!string.IsNullOrWhiteSpace(rol))
+        {
+            await sql.ExecuteAsync(
+                "dbo.usp_UsuarioRol_AssignOrUpdate",
+                new { UsuarioID = usuarioId, NombreRol = rol, AssignedBy = by },
+                tx, commandType: CommandType.StoredProcedure
+            );
+        }
 
         tx.Commit();
     }

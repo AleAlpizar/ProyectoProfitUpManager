@@ -3,6 +3,7 @@ import Button from "../buttons/button";
 import Modal from "../modals/Modal";
 import { createUser, RegisterInput, Role } from "./accounts.api";
 import { useSession } from "../hooks/useSession";
+import { useConfirm } from "../modals/ConfirmProvider";
 
 type Props = {
   onCreated?: (u: {
@@ -28,6 +29,7 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
   const [error, setError] = React.useState<string | null>(null);
 
   const { authHeader } = useSession();
+  const confirm = useConfirm();
 
   const open = () => setVisible(true);
   const close = () => {
@@ -50,6 +52,18 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
     if (!form.correo.includes("@")) return setError("Correo inválido.");
     if (!form.password || form.password.length < 6)
       return setError("La contraseña debe tener al menos 6 caracteres.");
+
+    const ok = await confirm({
+      title: "Crear usuario",
+      message: (
+        <>
+          ¿Crear el usuario <b>{form.nombre}{form.apellido ? " " + form.apellido : ""}</b> con rol{" "}
+          <b>{form.rol}</b>?
+        </>
+      ),
+      confirmText: "Sí, crear",
+    });
+    if (!ok) return;
 
     try {
       setLoading(true);
@@ -98,7 +112,7 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
               <button
                 type="button"
                 onClick={close}
-                className="rounded-xl p-2 text-[#8B9AA0] hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#A30862]/40"
+                className="rounded-xl p-2 text-[#8B9AA0] hover:bg:white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-[#A30862]/40"
                 aria-label="Cerrar"
                 title="Cerrar"
               >
@@ -185,3 +199,5 @@ const Field: React.FC<{
     {helper && <span className="block text-[11px] text-[#8B9AA0]">{helper}</span>}
   </label>
 );
+
+export default AddUser;

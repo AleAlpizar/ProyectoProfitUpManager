@@ -1,8 +1,9 @@
-import { apiJson } from "../../helpers/apiClient"
+import { apiJson } from "../../helpers/apiClient";
 
 const API = process.env.NEXT_PUBLIC_API_BASE_URL!;
 
 export type Role = "Administrador" | "Empleado";
+export type Status = "ACTIVE" | "PAUSED" | "VACATION";
 
 export type RegisterInput = {
   nombre: string;
@@ -18,8 +19,10 @@ export type UserDto = {
   nombre: string;
   apellido?: string;
   correo: string;
-  rol: Role;
+  telefono?: string | null;
+  rol: Role | string;
   isActive: boolean;
+  estadoUsuario?: Status;
 };
 
 export async function listUsers(authHeader: Record<string, string>) {
@@ -33,4 +36,30 @@ export async function createUser(input: RegisterInput, authHeader: Record<string
 export async function updateUserRole(usuarioId: number, rol: Role, authHeader: Record<string, string>) {
   const url = `${API}/auth/users/${usuarioId}/role/${encodeURIComponent(rol)}`;
   return apiJson<{ usuarioId: number; rol: string }>(url, "PATCH", {}, authHeader);
+}
+
+export type UpdateUserInput = Partial<{
+  nombre: string;
+  apellido?: string;
+  correo: string;
+  telefono?: string | null;
+  rol: Role;
+}>;
+
+export async function updateUser(
+  usuarioId: number,
+  payload: UpdateUserInput,
+  authHeader: Record<string, string>
+) {
+  const url = `${API}/auth/users/${usuarioId}`;
+  return apiJson<{ usuarioId: number }>(url, "PATCH", payload, authHeader);
+}
+
+export async function setUserStatus(
+  usuarioId: number,
+  status: Status,
+  authHeader: Record<string, string>
+) {
+  const url = `${API}/auth/users/${usuarioId}/status/${status}`;
+  return apiJson<{ usuarioId: number; estado: Status }>(url, "PATCH", {}, authHeader);
 }

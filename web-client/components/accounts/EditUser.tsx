@@ -1,0 +1,144 @@
+import React from "react";
+import Modal from "../modals/Modal";
+import Button from "../buttons/button";
+import { Role, UpdateUserInput, updateUser } from "./accounts.api";
+import { useSession } from "../hooks/useSession";
+import { useConfirm } from "../modals/ConfirmProvider";
+
+type Props = {
+  user: {
+    usuarioId: number;
+    nombre: string;
+    apellido?: string;
+    correo: string;
+    telefono?: string | null;
+    rol: Role;
+  };
+  onSaved?: () => void;
+  onClose?: () => void;
+};
+
+export const EditUser: React.FC<Props> = ({ user, onSaved, onClose }) => {
+  const { authHeader } = useSession();
+  const confirm = useConfirm();
+
+  const [form, setForm] = React.useState<UpdateUserInput>({
+    nombre: user.nombre,
+    apellido: user.apellido ?? "",
+    correo: user.correo,
+    telefono: user.telefono ?? "",
+    rol: user.rol ?? "Empleado",
+  });
+
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  const onChange =
+    (k: keyof UpdateUserInput) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      setForm((f) => ({ ...f, [k]: e.target.value }));
+    };
+
+  const submit = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    setError(null);
+
+    if (!form.nombre?.trim()) return setError("El nombre es obligatorio.");
+    if (form.correo && !form.correo.includes("@")) return setError("Correo inválido.");
+
+    const ok = await confirm({
+      title: "Guardar cambios",
+      message: <>¿Deseas guardar los cambios del usuario <b>{form.nombre}</b>?</>,
+      confirmText: "Sí, guardar",
+    });
+    if (!ok) return;
+
+    try {
+      setLoading(true);
+      await updateUser(user.usuarioId, form, authHeader as any);
+      onSaved?.();
+      onClose?.();
+    } catch (err: any) {
+      setError(err?.message || "No se pudo actualizar el usuario.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal onClose={onClose!}>
+      <form
+        onSubmit={submit}
+        className="w-full max-w-2xl rounded-3xl border border-white/10 bg-[#13171A] text-[#E6E9EA] shadow-[0_30px_80px_rgba(0,0,0,.55)]"
+      >
+        <div className="flex items-start justify-between gap-4 px-6 pt-5">
+          <h2 className="text-xl font-semibold">Editar usuario</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl p-2 text-[#8B9AA0] hover:bg-white/5"
+          >
+            ✕
+          </button>
+        </div>
+
+        {error && (
+          <div className="mx-6 mt-3 rounded-2xl border border-[#6C0F1C]/40 bg-[#6C0F1C]/15 px-4 py-3 text-sm text-[#F7C6CF]">
+            {error}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-4 px-6 pb-2 md:grid-cols-2 mt-4">
+          <Field label="Primer nombre" value={form.nombre ?? ""} onChange={onChange("nombre")} />
+          <Field label="Apellidos" value={form.apellido ?? ""} onChange={onChange("apellido")} />
+          <Field label="Email" type="email" value={form.correo ?? ""} onChange={onChange("correo")} />
+          <Field label="Teléfono" value={form.telefono ?? ""} onChange={onChange("telefono")} />
+          <label className="space-y-1">
+            <span className="text-xs text-[#8B9AA0]">Rol</span>
+            <select
+              className="w-full rounded-2xl border border-white/10 bg-[#0F1315] px-3 py-2.5 text-sm outline-none"
+              value={form.rol ?? "Empleado"}
+              onChange={onChange("rol")}
+            >
+              <option value="Empleado">Empleado</option>
+              <option value="Administrador">Administrador</option>
+            </select>
+          </label>
+        </div>
+
+        <div className="mx-6 my-6 flex items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+            className="!rounded-2xl !border-white/20 !bg-transparent"
+          >
+            Cancelar
+          </Button>
+          <Button type="submit" disabled={loading} className="!rounded-2xl !bg-[#A30862] !text-white">
+            {loading ? "Guardando..." : "Guardar cambios"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
+  );
+};
+
+const Field: React.FC<{
+  label: string;
+  type?: React.HTMLInputTypeAttribute;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+}> = ({ label, type = "text", value, onChange }) => (
+  <label className="space-y-1">
+    <span className="text-xs text-[#8B9AA0]">{label}</span>
+    <input
+      type={type}
+      value={value}
+      onChange={onChange}
+      className="w-full rounded-2xl border border-white/10 bg-[#0F1315] px-3 py-2.5 text-sm outline-none"
+    />
+  </label>
+);
+
+export default EditUser;

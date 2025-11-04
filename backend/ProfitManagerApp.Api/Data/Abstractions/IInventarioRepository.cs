@@ -16,14 +16,16 @@ namespace ProfitManagerApp.Api.Data.Abstractions
         Task AsignarProductoBodegaAsync(int productoId, int bodegaId);
 
         Task<decimal> GetCantidadActualAsync(int productoId, int bodegaId);
-
         Task SetCantidadAbsolutaAsync(InventarioSetCantidadDto dto, int? userId);
 
         Task InactivarProductoYRetirarStockAsync(int productoId, int? userId);
-        Task<IReadOnlyList<ProductoMiniDto>> GetProductosMiniAsync();
+        Task<IReadOnlyList<ProductoMiniDto>> GetProductosMiniAsync(string estado = "activos"); 
+
         Task<Dictionary<int, List<BodegaStockDto>>> GetBodegasConStockPorProductoAsync(
             IEnumerable<int> productoIds,
             CancellationToken ct = default);
 
-  }
+        Task ActivarProductoAsync(int id);
+        Task UpdatePrecioVentaAsync(int id, decimal precioVenta);
+    }
 }

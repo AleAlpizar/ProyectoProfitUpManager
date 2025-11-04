@@ -257,13 +257,13 @@ export default function RegistrarVentaPage() {
           </h2>
           <Button
             type="button"
-            variant="solid-emerald"
-            onClick={() =>
-              setLines((prev) => [...prev, { lineId: crypto.randomUUID() }])
-            }
+            variant="primary"
+            className="!bg-[#A30862] hover:!opacity-95 focus:!ring-2 focus:!ring-[#A30862]/40"
+            onClick={() => setLines((prev) => [...prev, { lineId: crypto.randomUUID() }])}
           >
             + Agregar producto
           </Button>
+
         </div>
 
         <div className="overflow-x-auto border-t border-white/10">
@@ -430,12 +430,14 @@ export default function RegistrarVentaPage() {
           </button> */}
           <Button
             type="button"
-            variant="solid-emerald"
+            variant="primary"
+            className="!bg-[#A30862] hover:!opacity-95 focus:!ring-2 focus:!ring-[#A30862]/40 disabled:!opacity-60"
             disabled={!lines || lines.length === 0}
             onClick={() => setShowConfirm(true)}
           >
             Registrar venta
           </Button>
+
         </div>
       </section>
 

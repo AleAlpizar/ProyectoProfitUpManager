@@ -1,9 +1,8 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
-using ProfitManagerApp.Api.Data.Abstractions;
 using ProfitManagerApp.Api.Dtos;
-using ProfitManagerApp.Data.Abstractions;
+using ProfitManagerApp.Api.Data.Abstractions;
 using ProfitManagerApp.Domain.Inventory.Dto;
 
 namespace ProfitManagerApp.Api.Controllers
@@ -76,9 +75,8 @@ namespace ProfitManagerApp.Api.Controllers
             if (string.IsNullOrWhiteSpace(dto.Nombre))
                 return Problem(title: "FIELD_REQUIRED:Nombre", statusCode: 400);
 
-            int? userId = null;
-            var idClaim = User?.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (int.TryParse(idClaim, out var idVal)) userId = idVal;
+            if (dto.PrecioVenta.HasValue && dto.PrecioVenta.Value < 0)
+                return Problem(title: "FIELD_INVALID:PrecioVenta", detail: "Debe ser >= 0", statusCode: 400);
 
             try
             {
@@ -87,9 +85,10 @@ namespace ProfitManagerApp.Api.Controllers
             }
             catch (Exception ex)
             {
+                if (ex.Message.Contains("SKU_DUPLICATE", StringComparison.OrdinalIgnoreCase))
+                    return Conflict(new { error = "El SKU ya existe." });
                 if (ex.Message.Contains("no encontrado", StringComparison.OrdinalIgnoreCase))
                     return NotFound("Not Found");
-
                 return Problem(ex.Message);
             }
         }
@@ -115,12 +114,25 @@ namespace ProfitManagerApp.Api.Controllers
             }
         }
 
-        [HttpGet("mini")]
-        public async Task<IActionResult> Mini()
+        [HttpPost("{id:int}/activar")]
+        public async Task<IActionResult> Activar([FromRoute] int id)
         {
-            var items = await _inventarioRepository.GetProductosMiniAsync();
+            try
+            {
+                await _inventarioRepository.ActivarProductoAsync(id);
+                return Ok(new { message = "Producto activado." });
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { error = "Producto no encontrado." });
+            }
+        }
+
+        [HttpGet("mini")]
+        public async Task<IActionResult> Mini([FromQuery] string estado = "activos")
+        {
+            var items = await _inventarioRepository.GetProductosMiniAsync(estado);
             return Ok(items);
         }
     }
 }
-

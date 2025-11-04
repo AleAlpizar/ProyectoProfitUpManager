@@ -49,7 +49,9 @@ export const EditUser: React.FC<Props> = ({ user, onSaved, onClose }) => {
     const ok = await confirm({
       title: "Guardar cambios",
       message: <>¿Deseas guardar los cambios del usuario <b>{form.nombre}</b>?</>,
+      tone: "brand",
       confirmText: "Sí, guardar",
+      cancelText: "Cancelar",
     });
     if (!ok) return;
 
@@ -66,37 +68,51 @@ export const EditUser: React.FC<Props> = ({ user, onSaved, onClose }) => {
   };
 
   return (
-    <Modal onClose={onClose!}>
+    <Modal frameless onClose={onClose!}>
       <form
         onSubmit={submit}
-        className="w-full max-w-2xl rounded-3xl border border-white/10 bg-[#13171A] text-[#E6E9EA] shadow-[0_30px_80px_rgba(0,0,0,.55)]"
+        className="w-full max-w-4xl rounded-3xl border border-white/10 bg-[#13171A] text-[#E6E9EA] shadow-[0_30px_80px_rgba(0,0,0,.55)] ring-1 ring-black/20"
       >
+        {/* Header */}
         <div className="flex items-start justify-between gap-4 px-6 pt-5">
-          <h2 className="text-xl font-semibold">Editar usuario</h2>
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-2.5 py-1 text-[11px] text-[#8B9AA0]">
+              Usuarios
+            </div>
+            <h2 className="mt-2 text-xl font-semibold tracking-wide">Editar usuario</h2>
+            <p className="mt-1 text-sm text-[#8B9AA0]">Actualiza los datos del usuario.</p>
+          </div>
+
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl p-2 text-[#8B9AA0] hover:bg-white/5"
+            className="rounded-xl p-2 text-[#8B9AA0] hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/20"
+            aria-label="Cerrar"
+            title="Cerrar"
           >
             ✕
           </button>
         </div>
 
+        <div className="mx-6 my-4 h-px bg-white/10" />
+
         {error && (
-          <div className="mx-6 mt-3 rounded-2xl border border-[#6C0F1C]/40 bg-[#6C0F1C]/15 px-4 py-3 text-sm text-[#F7C6CF]">
+          <div className="mx-6 mb-4 rounded-2xl border border-[#6C0F1C]/40 bg-[#6C0F1C]/15 px-4 py-3 text-sm text-[#F7C6CF]">
             {error}
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 px-6 pb-2 md:grid-cols-2 mt-4">
+        {/* Form body */}
+        <div className="grid grid-cols-1 gap-4 px-6 pb-2 md:grid-cols-2">
           <Field label="Primer nombre" value={form.nombre ?? ""} onChange={onChange("nombre")} />
           <Field label="Apellidos" value={form.apellido ?? ""} onChange={onChange("apellido")} />
           <Field label="Email" type="email" value={form.correo ?? ""} onChange={onChange("correo")} />
           <Field label="Teléfono" value={form.telefono ?? ""} onChange={onChange("telefono")} />
-          <label className="space-y-1">
+
+          <label className="space-y-1 md:col-span-2">
             <span className="text-xs text-[#8B9AA0]">Rol</span>
             <select
-              className="w-full rounded-2xl border border-white/10 bg-[#0F1315] px-3 py-2.5 text-sm outline-none"
+              className="w-full rounded-2xl border border-white/10 bg-[#0F1315] px-3 py-2.5 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
               value={form.rol ?? "Empleado"}
               onChange={onChange("rol")}
             >
@@ -106,12 +122,13 @@ export const EditUser: React.FC<Props> = ({ user, onSaved, onClose }) => {
           </label>
         </div>
 
+        {/* Actions */}
         <div className="mx-6 my-6 flex items-center justify-end gap-2">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="!rounded-2xl !border-white/20 !bg-transparent"
+            className="!rounded-2xl !border-white/20 !bg-transparent !text-[#E6E9EA] hover:!bg-white/5 focus:!ring-2 focus:!ring-[#A30862]/40"
           >
             Cancelar
           </Button>
@@ -136,7 +153,7 @@ const Field: React.FC<{
       type={type}
       value={value}
       onChange={onChange}
-      className="w-full rounded-2xl border border-white/10 bg-[#0F1315] px-3 py-2.5 text-sm outline-none"
+      className="w-full rounded-2xl border border-white/10 bg-[#0F1315] px-3 py-2.5 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
     />
   </label>
 );

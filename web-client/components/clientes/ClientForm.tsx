@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import Button from "../buttons/button";
 import Field from "../Inputs/fields";
-import { Cliente, Estado, TipoDePersona } from "./types";
 import LabeledInput from "../Inputs/LabeledInput";
+import { Cliente, Estado, TipoDePersona } from "./types";
+import { useConfirm } from "../modals/ConfirmProvider";
 
 const clamp = (n: number, min = 0, max = 100) => Math.min(max, Math.max(min, n));
 
@@ -13,8 +14,10 @@ const ClienteForm = ({
 }: {
   initial?: Cliente;
   onCancel: () => void;
-  onSave: (payload: Cliente) => void;
+  onSave: (payload: Cliente) => void | Promise<void>;
 }) => {
+  const confirm = useConfirm();
+
   const [codigoCliente, setCodigoCliente] = useState(initial?.codigoCliente ?? "");
   const [identificacion, setIdentificacion] = useState(initial?.identificacion ?? "");
   const [tipoPersona, setTipoPersona] = useState<TipoDePersona>(initial?.tipoPersona ?? "Natural");
@@ -26,13 +29,35 @@ const ClienteForm = ({
   const [error, setError] = useState<string | null>(null);
   const [descuentoPorcentaje, setDescuentoPorcentaje] = useState<number>(initial?.descuentoPorcentaje ?? 0);
   const [descuentoDescripcion, setDescuentoDescripcion] = useState<string>(initial?.descuentoDescripcion ?? "");
+  const [saving, setSaving] = useState(false);
 
-  const submit = (e: React.FormEvent) => {
+  const setDescuentoPorcentajeSafe = (raw: number | string) => {
+    const n = typeof raw === "string" ? parseFloat(raw) : raw;
+    if (Number.isNaN(n)) return setDescuentoPorcentaje(0);
+    setDescuentoPorcentaje(clamp(n));
+  };
+
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+
     if (!nombre.trim()) return setError("El nombre es obligatorio.");
     if (!email.includes("@")) return setError("El correo no es válido.");
 
-    onSave({
+    const ok = await confirm({
+      title: initial ? "Guardar cambios" : "Crear cliente",
+      message: (
+        <>
+          ¿Deseas {initial ? "guardar los cambios de" : "crear a"} <b>{nombre || "cliente"}</b>?
+        </>
+      ),
+      tone: "brand",
+      confirmText: initial ? "Sí, guardar" : "Sí, crear",
+      cancelText: "Cancelar",
+    });
+    if (!ok) return;
+
+    const payload: Cliente = {
       nombre: nombre.trim(),
       correo: email.trim(),
       isActive: estado === "Activo",
@@ -43,20 +68,21 @@ const ClienteForm = ({
       identificacion,
       telefono,
       descuentoPorcentaje,
-      descuentoDescripcion
-    });
-  };
+      descuentoDescripcion,
+    };
 
-  const setDescuentoPorcentajeSafe = (raw: number | string) => {
-    const n = typeof raw === "string" ? parseFloat(raw) : raw;
-    if (Number.isNaN(n)) return setDescuentoPorcentaje(0);
-    setDescuentoPorcentaje(clamp(n));
+    try {
+      setSaving(true);
+      await Promise.resolve(onSave(payload));
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
     <form
       onSubmit={submit}
-      className="w-full max-w-2xl rounded-3xl border border-white/10 bg-[#13171A] text-[#E6E9EA] shadow-[0_30px_80px_rgba(0,0,0,.55)] ring-1 ring-black/20"
+      className="w-full max-w-[900px] sm:max-w-3xl lg:max-w-4xl rounded-3xl border border-white/10 bg-[#13171A] text-[#E6E9EA] shadow-[0_30px_80px_rgba(0,0,0,.55)] ring-1 ring-black/20"
     >
       <div className="flex items-start justify-between gap-4 px-6 pt-5">
         <div>
@@ -93,7 +119,7 @@ const ClienteForm = ({
           label="Nombre"
           placeholder="Juan Pérez"
           value={nombre}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNombre(e.target.value)}
+          onChange={(e) => setNombre(e.target.value)}
           className="rounded-2xl border border-white/10 bg-[#1C2224] focus:ring-2 focus:ring-[#A30862]/40"
         />
 
@@ -102,7 +128,7 @@ const ClienteForm = ({
           type="email"
           placeholder="correo@company.com"
           value={email}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+          onChange={(e) => setEmail(e.target.value)}
           className="rounded-2xl border border-white/10 bg-[#1C2224] focus:ring-2 focus:ring-[#A30862]/40"
         />
 
@@ -110,8 +136,7 @@ const ClienteForm = ({
           <select
             value={estado}
             onChange={(e) => setEstado(e.target.value as Estado)}
-            className="w-full rounded-2xl border border-white/10 bg-[#1C2224] px-3 py-2 text-sm outline-none transition
-                       focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
+            className="w-full rounded-2xl border border-white/10 bg-[#1C2224] px-3 py-2 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
           >
             <option value="Activo">Activo</option>
             <option value="Inactivo">Inactivo</option>
@@ -122,7 +147,7 @@ const ClienteForm = ({
           label="Teléfono"
           placeholder="8765 4123"
           value={telefono}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTelefono(e.target.value)}
+          onChange={(e) => setTelefono(e.target.value)}
           className="rounded-2xl border border-white/10 bg-[#1C2224] focus:ring-2 focus:ring-[#A30862]/40"
         />
 
@@ -130,7 +155,7 @@ const ClienteForm = ({
           label="Identificación"
           placeholder="1-1234-1234"
           value={identificacion}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setIdentificacion(e.target.value)}
+          onChange={(e) => setIdentificacion(e.target.value)}
           className="rounded-2xl border border-white/10 bg-[#1C2224] focus:ring-2 focus:ring-[#A30862]/40"
         />
 
@@ -138,11 +163,10 @@ const ClienteForm = ({
           <select
             value={tipoPersona}
             onChange={(e) => setTipoPersona(e.target.value as TipoDePersona)}
-            className="w-full rounded-2xl border border-white/10 bg-[#1C2224] px-3 py-2 text-sm outline-none transition
-                       focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
+            className="w-full rounded-2xl border border-white/10 bg-[#1C2224] px-3 py-2 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
           >
             <option value="Natural">Natural</option>
-            <option value="Juridica">Jurídica</option>
+            <option value="Juridico">Jurídica</option>
           </select>
         </Field>
 
@@ -150,7 +174,7 @@ const ClienteForm = ({
           label="Código cliente"
           placeholder="EJMPL-123"
           value={codigoCliente}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCodigoCliente(e.target.value)}
+          onChange={(e) => setCodigoCliente(e.target.value)}
           className="rounded-2xl border border-white/10 bg-[#1C2224] focus:ring-2 focus:ring-[#A30862]/40 sm:col-span-2"
         />
 
@@ -158,7 +182,7 @@ const ClienteForm = ({
           label="Dirección"
           placeholder="Heredia, CR"
           value={direccion}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDireccion(e.target.value)}
+          onChange={(e) => setDireccion(e.target.value)}
           className="rounded-2xl border border-white/10 bg-[#1C2224] focus:ring-2 focus:ring-[#A30862]/40 sm:col-span-3"
         />
 
@@ -181,27 +205,26 @@ const ClienteForm = ({
               step={1}
               value={Number.isNaN(descuentoPorcentaje) ? 0 : descuentoPorcentaje}
               onChange={(e) => setDescuentoPorcentaje(parseFloat(e.target.value))}
-              onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()} // evita scroll accidental
-              className="w-20 rounded-2xl border border-white/10 bg-[#1C2224] px-2 py-2 text-sm outline-none
-                         focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
+              onWheel={(e) => (e.currentTarget as HTMLInputElement).blur()}
+              className="w-20 rounded-2xl border border-white/10 bg-[#1C2224] px-2 py-2 text-sm outline-none focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
             />
           </div>
-
-          {/* Preview */}
           <div className="mt-1 flex items-center justify-between text-xs text-[#8B9AA0]">
-            <span>Actual: <b className="text-white">{initial?.descuentoPorcentaje}%</b></span>
-            <span>Nuevo: <b className="text-white">{Math.round(descuentoPorcentaje)}%</b></span>
+            <span>
+              Actual: <b className="text-white">{initial?.descuentoPorcentaje ?? 0}%</b>
+            </span>
+            <span>
+              Nuevo: <b className="text-white">{Math.round(descuentoPorcentaje)}%</b>
+            </span>
           </div>
         </div>
 
-        {/* Notas */}
         <Field label="Notas (opcional)">
           <input
             placeholder="Escribe aquí tus notas…"
             value={descuentoDescripcion}
             onChange={(e) => setDescuentoDescripcion(e.target.value)}
-            className="w-full rounded-2xl border border-white/10 bg-[#1C2224] px-3 py-2 text-sm outline-none
-                       placeholder:text-[#8B9AA0] focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
+            className="w-full rounded-2xl border border-white/10 bg-[#1C2224] px-3 py-2 text-sm outline-none placeholder:text-[#8B9AA0] focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
           />
         </Field>
       </div>
@@ -218,9 +241,10 @@ const ClienteForm = ({
         <Button
           variant="primary"
           type="submit"
-          className="!rounded-2xl !bg-[#A30862] !text-white hover:!opacity-95 focus:!ring-2 focus:!ring-[#A30862]/40"
+          disabled={saving}
+          className="!rounded-2xl !bg-[#A30862] !text-white hover:!opacity-95 focus:!ring-2 focus:!ring-[#A30862]/40 disabled:!opacity-60"
         >
-          Guardar
+          {saving ? "Guardando..." : "Guardar"}
         </Button>
       </div>
     </form>
@@ -228,4 +252,3 @@ const ClienteForm = ({
 };
 
 export default ClienteForm;
-

@@ -29,5 +29,6 @@ namespace ProfitManagerApp.Api.Data.Abstractions
         Task UpdatePrecioVentaAsync(int id, decimal precioVenta);
 
         Task<IReadOnlyList<StockRowDto>> GetStockAsync(StockQueryDto query, CancellationToken ct = default);
+
     }
 }

@@ -60,6 +60,11 @@ builder.Services.AddScoped<PasswordResetService>();
 
 builder.Services.AddScoped<IVencimientosRepository, VencimientosRepository>();
 
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<IReportSessionStore, ReportSessionStore>();
+builder.Services.AddSingleton<IReportExportService, ReportExportService>();
+
+
 
 builder.Services.AddControllers()
   .AddJsonOptions(o => o.JsonSerializerOptions.Converters

@@ -134,5 +134,6 @@ namespace ProfitManagerApp.Api.Controllers
             var items = await _inventarioRepository.GetProductosMiniAsync(estado);
             return Ok(items);
         }
+
     }
 }

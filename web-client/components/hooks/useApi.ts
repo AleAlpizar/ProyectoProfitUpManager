@@ -1,34 +1,44 @@
+"use client";
 
 import { useCallback, useMemo, useState } from "react";
 import { useAuthToken } from "./useAuthToken";
 
-export type ApiError = { status: number; message: string; raw?: any };
+export type ApiError = { status: number; message: string; raw?: any; url?: string };
 
-const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "");
-
-function buildUrl(path: string): string {
-  if (/^https?:\/\//i.test(path)) return path;
-  const clean = path.replace(/^\/+/, "");
-  return API_BASE ? `${API_BASE}/${clean}` : `/${clean}`;
+export function getApiBase() {
+  return (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
 }
 
-async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
+export function buildUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) return path;
+  const base = getApiBase();
+  const clean = String(path ?? "").replace(/^\/+/, ""); 
+  return base ? `${base}/${clean}` : `/${clean}`;
+}
+
+async function apiFetch<T>(
+  path: string,
+  init: RequestInit = {}
+): Promise<T> {
   const url = buildUrl(path);
 
   const headers = new Headers(init.headers ?? {});
   const hasBody = init.body !== undefined;
 
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
-  if (hasBody && !headers.has("Content-Type") && !(init.body instanceof FormData)) {
-    headers.set("Content-Type", "application/json");
+
+  let body = init.body;
+  if (hasBody && body && typeof body !== "string" && !(body instanceof FormData)) {
+    if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
+    body = JSON.stringify(body);
   }
 
-  const body =
-    hasBody && init.body && typeof init.body !== "string" && !(init.body instanceof FormData)
-      ? JSON.stringify(init.body)
-      : init.body;
-
-  const res = await fetch(url, { ...init, headers, body, credentials: init.credentials ?? "include" });
+  const res = await fetch(url, {
+    ...init,
+    headers,
+    body,
+    credentials: init.credentials ?? "include",
+  });
 
   const parse = async () => {
     try {
@@ -46,10 +56,13 @@ async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   };
 
   const { ok, data, message } = await parse();
+
   if (!ok) {
-    const err: ApiError = { status: res.status, message, raw: data };
+    const err: ApiError = { status: res.status, message: `${message} (${url})`, raw: data, url };
     throw err;
   }
+
+  if (res.status === 204) return undefined as T;
 
   return data as T;
 }
@@ -88,13 +101,12 @@ export function useApi() {
 
   const api = useMemo(
     () => ({
-      get: <T,>(path: string, init?: RequestInit) =>
-        call<T>(path, { ...(init ?? {}), method: "GET" }),
+      get:  <T,>(path: string, init?: RequestInit) => call<T>(path, { ...(init ?? {}), method: "GET" }),
       post: <T,>(path: string, body?: any, init?: RequestInit) =>
         call<T>(path, { ...(init ?? {}), method: "POST", body }),
-      put: <T,>(path: string, body?: any, init?: RequestInit) =>
+      put:  <T,>(path: string, body?: any, init?: RequestInit) =>
         call<T>(path, { ...(init ?? {}), method: "PUT", body }),
-      del: <T,>(path: string, init?: RequestInit) =>
+      del:  <T,>(path: string, init?: RequestInit) =>
         call<T>(path, { ...(init ?? {}), method: "DELETE" }),
     }),
     [call]

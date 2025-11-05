@@ -19,7 +19,7 @@ namespace ProfitManagerApp.Api.Data.Abstractions
         Task SetCantidadAbsolutaAsync(InventarioSetCantidadDto dto, int? userId);
 
         Task InactivarProductoYRetirarStockAsync(int productoId, int? userId);
-        Task<IReadOnlyList<ProductoMiniDto>> GetProductosMiniAsync(string estado = "activos"); 
+        Task<IReadOnlyList<ProductoMiniDto>> GetProductosMiniAsync(string estado = "activos");
 
         Task<Dictionary<int, List<BodegaStockDto>>> GetBodegasConStockPorProductoAsync(
             IEnumerable<int> productoIds,
@@ -27,5 +27,7 @@ namespace ProfitManagerApp.Api.Data.Abstractions
 
         Task ActivarProductoAsync(int id);
         Task UpdatePrecioVentaAsync(int id, decimal precioVenta);
+
+        Task<IReadOnlyList<StockRowDto>> GetStockAsync(StockQueryDto query, CancellationToken ct = default);
     }
 }

@@ -484,6 +484,35 @@ ORDER BY Nombre;";
 
             return dict;
         }
+
+        public async Task<IReadOnlyList<StockRowDto>> GetStockAsync(StockQueryDto query, CancellationToken ct = default)
+        {
+            var list = new List<StockRowDto>();
+            await using var cn = new SqlConnection(_cs);
+            await cn.OpenAsync(ct);
+
+            await using var cmd = new SqlCommand("dbo.usp_Inventario_GetStock", cn)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+            cmd.Parameters.AddWithValue("@ProductoID", (object?)query.ProductoID ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@BodegaID", (object?)query.BodegaID ?? DBNull.Value);
+
+            await using var rd = await cmd.ExecuteReaderAsync(ct);
+            while (await rd.ReadAsync(ct))
+            {
+                list.Add(new StockRowDto
+                {
+                    Producto = rd["Producto"] as string ?? "",
+                    SKU = rd["SKU"] as string ?? "",
+                    Bodega = rd["Bodega"] as string ?? "",
+                    Existencia = rd["Existencia"] is DBNull ? 0m : Convert.ToDecimal(rd["Existencia"]),
+                    Disponible = rd["Disponible"] is DBNull ? 0m : Convert.ToDecimal(rd["Disponible"])
+                });
+            }
+
+            return list;
+        }
     }
 
     internal sealed class SqlExceptionBuilder : Exception

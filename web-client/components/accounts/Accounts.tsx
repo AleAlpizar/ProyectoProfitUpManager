@@ -6,11 +6,20 @@ import { UsersIcon } from "../icons/breadcrumb/users-icon";
 import { ExportIcon } from "../icons/accounts/export-icon";
 
 import { useSession } from "../hooks/useSession";
-import { listUsers, updateUserRole, type Role, type UserDto } from "./accounts.api";
+import {
+  listUsers,
+  updateUserRole,
+  setUserStatus,
+  type Role,
+  type UserDto,
+  type Status,
+} from "./accounts.api";
 import { AddUser } from "./add-user";
+import EditUser from "./EditUser";
 import Button from "../buttons/button";
+import { useConfirm } from "../modals/ConfirmProvider";
 
-type Status = "ACTIVE" | "PAUSED" | "VACATION";
+import { CardTable, Th, Td, PageBtn, StatusPill, SELECT_CLS } from "../ui/table";
 
 type UserRow = {
   id: string;
@@ -21,6 +30,8 @@ type UserRow = {
   team: string;
   status: Status;
   usuarioId?: number;
+  telefono?: string | null;
+  apellido?: string | null;
 };
 
 export default function Accounts() {
@@ -29,18 +40,29 @@ export default function Accounts() {
   const [filter, setFilter] = React.useState<"Todos" | Status>("Todos");
   const [page, setPage] = React.useState(1);
   const [loading, setLoading] = React.useState(false);
-  const pageSize = 8;
+  const [editUser, setEditUser] = React.useState<null | {
+    usuarioId: number;
+    nombre: string;
+    apellido?: string;
+    correo: string;
+    telefono?: string | null;
+    rol: Role;
+  }>(null);
 
+  const pageSize = 8;
   const { isAuthenticated, hasRole, authHeader } = useSession();
+  const confirm = useConfirm();
 
   const mapToRow = (u: UserDto): UserRow => ({
     id: `U-${String(u.usuarioID).padStart(4, "0")}`,
     usuarioId: u.usuarioID,
     name: `${u.nombre}${u.apellido ? " " + u.apellido : ""}`,
+    apellido: u.apellido ?? "",
     email: u.correo,
     role: u.rol,
     team: "—",
-    status: u.isActive ? "ACTIVE" : "PAUSED",
+    status: (u.estadoUsuario as Status) ?? (u.isActive ? "ACTIVE" : "PAUSED"),
+    telefono: u.telefono ?? "",
   });
 
   const load = React.useCallback(async () => {
@@ -55,9 +77,7 @@ export default function Accounts() {
     }
   }, [isAuthenticated, hasRole, authHeader]);
 
-  React.useEffect(() => {
-    load();
-  }, [load]);
+  React.useEffect(() => { load(); }, [load]);
 
   const filtered = React.useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -68,14 +88,12 @@ export default function Accounts() {
         r.email.toLowerCase().includes(term) ||
         String(r.role).toLowerCase().includes(term) ||
         r.id.toLowerCase().includes(term);
-
       const matchF = filter === "Todos" ? true : r.status === filter;
       return matchQ && matchF;
     });
   }, [rows, q, filter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-
   const pageRows = React.useMemo(() => {
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
@@ -83,12 +101,18 @@ export default function Accounts() {
 
   React.useEffect(() => setPage(1), [q, filter]);
 
-  const handleCreated = () => {
-    load();
-  };
+  const handleCreated = () => load();
 
   const onChangeRole = async (u: UserRow, newRole: Role) => {
-    if (!u.usuarioId) return;
+    if (!u.usuarioId || newRole === u.role) return;
+    const ok = await confirm({
+      title: "Confirmar cambio de rol",
+      message: <>¿Cambiar el rol de <b>{u.name}</b> a <b>{newRole}</b>?</>,
+      confirmText: "Sí, cambiar",
+      tone: "warning",
+    });
+    if (!ok) return;
+
     try {
       await updateUserRole(u.usuarioId, newRole, authHeader as any);
       setRows((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: newRole } : x)));
@@ -97,15 +121,45 @@ export default function Accounts() {
     }
   };
 
+  const onChangeStatus = async (u: UserRow, status: Status) => {
+    if (!u.usuarioId || status === u.status) return;
+    const human = status === "ACTIVE" ? "Activo" : status === "PAUSED" ? "Inactivo" : "Vacaciones";
+    const ok = await confirm({
+      title: "Confirmar cambio de estado",
+      message: <>¿Cambiar el estado de <b>{u.name}</b> a <b>{human}</b>?</>,
+      confirmText: "Sí, cambiar",
+      tone: "warning",
+    });
+    if (!ok) return;
+
+    try {
+      await setUserStatus(u.usuarioId, status, authHeader as any);
+      setRows((prev) => prev.map((x) => (x.id === u.id ? { ...x, status } : x)));
+    } catch (e: any) {
+      alert(e?.message || "No se pudo cambiar el estado");
+    }
+  };
+
+  const openEdit = (u: UserRow) => {
+    if (!u.usuarioId) return;
+    const [nombre, ...ap] = u.name.split(" ");
+    setEditUser({
+      usuarioId: u.usuarioId,
+      nombre: nombre ?? "",
+      apellido: u.apellido ?? ap.join(" "),
+      correo: u.email,
+      telefono: u.telefono ?? "",
+      rol: (u.role as Role) ?? "Empleado",
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#0B0F0E] text-[#E6E9EA] p-6 sm:px-16">
       <nav aria-label="Breadcrumb" className="mb-3">
         <ol className="flex items-center gap-2 text-sm text-[#8B9AA0]">
           <li className="flex items-center gap-2">
             <HouseIcon />
-            <Link href="/" className="hover:text-white transition">
-              Inicio
-            </Link>
+            <Link href="/" className="hover:text-white transition">Inicio</Link>
             <span className="px-1 text-[#8B9AA0]">/</span>
           </li>
           <li className="flex items-center gap-2">
@@ -129,19 +183,8 @@ export default function Accounts() {
               placeholder="Buscar por nombre, correo o #"
               className="w-full rounded-xl border border-white/10 bg-[#121618] pl-9 pr-3 py-2 text-sm outline-none placeholder:text-[#8B9AA0] focus:ring-2 focus:ring-[#A30862]/40 focus:border-transparent transition"
             />
-            <svg
-              className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 opacity-70"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              aria-hidden
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="m21 21-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z"
-              />
+            <svg className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z" />
             </svg>
           </label>
 
@@ -152,7 +195,7 @@ export default function Accounts() {
           >
             <option value="Todos">Todos</option>
             <option value="ACTIVE">Activos</option>
-            <option value="PAUSED">Pausados</option>
+            <option value="PAUSED">Inactivos</option>
             <option value="VACATION">Vacaciones</option>
           </select>
         </div>
@@ -169,160 +212,118 @@ export default function Accounts() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-2xl border border-white/10 bg-[#121618] shadow-[0_10px_30px_rgba(0,0,0,0.25)]">
-        <table className="min-w-full border-collapse">
-          <thead>
-            <tr className="bg-[#1C2224]">
-              <Th>Nombre</Th>
-              <Th>ROL</Th>
-              <Th>Estado</Th>
-              <Th className="text-right">ACCIONES</Th>
+      <CardTable>
+        <thead>
+          <tr className="bg-[#1C2224]">
+            <Th>Nombre</Th>
+            <Th>ROL</Th>
+            <Th>Estado</Th>
+            <Th className="text-right">ACCIONES</Th>
+          </tr>
+        </thead>
+
+        <tbody className="[&>tr:not(:last-child)]:border-b [&>tr]:border-white/10">
+          {loading && (
+            <tr>
+              <td colSpan={4} className="px-4 py-10 text-center text-sm text-[#8B9AA0]">
+                Cargando usuarios…
+              </td>
             </tr>
-          </thead>
-          <tbody className="[&>tr:not(:last-child)]:border-b [&>tr]:border-white/10">
-            {loading && (
-              <tr>
-                <td colSpan={4} className="px-4 py-10 text-center text-sm text-[#8B9AA0]">
-                  Cargando usuarios…
-                </td>
-              </tr>
-            )}
+          )}
 
-            {!loading &&
-              pageRows.map((u) => (
-                <tr key={u.id} className="hover:bg-white/5">
-                  <Td>
-                    <div className="flex items-center gap-3">
-                      <div className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-sm font-semibold text-white">
-                        {u.name.slice(0, 1).toUpperCase()}
-                      </div>
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-medium">{u.name}</div>
-                        <div className="truncate text-xs text-[#8B9AA0]">{u.email}</div>
-                      </div>
+          {!loading &&
+            pageRows.map((u) => (
+              <tr key={u.id} className="hover:bg-white/5">
+                <Td>
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-10 w-10 place-items-center rounded-full bg-white/10 text-sm font-semibold text-white">
+                      {u.name.slice(0, 1).toUpperCase()}
                     </div>
-                  </Td>
-
-                  <Td>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold">{u.role}</span>
-                      {isAuthenticated && hasRole("Administrador") && (
-                        <select
-                          className="rounded-lg border border-white/10 bg-[#1C2224] px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-[#A30862]/40"
-                          value={u.role === "Administrador" ? "Administrador" : "Empleado"}
-                          onChange={(e) => onChangeRole(u, e.target.value as Role)}
-                          title="Cambiar rol"
-                        >
-                          <option value="Empleado">Empleado</option>
-                          <option value="Administrador">Administrador</option>
-                        </select>
-                      )}
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">{u.name}</div>
+                      <div className="truncate text-xs text-[#8B9AA0]">{u.email}</div>
                     </div>
-                  </Td>
+                  </div>
+                </Td>
 
-                  <Td>
-                    <StatusBadge status={u.status} />
-                  </Td>
-
-                  <Td className="text-right">
-                    <div className="inline-flex items-center gap-2">
-                      <Button
-                        variant="outline-primary"
-                        onClick={() => console.log("Editar", u.id)}
-                        className="!rounded-xl !border-white/20 !bg-transparent hover:!bg-white/5 !text-white"
+                <Td>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="truncate text-sm font-semibold">{u.role}</span>
+                    {isAuthenticated && hasRole("Administrador") && (
+                      <select
+                        className={SELECT_CLS}
+                        value={u.role === "Administrador" ? "Administrador" : "Empleado"}
+                        onChange={(e) => onChangeRole(u, e.target.value as Role)}
+                        title="Cambiar rol"
                       >
-                        Editar
-                      </Button>
-                      <Button
-                        variant="danger"
-                        onClick={() => console.log("Inactivar (visual)", u.id)}
-                        className="!rounded-xl !bg-[#6C0F1C] hover:!opacity-95"
-                      >
-                        Inactivar
-                      </Button>
-                    </div>
-                  </Td>
-                </tr>
-              ))}
+                        <option value="Empleado">Empleado</option>
+                        <option value="Administrador">Administrador</option>
+                      </select>
+                    )}
+                  </div>
+                </Td>
 
-            {!loading && pageRows.length === 0 && (
-              <tr>
-                <td colSpan={4} className="px-4 py-10 text-center text-sm text-[#8B9AA0]">
-                  No hay cuentas para mostrar.
-                </td>
+                <Td>
+                  <div className="flex items-center justify-between gap-3">
+                    <StatusPill status={u.status} />
+                    {isAuthenticated && hasRole("Administrador") && (
+                      <select
+                        className={SELECT_CLS}
+                        value={u.status}
+                        onChange={(e) => onChangeStatus(u, e.target.value as Status)}
+                        title="Cambiar estado"
+                      >
+                        <option value="ACTIVE">Activo</option>
+                        <option value="PAUSED">Inactivo</option>
+                        <option value="VACATION">Vacaciones</option>
+                      </select>
+                    )}
+                  </div>
+                </Td>
+
+                <Td className="text-right">
+                  <div className="inline-flex items-center gap-2">
+                    <Button
+                      variant="outline-primary"
+                      onClick={() => openEdit(u)}
+                      className="!rounded-xl !border-white/20 !bg-transparent hover:!bg-white/5 !text-white"
+                    >
+                      Editar
+                    </Button>
+                  </div>
+                </Td>
               </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            ))}
+
+          {!loading && pageRows.length === 0 && (
+            <tr>
+              <td colSpan={4} className="px-4 py-10 text-center text-sm text-[#8B9AA0]">
+                No hay cuentas para mostrar.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </CardTable>
 
       <div className="mt-4 flex items-center justify-between text-sm text-[#8B9AA0]">
         <span>
           Mostrando{" "}
           <b className="text-white">
-            {pageRows.length === 0 ? 0 : (page - 1) * pageSize + 1}-
-            {(page - 1) * pageSize + pageRows.length}
+            {pageRows.length === 0 ? 0 : (page - 1) * pageSize + 1}-{(page - 1) * pageSize + pageRows.length}
           </b>{" "}
           de <b className="text-white">{filtered.length}</b>
         </span>
 
         <div className="flex items-center gap-2">
-          <PageBtn disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>
-            Prev
-          </PageBtn>
-          <span>
-            Página <b className="text-white">{page}</b> de <b className="text-white">{totalPages}</b>
-          </span>
-          <PageBtn disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>
-            Next
-          </PageBtn>
+          <PageBtn disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</PageBtn>
+          <span> Página <b className="text-white">{page}</b> de <b className="text-white">{totalPages}</b></span>
+          <PageBtn disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next</PageBtn>
         </div>
       </div>
+
+      {editUser && (
+        <EditUser user={editUser} onSaved={load} onClose={() => setEditUser(null)} />
+      )}
     </div>
   );
 }
-
-const Th: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ className = "", children }) => (
-  <th
-    className={[
-      "px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wide",
-      "text-[#8B9AA0]",
-      className,
-    ].join(" ")}
-  >
-    {children}
-  </th>
-);
-
-const Td: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ className = "", children }) => (
-  <td className={["px-3 py-3 text-sm", className].join(" ")}>{children}</td>
-);
-
-const PageBtn: React.FC<React.PropsWithChildren<React.ButtonHTMLAttributes<HTMLButtonElement>>> = ({
-  className = "",
-  children,
-  ...props
-}) => (
-  <button
-    className={[
-      "rounded-xl px-3 py-1 text-sm transition",
-      "bg-[#1C2224] text-white hover:bg-white/10",
-      "disabled:cursor-not-allowed disabled:opacity-50",
-      "focus:outline-none focus:ring-2 focus:ring-[#A30862]/40",
-      className,
-    ].join(" ")}
-    {...props}
-  >
-    {children}
-  </button>
-);
-
-const StatusBadge: React.FC<{ status: "ACTIVE" | "PAUSED" | "VACATION" }> = ({ status }) => {
-  const map: Record<"ACTIVE" | "PAUSED" | "VACATION", string> = {
-    ACTIVE: "bg-[#95B64F]/20 text-[#95B64F] border-[#95B64F]/30",
-    PAUSED: "bg-[#6C0F1C]/20 text-[#F7C6CF] border-[#6C0F1C]/40",
-    VACATION: "bg-amber-400/20 text-amber-300 border-amber-400/30",
-  };
-  const label = { ACTIVE: "ACTIVO", PAUSED: "PAUSADO", VACATION: "VACACIONES" } as const;
-  return <span className={["inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", "border", map[status]].join(" ")}>{label[status]}</span>;
-};

@@ -13,6 +13,8 @@ using ProfitManagerApp.Data;
 using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Data.Infrastructure;
 using ProfitManagerApp.Data.Repositories;
+
+
 using ApiDbContext = ProfitManagerApp.Api.Infrastructure.AppDbContext;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -38,6 +40,7 @@ builder.Services.AddDbContext<ApiDbContext>(opt =>
              ?? throw new InvalidOperationException("ConnectionStrings:Default no está configurado.");
     opt.UseSqlServer(cs);
 });
+builder.Services.AddScoped<ProfitManagerApp.Api.Data.Abstractions.IVencimientosRepository, ProfitManagerApp.Data.VencimientosRepository>();
 
 builder.Services.AddProfitManagerData(builder.Configuration);
 builder.Services.AddSingleton<SqlConnectionFactory>();
@@ -54,6 +57,9 @@ builder.Services.AddScoped<JwtTokenService>();
 
 builder.Services.AddSingleton<IMailSender, SmtpMailSender>();
 builder.Services.AddScoped<PasswordResetService>();
+
+builder.Services.AddScoped<IVencimientosRepository, VencimientosRepository>();
+
 
 builder.Services.AddControllers()
   .AddJsonOptions(o => o.JsonSerializerOptions.Converters

@@ -1,5 +1,4 @@
 "use client";
-
 import React from "react";
 import type { BodegaDto } from "@/components/hooks/useBodegas";
 
@@ -10,17 +9,19 @@ export default function BodegasTable({ rows }: Props) {
 
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#121618] text-[#E6E9EA] shadow-[0_10px_30px_rgba(0,0,0,.25)]">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#1C2224]">
+      <div className="flex items-center justify-between border-b border-white/10 bg-[#1C2224] px-4 py-3">
         <h3 className="text-sm font-semibold tracking-wide">Bodegas</h3>
         <div className="text-xs text-[#8B9AA0]">{rows.length} registradas</div>
       </div>
 
       <div className="overflow-x-auto">
         <table className="min-w-full border-separate border-spacing-0">
-          <thead>
-            <tr className="text-left text-[11px] uppercase tracking-wide text-[#8B9AA0] bg-[#1C2224]">
-              {["Código", "Nombre", "Dirección", "Contacto", "Activa"].map((h, idx, arr) => (
-                <Th key={h} isLast={idx === arr.length - 1}>{h}</Th>
+          <thead className="sticky top-0 z-10">
+            <tr className="bg-[#1C2224] text-left text-[11px] uppercase tracking-wide text-[#8B9AA0]">
+              {["Código", "Nombre", "Dirección", "Contacto", "Activa"].map((h, i, arr) => (
+                <Th key={h} isLast={i === arr.length - 1}>
+                  {h}
+                </Th>
               ))}
             </tr>
           </thead>
@@ -34,38 +35,39 @@ export default function BodegasTable({ rows }: Props) {
               </tr>
             )}
 
-            {!isEmpty && rows.map((b, i) => {
-              const active = typeof b.isActive === "number" ? b.isActive === 1 : !!b.isActive;
-              return (
-                <tr
-                  key={b.bodegaID}
-                  className={`transition-colors ${i % 2 === 0 ? "bg-white/[.02]" : "bg-transparent"} hover:bg-white/[.06]`}
-                >
-                  <Td>{b.codigo ?? "—"}</Td>
-                  <Td className="font-medium">{b.nombre}</Td>
-                  <Td>{b.direccion ?? "—"}</Td>
-                  <Td>{b.contacto ?? "—"}</Td>
-                  <Td>
-                    <span
-                      className={[
-                        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border",
-                        active
-                          ? "bg-[#95B64F]/18 text-[#95B64F] border-[#95B64F]/35"
-                          : "bg-white/5 text-[#8B9AA0] border-white/10"
-                      ].join(" ")}
-                    >
-                      <span className={`text-[10px] ${active ? "text-[#95B64F]" : "text-[#8B9AA0]"}`}>●</span>
-                      {active ? "Sí" : "No"}
-                    </span>
-                  </Td>
-                </tr>
-              );
-            })}
+            {!isEmpty &&
+              rows.map((b, i) => {
+                const active = typeof b.isActive === "number" ? b.isActive === 1 : !!b.isActive;
+                return (
+                  <tr
+                    key={b.bodegaID}
+                    className={`transition-colors ${i % 2 === 0 ? "bg-white/[.02]" : "bg-transparent"} hover:bg-white/[.06]`}
+                  >
+                    <Td>{b.codigo ?? "—"}</Td>
+                    <Td className="font-medium">{b.nombre}</Td>
+                    <Td>{b.direccion ?? "—"}</Td>
+                    <Td>{b.contacto ?? "—"}</Td>
+                    <Td>
+                      <span
+                        className={[
+                          "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium border",
+                          active
+                            ? "bg-[#95B64F]/18 text-[#95B64F] border-[#95B64F]/35"
+                            : "bg-white/5 text-[#8B9AA0] border-white/10",
+                        ].join(" ")}
+                      >
+                        <span className={`text-[10px] ${active ? "text-[#95B64F]" : "text-[#8B9AA0]"}`}>●</span>
+                        {active ? "Sí" : "No"}
+                      </span>
+                    </Td>
+                  </tr>
+                );
+              })}
           </tbody>
         </table>
       </div>
 
-      <div className="px-4 py-2 text-xs text-[#8B9AA0] border-t border-white/10">
+      <div className="border-t border-white/10 px-4 py-2 text-xs text-[#8B9AA0]">
         Consejo: usa el buscador de la página para filtrar por nombre o código.
       </div>
     </div>
@@ -75,7 +77,6 @@ export default function BodegasTable({ rows }: Props) {
 const Th: React.FC<React.PropsWithChildren<{ isLast?: boolean }>> = ({ children, isLast }) => (
   <th className={["px-4 py-2.5 font-semibold", !isLast && "border-r border-white/5"].join(" ")}>{children}</th>
 );
-
 const Td: React.FC<React.PropsWithChildren<{ className?: string }>> = ({ children, className = "" }) => (
   <td className={["px-4 py-3 text-sm", className].join(" ")}>{children}</td>
 );

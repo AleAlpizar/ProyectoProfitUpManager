@@ -1,9 +1,10 @@
 import type { AppProps } from "next/app";
 import React from "react";
 
-import "../styles/globals.css";                 
+import "../styles/globals.css";
 import { Layout } from "../components/layout/layout";
 import { useSession } from "../components/hooks/useSession";
+import { ConfirmProvider } from "../components/modals/ConfirmProvider";
 
 function SessionGate({ children }: { children: React.ReactNode }) {
   const { ready } = useSession();
@@ -18,9 +19,11 @@ export default function App({ Component, pageProps }: AppProps) {
 
   return (
     <SessionGate>
-      <Layout noChrome={noChrome}>
-        <Component {...pageProps} />
-      </Layout>
+      <ConfirmProvider>
+        <Layout noChrome={noChrome}>
+          <Component {...pageProps} />
+        </Layout>
+      </ConfirmProvider>
     </SessionGate>
   );
 }

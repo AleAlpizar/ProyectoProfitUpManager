@@ -1,10 +1,7 @@
 import React from "react";
-import { Input, Link, Navbar, Text } from "@nextui-org/react";
-import { FeedbackIcon } from "../icons/navbar/feedback-icon";
+import { Link, Navbar } from "@nextui-org/react";
 import { SupportIcon } from "../icons/navbar/support-icon";
-import { SearchIcon } from "../icons/searchicon";
 import { Box } from "../styles/box";
-import { Flex } from "../styles/flex";
 import { BurguerButton } from "./burguer-button";
 import { NotificationsDropdown } from "./notifications-dropdown";
 import { UserDropdown } from "./user-dropdown";
@@ -17,7 +14,6 @@ const BG = "#121618";
 const TEXT = "#E6E9EA";
 const MUTED = "#8B9AA0";
 const BORDER = "rgba(255,255,255,0.08)";
-const ACCENT = "#A30862";
 
 export const NavbarWrapper: React.FC<Props> = ({ children }) => {
   const collapseItems = [
@@ -52,19 +48,29 @@ export const NavbarWrapper: React.FC<Props> = ({ children }) => {
         css={{
           position: "sticky",
           top: 0,
-          backdropFilter: "saturate(180%) blur(8px)",
-          bg: `${BG}AA`, 
+          backdropFilter: "none",
+          bg: BG,                 
+          boxShadow: "none",
           borderBottom: `1px solid ${BORDER}`,
           justifyContent: "space-between",
           width: "100%",
-          "@md": {
-            justifyContent: "space-between",
-          },
+
           "& .nextui-navbar-container": {
+            background: "transparent",
+            backdropFilter: "none",
+            boxShadow: "none",
             border: "none",
             maxWidth: "100%",
             gap: "$6",
             "@md": { justifyContent: "space-between" },
+          },
+          "& .nextui-navbar-content": {
+            background: "transparent",
+          },
+          "& .nextui-navbar-wrapper": {
+            background: "transparent",
+            backdropFilter: "none",
+            boxShadow: "none",
           },
         }}
       >
@@ -72,42 +78,9 @@ export const NavbarWrapper: React.FC<Props> = ({ children }) => {
           <BurguerButton aria-label="Abrir menú" />
         </Navbar.Content>
 
-        <Navbar.Content hideIn={"md"} css={{ width: "100%" }}>
-          <Input
-            clearable
-            aria-label="Buscar"
-            contentLeft={<SearchIcon fill={MUTED} size={16} />}
-            contentLeftStyling={false}
-            placeholder="Buscar…"
-            css={{
-              "w": "100%",
-              "transition": "all 0.2s ease",
-              "@xsMax": { w: "100%" },
-              "& .nextui-input-content--left": {
-                h: "100%",
-                ml: "$4",
-                dflex: "center",
-              },
-              "& input": {
-                color: TEXT,
-                "::placeholder": { color: `${MUTED}` },
-              },
-              "& .nextui-input-wrapper": {
-                bg: "rgba(255,255,255,0.04)",
-                border: `1px solid ${BORDER}`,
-              },
-              "&:focus-within .nextui-input-wrapper": {
-                border: `1px solid ${ACCENT}`,
-                boxShadow: `0 0 0 2px ${ACCENT}40`,
-              },
-            }}
-          />
-        </Navbar.Content>
+        <Navbar.Content css={{ flex: 1 }} />
 
         <Navbar.Content>
-          <Navbar.Content hideIn={"md"}>
-          </Navbar.Content>
-
           <Navbar.Content>
             <NotificationsDropdown />
           </Navbar.Content>
@@ -139,12 +112,7 @@ export const NavbarWrapper: React.FC<Props> = ({ children }) => {
               }}
               isActive={index === 2}
             >
-              <Link
-                color="inherit"
-                css={{ minWidth: "100%" }}
-                href="#"
-                className="hover:opacity-90"
-              >
+              <Link color="inherit" css={{ minWidth: "100%" }} href="#" className="hover:opacity-90">
                 {item}
               </Link>
             </Navbar.CollapseItem>

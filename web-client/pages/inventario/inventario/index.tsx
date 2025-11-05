@@ -18,8 +18,8 @@ export default function InventarioHubPage() {
         role="list"
       >
         <FeatureCard
-          title="Productos"
-          desc="Alta y gestión de artículos."
+          title="Alta Productos"
+          desc="Alta y gestión de productos."
           href="/inventario/productos"
           cta="Ir a Productos"
           icon={
@@ -61,8 +61,8 @@ export default function InventarioHubPage() {
         />
 
         <FeatureCard
-          title="Existencias"
-          desc="Stock por producto y bodega."
+          title="Detalles Productos"
+          desc="Editar producto y ver datos."
           href="/inventario/existencias"
           cta="Ver Existencias"
           icon={

@@ -1185,3 +1185,25 @@ ALTER COLUMN Nombre NVARCHAR(200) NOT NULL;
 
 ALTER TABLE Cliente
 ADD CONSTRAINT DF_Cliente_TipoPersona DEFAULT 'Natural' FOR TipoPersona;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

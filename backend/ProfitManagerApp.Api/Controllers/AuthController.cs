@@ -123,6 +123,7 @@ public class AuthController : ControllerBase
 
         return Ok(new { message = "Contraseña actualizada correctamente." });
     }
+
     public record ForgotPasswordDto(string Correo);
 
     [HttpPost("password/forgot")]
@@ -133,12 +134,39 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Si el correo existe, se enviará una contraseña temporal." });
     }
 
-
     [HttpGet("users")]
     [Authorize(Roles = "Administrador")]
     public async Task<ActionResult<IEnumerable<UserListItem>>> Users()
     {
         var data = await _auth.GetUsersAsync();
         return Ok(data);
+    }
+
+
+    public record UpdateUserDto(string? Nombre, string? Apellido, string? Correo, string? Telefono, string? Rol);
+
+    [HttpPatch("users/{usuarioId:int}/status/{estado}")]
+    [Authorize(Roles = "Administrador")]
+    public async Task<IActionResult> SetStatus([FromRoute] int usuarioId, [FromRoute] string estado)
+    {
+        var by = GetUserId();
+        await _auth.SetUserStatusAsync(usuarioId, estado.ToUpperInvariant(), by);
+        return Ok(new { usuarioId, estado = estado.ToUpperInvariant() });
+    }
+
+    [HttpPatch("users/{usuarioId:int}")]
+    [Authorize(Roles = "Administrador")]
+    public async Task<IActionResult> UpdateBasic([FromRoute] int usuarioId, [FromBody] UpdateUserDto dto)
+    {
+        try
+        {
+            var by = GetUserId();
+            await _auth.UpdateUserBasicAsync(usuarioId, dto.Nombre, dto.Apellido, dto.Correo, dto.Telefono, dto.Rol, by);
+            return Ok(new { usuarioId });
+        }
+        catch (ApplicationException ex) when (ex.Message == "EMAIL_DUPLICATE")
+        {
+            return Conflict(new { message = "El correo ya está registrado." });
+        }
     }
 }

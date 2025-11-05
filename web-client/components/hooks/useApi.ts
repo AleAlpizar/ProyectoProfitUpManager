@@ -12,7 +12,7 @@ export function getApiBase() {
 export function buildUrl(path: string): string {
   if (/^https?:\/\//i.test(path)) return path;
   const base = getApiBase();
-  const clean = String(path ?? "").replace(/^\/+/, ""); 
+  const clean = String(path ?? "").replace(/^\/+/, "");
   return base ? `${base}/${clean}` : `/${clean}`;
 }
 
@@ -28,9 +28,13 @@ async function apiFetch<T>(
   if (!headers.has("Accept")) headers.set("Accept", "application/json");
 
   let body = init.body;
-  if (hasBody && body && typeof body !== "string" && !(body instanceof FormData)) {
+
+  if (hasBody && !(body instanceof FormData)) {
     if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-    body = JSON.stringify(body);
+
+    if (body && typeof body !== "string") {
+      body = JSON.stringify(body);
+    }
   }
 
   const res = await fetch(url, {

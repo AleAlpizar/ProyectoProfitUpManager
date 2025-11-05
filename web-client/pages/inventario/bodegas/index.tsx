@@ -11,7 +11,6 @@ import BodegaForm from "@/components/bodegas/BodegaForm";
 
 const WINE = "#A30862";
 
-
 export type BodegaDto = {
   bodegaID: number;
   codigo?: string | null;
@@ -52,7 +51,6 @@ type StockRow = {
 };
 
 type EstadoFiltro = "activos" | "inactivos" | "todos";
-
 
 function ProductSelect({
   value,
@@ -147,11 +145,10 @@ function ProductSelect({
 }
 
 export default function BodegasPage() {
-  const { call } = useApi();
+  const { call, post } = useApi(); 
   const { inactivate, loading: inactLoading, error: inactError } = useBodegaDelete();
   const { activate, loading: actLoading, error: actError } = useBodegaActivate();
 
-  
   const [rows, setRows] = useState<BodegaDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -202,7 +199,6 @@ export default function BodegasPage() {
       });
   }, [rows, q, estado]);
 
-  
   const [toast, setToast] = useState<{ kind: "ok" | "err" | "warn"; msg: string } | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState>({ open: false });
   const askInactivate = (b: BodegaDto) =>
@@ -238,7 +234,6 @@ export default function BodegasPage() {
     await load();
     setToast({ kind: "ok", msg: "Bodega guardada correctamente." });
   };
-
 
   const [stockModal, setStockModal] = useState<{
     open: boolean;
@@ -278,7 +273,7 @@ export default function BodegasPage() {
         { method: "GET" }
       );
 
-      const byBodega = new Map<number, number>(); 
+      const byBodega = new Map<number, number>();
       (disp ?? []).forEach((p) => {
         const bRow = p.bodegas.find((x) => x.id === b.bodegaID);
         byBodega.set(p.id, bRow ? (bRow.cantidad ?? 0) : 0);
@@ -322,14 +317,11 @@ export default function BodegasPage() {
       );
       const actual = cur?.cantidad ?? 0;
 
-      await call<void>(`/api/inventario/cantidad/set`, {
-        method: "POST",
-        body: JSON.stringify({
-          productoID,
-          bodegaID: stockModal.bodega.bodegaID,
-          nuevaCantidad: actual + agregar.cantidad,
-          motivo: agregar.motivo?.trim() || null,
-        }),
+      await post<void>(`/api/inventario/cantidad/set`, {
+        productoID,
+        bodegaID: stockModal.bodega.bodegaID,
+        nuevaCantidad: actual + agregar.cantidad,
+        motivo: agregar.motivo?.trim() || null,
       });
 
       await openStockFor(stockModal.bodega);

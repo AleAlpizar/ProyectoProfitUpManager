@@ -15,7 +15,6 @@ namespace ProfitManagerApp.Data
                ?? throw new InvalidOperationException("Connection string 'Default' no configurada.");
         }
 
-       
         public async Task<int> CreateAsync(VencimientoUpdateDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Titulo))
@@ -66,7 +65,6 @@ SELECT CAST(SCOPE_IDENTITY() AS int);";
             return newId;
         }
 
-    
         public async Task<VencimientoDetalleDto?> GetByIdAsync(int id)
         {
             const string sql = @"
@@ -87,7 +85,6 @@ WHERE DocumentoVencimientoID = @id;";
             return await cn.QueryFirstOrDefaultAsync<VencimientoDetalleDto>(sql, new { id });
         }
 
-       
         public async Task UpdateAsync(int id, VencimientoUpdateDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Titulo))
@@ -146,7 +143,6 @@ WHERE DocumentoVencimientoID = @Id;";
             await tx.CommitAsync();
         }
 
-       
         public async Task<IReadOnlyList<VencimientoRowDto>> ListCalendarioAsync(DateTime? desde, DateTime? hasta, bool soloPendientes)
         {
             const string sql = @"
@@ -206,7 +202,6 @@ ORDER BY FechaVencimiento ASC, Titulo ASC;";
             return rows.ToList();
         }
 
-    
         public async Task<IReadOnlyList<AlertRowDto>> ListAlertasPendientesAsync(int umbralDefault = 7)
         {
             const string sql = @"
@@ -239,7 +234,6 @@ ORDER BY dv.FechaVencimiento ASC, dv.Titulo ASC;";
             return rows.ToList();
         }
 
-       
         public async Task<IReadOnlyList<TipoDocumentoVtoDto>> ListTiposActivosAsync()
         {
             const string sql = @"
@@ -255,6 +249,20 @@ ORDER BY Nombre;";
             await using var cn = new SqlConnection(_cs);
             var rows = await cn.QueryAsync<TipoDocumentoVtoDto>(sql);
             return rows.ToList();
+        }
+
+        public async Task DeleteAsync(int id)
+        {
+            const string sql = @"
+UPDATE dbo.DocumentoVencimiento
+   SET IsActive = 0, UpdatedAt = SYSUTCDATETIME()
+ WHERE DocumentoVencimientoID = @Id AND IsActive = 1;";
+
+            await using var cn = new SqlConnection(_cs);
+            var rows = await cn.ExecuteAsync(sql, new { Id = id });
+
+            if (rows == 0)
+                throw new KeyNotFoundException("Documento no encontrado o ya inactivo.");
         }
     }
 }

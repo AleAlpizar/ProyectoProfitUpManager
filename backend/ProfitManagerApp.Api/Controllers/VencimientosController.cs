@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProfitManagerApp.Api.Data.Abstractions;
 using ProfitManagerApp.Api.Dtos;
+using System.Linq;
 
 namespace ProfitManagerApp.Api.Controllers
 {
@@ -26,6 +27,20 @@ namespace ProfitManagerApp.Api.Controllers
         {
             var rows = await _repo.ListAlertasPendientesAsync(umbralDefault);
             return Ok(rows);
+        }
+
+        [HttpGet("tipos")]
+        public async Task<IActionResult> Tipos()
+        {
+            var rows = await _repo.ListTiposActivosAsync();
+            var shaped = rows.Select(t => new
+            {
+                tipoDocumentoVencimientoID = t.TipoDocumentoVencimientoID,
+                nombre = t.Nombre,
+                descripcion = t.Descripcion,
+                activo = t.IsActive
+            });
+            return Ok(shaped);
         }
 
         [HttpGet("{id:int}")]
@@ -85,6 +100,24 @@ namespace ProfitManagerApp.Api.Controllers
             catch (Exception ex)
             {
                 return Problem(title: "UPDATE_ERROR", detail: ex.Message, statusCode: 500);
+            }
+        }
+
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> Delete([FromRoute] int id)
+        {
+            try
+            {
+                await _repo.DeleteAsync(id);
+                return NoContent();
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFound(new { error = "Documento no encontrado." });
+            }
+            catch (Exception ex)
+            {
+                return Problem(title: "DELETE_ERROR", detail: ex.Message, statusCode: 500);
             }
         }
     }

@@ -17,8 +17,16 @@ export default function LoginPage() {
   }, [isAuthenticated, router]);
 
   const isEmailValid = React.useMemo(() => /\S+@\S+\.\S+/.test(email), [email]);
-  const isPassValid = password.length >= 6;
+  const isPassValid = password.length >= 6; 
   const canSubmit = isEmailValid && isPassValid && !loading;
+
+  const vino = {
+    bg: "bg-[#62053B]",
+    hover: "hover:bg-[#7A094B]",
+    ring: "focus:ring-[#62053B]/40",
+    border: "border-[#62053B]",
+    text: "text-[#62053B]",
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,11 +49,18 @@ export default function LoginPage() {
   return (
     <main className="grid min-h-screen place-items-center bg-neutral-900 px-4">
       <div className="w-full max-w-md rounded-2xl border border-white/10 bg-black p-8 shadow-[0_8px_30px_rgba(0,0,0,.35)]">
-        <div className="mx-auto grid h-10 w-10 place-items-center rounded-md bg-white text-[13px] font-semibold text-black">
-          PU
+        <div className="mx-auto mb-1 grid h-10 w-10 place-items-center">
+          <img
+            src="/brand/pum-logo.jpg"
+            alt="Profit Up Manager"
+            className="h-10 w-auto rounded-md object-contain"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+            }}
+          />
         </div>
 
-        <header className="mt-6 mb-8 text-center">
+        <header className="mt-4 mb-8 text-center">
           <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-[42px]">
             Iniciar sesión
           </h1>
@@ -75,7 +90,11 @@ export default function LoginPage() {
               autoComplete="email"
               placeholder="tucorreo@empresa.com"
               aria-invalid={!!email && !isEmailValid}
-              className="block w-full rounded-lg border border-white/10 bg-neutral-900 px-3.5 py-2.5 text-sm text-white placeholder-white/40 outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+              className={[
+                "block w-full rounded-lg border bg-neutral-900 px-3.5 py-2.5 text-sm text-white placeholder-white/40 outline-none transition",
+                "border-white/10 focus:border-white/20 focus:ring-2",
+                vino.ring,
+              ].join(" ")}
             />
           </div>
 
@@ -92,12 +111,16 @@ export default function LoginPage() {
                 autoComplete="current-password"
                 placeholder="••••••••"
                 aria-invalid={!!password && !isPassValid}
-                className="block w-full rounded-lg border border-white/10 bg-neutral-900 px-3.5 py-2.5 pr-10 text-sm text-white placeholder-white/40 outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+                className={[
+                  "block w-full rounded-lg border bg-neutral-900 px-3.5 py-2.5 pr-10 text-sm text-white placeholder-white/40 outline-none transition",
+                  "border-white/10 focus:border-white/20 focus:ring-2",
+                  vino.ring,
+                ].join(" ")}
               />
               <button
                 type="button"
                 onClick={() => setShowPass((s) => !s)}
-                className="absolute inset-y-0 right-2 my-auto inline-flex h-8 w-8 items-center justify-center rounded-md text-white/60 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/20"
+                className="absolute inset-y-0 right-2 my-auto inline-flex h-8 w-8 items-center justify-center rounded-md text-white/60 hover:text-white focus:outline-none"
                 aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
                 title={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
               >
@@ -116,11 +139,16 @@ export default function LoginPage() {
             <p className="text-[11px] text-white/40">Mínimo 6 caracteres</p>
           </div>
 
+          {}
           <button
             type="submit"
             disabled={!canSubmit}
-            className="inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60"
-            style={{ background: "#A30862" }}
+            className={[
+              "inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition",
+              vino.bg,
+              vino.hover,
+              "disabled:cursor-not-allowed disabled:opacity-60",
+            ].join(" ")}
           >
             {loading ? "Ingresando…" : "Ingresar"}
           </button>
@@ -130,7 +158,11 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => router.push("/forgot-password")}
-            className="text-xs text-white/80 underline underline-offset-4 hover:text-white"
+            className={[
+              "text-xs underline underline-offset-4 hover:text-white",
+              "text-white/90",
+            ].join(" ")}
+
           >
             ¿Olvidaste tu contraseña?
           </button>

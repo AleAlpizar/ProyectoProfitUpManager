@@ -1,7 +1,11 @@
 import React from "react";
 import { useRouter } from "next/router";
 
-const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "");
+
+
+const API_PREFIX = ""; 
+const ENDPOINT_PATH = "/auth/password/forgot"; 
 
 function ForgotPasswordPage() {
   const router = useRouter();
@@ -17,6 +21,20 @@ function ForgotPasswordPage() {
     return ok ? null : "Ingresa un correo válido.";
   };
 
+  const parseServerMessage = async (res: Response) => {
+    try {
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("application/json")) {
+        const data = await res.json();
+        return data?.message || data?.error || "";
+      }
+      const text = await res.text();
+      return text?.slice(0, 300);
+    } catch {
+      return "";
+    }
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setOkMsg(null);
@@ -26,31 +44,23 @@ function ForgotPasswordPage() {
     setEmailErr(vErr);
     if (vErr) return;
 
-    if (!API) {
+    if (!API_BASE) {
       setErrMsg("Falta configurar NEXT_PUBLIC_API_BASE_URL.");
       return;
     }
 
     try {
       setLoading(true);
-
-      const res = await fetch(`${API}/auth/password/temp`, {
+      const url = `${API_BASE}${API_PREFIX}${ENDPOINT_PATH}`;
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ Correo: email.trim() }),
       });
 
       if (!res.ok) {
-        let serverMsg = "";
-        try {
-          const data = await res.json();
-          serverMsg = data?.message || data?.error || "";
-        } catch { }
-
-        setErrMsg(
-          serverMsg ||
-            `No pudimos procesar la solicitud (HTTP ${res.status}). Intenta de nuevo.`
-        );
+        const serverMsg = await parseServerMessage(res);
+        setErrMsg(serverMsg || `No pudimos procesar la solicitud (HTTP ${res.status}).`);
         return;
       }
 
@@ -62,15 +72,31 @@ function ForgotPasswordPage() {
     }
   };
 
+  const vino = {
+    bg: "bg-[#62053B]",
+    bgHover: "hover:bg-[#7A094B]",
+    ring: "focus:ring-[#62053B]/40 dark:focus:ring-[#62053B]/30",
+    text: "text-white",
+    outlineText: "text-[#62053B]",
+    outlineBorder: "border-[#62053B]",
+    outlineHover: "hover:bg-[#62053B]/5",
+  };
+
   return (
     <main className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white dark:bg-neutral-950 shadow-xl">
+        <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white dark:bg-neutral-950 shadow-xl overflow-hidden">
           <div className="px-6 py-7 sm:px-8">
+            {}
             <div className="flex justify-center mb-4">
-              <div className="h-9 w-9 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 grid place-items-center text-sm font-semibold">
-                PU
-              </div>
+              <img
+                src="/brand/pum-logo.jpg"
+                alt="Profit Up Manager"
+                className="h-10 w-auto rounded-md object-contain"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).style.display = "none";
+                }}
+              />
             </div>
 
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-white text-center">
@@ -118,7 +144,7 @@ function ForgotPasswordPage() {
                     "border",
                     emailErr
                       ? "border-red-400 focus:ring-2 focus:ring-red-300/60 dark:focus:ring-red-500/40"
-                      : "border-neutral-300 dark:border-neutral-700 focus:ring-2 focus:ring-emerald-300/60 dark:focus:ring-emerald-500/40",
+                      : `border-neutral-300 dark:border-neutral-700 focus:ring-2 ${vino.ring}`,
                   ].join(" ")}
                   placeholder="tucorreo@empresa.com"
                   disabled={loading}
@@ -132,19 +158,34 @@ function ForgotPasswordPage() {
                 )}
               </div>
 
+              { }
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-lg bg-emerald-700 hover:bg-emerald-600 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold px-4 py-2 shadow-sm transition"
+                className={[
+                  "w-full rounded-lg text-sm font-semibold px-4 py-2 shadow-sm transition",
+                  vino.bg,
+                  vino.bgHover,
+                  vino.text,
+                  "disabled:opacity-60 disabled:cursor-not-allowed",
+                ].join(" ")}
               >
                 {loading ? "Enviando…" : "Enviar contraseña temporal"}
               </button>
 
+              { }
               <button
                 type="button"
                 onClick={() => router.push("/login")}
-                className="w-full rounded-lg border border-neutral-300 dark:border-neutral-700 bg-transparent text-neutral-800 dark:text-neutral-100 text-sm font-medium px-4 py-2 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition"
+                className={[
+                  "w-full rounded-lg text-sm font-medium px-4 py-2 transition",
+                  "bg-transparent border",
+                  vino.outlineBorder,
+                  vino.outlineText,
+                  vino.outlineHover,
+                ].join(" ")}
               >
+                Volver a iniciar sesión
               </button>
             </form>
           </div>
@@ -159,5 +200,4 @@ function ForgotPasswordPage() {
 }
 
 (ForgotPasswordPage as any).noChrome = true;
-
 export default ForgotPasswordPage;

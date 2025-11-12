@@ -20,6 +20,7 @@ import Button from "../buttons/button";
 import { useConfirm } from "../modals/ConfirmProvider";
 
 import { CardTable, Th, Td, PageBtn, StatusPill, SELECT_CLS } from "../ui/table";
+import { registerUsersReport, exportUsersPdf } from "../../helpers/reportClient";
 
 type UserRow = {
   id: string;
@@ -40,6 +41,7 @@ export default function Accounts() {
   const [filter, setFilter] = React.useState<"Todos" | Status>("Todos");
   const [page, setPage] = React.useState(1);
   const [loading, setLoading] = React.useState(false);
+  const [exporting, setExporting] = React.useState(false);
   const [editUser, setEditUser] = React.useState<null | {
     usuarioId: number;
     nombre: string;
@@ -153,6 +155,26 @@ export default function Accounts() {
     });
   };
 
+  async function handleExportPdf() {
+    if (!isAuthenticated || !hasRole("Administrador")) return;
+
+    try {
+      setExporting(true);
+      await registerUsersReport(authHeader as any, {
+        q,
+        estado: filter,
+        key: "usuarios",
+        title: "Usuarios"
+      });
+
+      await exportUsersPdf(authHeader as any, "usuarios");
+    } catch (e: any) {
+      alert(e?.message || "No se pudo exportar el PDF");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#0B0F0E] text-[#E6E9EA] p-6 sm:px-16">
       <nav aria-label="Breadcrumb" className="mb-3">
@@ -202,13 +224,18 @@ export default function Accounts() {
 
         <div className="flex items-center gap-3">
           {isAuthenticated && hasRole("Administrador") && <AddUser onCreated={handleCreated} />}
-          <button
-            type="button"
-            className="inline-flex items-center gap-2 rounded-xl bg-[#A30862] px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-[#A30862]/40"
-            onClick={() => console.log("Export CSV (visual)")}
-          >
-            Exportar CSV <ExportIcon />
-          </button>
+
+          <div className="inline-flex gap-2">
+            <button
+              type="button"
+              disabled={exporting}
+              className="inline-flex items-center gap-2 rounded-xl bg-[#A30862] px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:opacity-95 focus:outline-none focus:ring-2 focus:ring-[#A30862]/40 disabled:opacity-50"
+              onClick={handleExportPdf}
+              title="Exportar PDF"
+            >
+              {exporting ? "Exportando…" : <>Exportar PDF <ExportIcon /></>}
+            </button>
+          </div>
         </div>
       </div>
 

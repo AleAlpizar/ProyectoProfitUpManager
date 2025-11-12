@@ -8,11 +8,13 @@ public class ReportsController : ControllerBase
 {
     private readonly IReportSessionStore _store;
     private readonly IReportExportService _export;
+    private readonly ReportUsersService _users;
 
-    public ReportsController(IReportSessionStore store, IReportExportService export)
+    public ReportsController(IReportSessionStore store, IReportExportService export, ReportUsersService users)
     {
         _store = store;
         _export = export;
+        _users = users;
     }
 
     private int? GetUserId()
@@ -26,7 +28,6 @@ public class ReportsController : ControllerBase
     {
         var uid = GetUserId();
         if (uid is null) return Unauthorized();
-
         if (dto is null || dto.Rows is null || dto.Rows.Count == 0)
             return BadRequest(new { code = "REPORT_REQUIRED", msg = "Debe proveer datos del reporte." });
 
@@ -34,28 +35,18 @@ public class ReportsController : ControllerBase
         return Ok(new { message = "Reporte registrado en sesión.", key = dto.Key });
     }
 
-    [HttpPost("{key}/export/excel")]
-    public IActionResult ExportExcel([FromRoute] string key = "default")
+    [HttpGet("users/register-from-db")]
+    public async Task<IActionResult> RegisterUsersFromDb([FromQuery] string? q, [FromQuery] string? estado, [FromQuery] string? rol,
+                                                         [FromQuery] string key = "usuarios", [FromQuery] string title = "Usuarios")
     {
         var uid = GetUserId();
         if (uid is null) return Unauthorized();
 
-        var report = _store.Get(uid.Value, key);
-        if (report is null)
-            return BadRequest(new { code = "NO_REPORT", msg = "Primero debe generar un reporte para poder exportarlo." });
+        var data = await _users.GetUsersForReportAsync(new ReportUsersService.ReportFilter { Q = q, Estado = estado, Rol = rol });
 
-        try
-        {
-            var bytes = _export.ToExcel(report);
-            var fileName = $"{(string.IsNullOrWhiteSpace(report.Title) ? "Reporte" : report.Title)}.xlsx";
-            return File(bytes,
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                fileName);
-        }
-        catch (Exception ex)
-        {
-            return Problem(title: "EXPORT_FAILED", detail: ex.Message, statusCode: 500);
-        }
+        var dto = BuildUsersReportDto(data, key, title, q, estado, rol);
+        _store.Register(uid.Value, dto);
+        return Ok(new { message = "Reporte de usuarios registrado.", key });
     }
 
     [HttpPost("{key}/export/pdf")]
@@ -71,7 +62,9 @@ public class ReportsController : ControllerBase
         try
         {
             var bytes = _export.ToPdf(report);
-            var fileName = $"{(string.IsNullOrWhiteSpace(report.Title) ? "Reporte" : report.Title)}.pdf";
+
+            var fileName = $"Control Usuarios - {DateTime.Now:yyyy-MM-dd}.pdf";
+
             return File(bytes, "application/pdf", fileName);
         }
         catch (Exception ex)
@@ -79,4 +72,53 @@ public class ReportsController : ControllerBase
             return Problem(title: "EXPORT_FAILED", detail: ex.Message, statusCode: 500);
         }
     }
+
+
+    private static ReportRegisterDto BuildUsersReportDto(
+    IReadOnlyList<ReportUsersService.ReportUserRow> data,
+    string key, string title, string? q, string? estado, string? rol)
+    {
+        var columnOrder = new List<string>
+    {
+        "UsuarioID","Nombre","Apellido","Correo","Telefono","Rol","EstadoUsuario"
+    };
+
+        var headers = new Dictionary<string, string>
+        {
+            ["UsuarioID"] = "UsuarioID",
+            ["Nombre"] = "Nombre",
+            ["Apellido"] = "Apellido",
+            ["Correo"] = "Correo",
+            ["Telefono"] = "Teléfono",
+            ["Rol"] = "Rol",
+            ["EstadoUsuario"] = "Estado"
+        };
+
+        var rows = data.Select(x => new Dictionary<string, object?>
+        {
+            ["UsuarioID"] = x.UsuarioID,
+            ["Nombre"] = x.Nombre,
+            ["Apellido"] = x.Apellido ?? "",
+            ["Correo"] = x.Correo,
+            ["Telefono"] = x.Telefono ?? "",
+            ["Rol"] = string.IsNullOrWhiteSpace(x.Rol) ? "Empleado" : x.Rol,
+            ["EstadoUsuario"] = x.EstadoUsuario
+        }).ToList();
+
+        var meta = new Dictionary<string, string>();
+        if (!string.IsNullOrWhiteSpace(q)) meta["Q"] = q!;
+        if (!string.IsNullOrWhiteSpace(estado)) meta["Estado"] = estado!;
+        if (!string.IsNullOrWhiteSpace(rol)) meta["Rol"] = rol!;
+
+        return new ReportRegisterDto
+        {
+            Key = key,
+            Title = title,
+            ColumnOrder = columnOrder,
+            Headers = headers,
+            Rows = rows,
+            Meta = meta
+        };
+    }
+
 }

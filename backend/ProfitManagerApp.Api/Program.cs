@@ -13,11 +13,15 @@ using ProfitManagerApp.Data;
 using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Data.Infrastructure;
 using ProfitManagerApp.Data.Repositories;
+using QuestPDF.Infrastructure;
+
 
 
 using ApiDbContext = ProfitManagerApp.Api.Infrastructure.AppDbContext;
 
 var builder = WebApplication.CreateBuilder(args);
+
+
 
 const string CorsPolicy = "AllowFrontend";
 
@@ -64,12 +68,21 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IReportSessionStore, ReportSessionStore>();
 builder.Services.AddSingleton<IReportExportService, ReportExportService>();
 
+builder.Services.AddMemoryCache();
 
+builder.Services.AddSingleton<IReportSessionStore, ReportSessionStore>();
+builder.Services.AddSingleton<IReportExportService, ReportExportService>();
+
+builder.Services.AddScoped<AuthService>();         
+builder.Services.AddScoped<ReportUsersService>();
+
+builder.Services.AddControllers();
 
 builder.Services.AddControllers()
   .AddJsonOptions(o => o.JsonSerializerOptions.Converters
   .Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 builder.Services.AddEndpointsApiExplorer();
+QuestPDF.Settings.License = LicenseType.Community;   
 
 builder.Services.AddSwaggerGen(c =>
 {

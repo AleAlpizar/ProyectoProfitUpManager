@@ -9,10 +9,12 @@
 	<ItemGroup>
 		<PackageReference Include="AutoMapper" Version="12.0.1" />
 		<PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+		<PackageReference Include="ClosedXML" Version="0.105.0" />
+		<PackageReference Include="CsvHelper" Version="33.1.0" />
 
 		<PackageReference Include="Dapper" Version="2.1.66" />
 
-		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.9" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
 		<PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.9" />
 		<PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.1" />
 
@@ -35,7 +37,6 @@
 
 	<ItemGroup>
 		<Folder Include="Mapping\Converters\" />
-		<Folder Include="Service\NewFolder\" />
 	</ItemGroup>
 
 </Project>

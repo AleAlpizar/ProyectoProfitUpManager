@@ -230,7 +230,7 @@ export default function CalendarMonth({ onEdit, onCreate }: Props) {
                       key={ev.documentoVencimientoID}
                       onClick={() => onEdit(ev.documentoVencimientoID)}
                       className={classNames("truncate rounded-md px-2 py-1 text-[11px] ring-1 text-left", chipClasses(ev.estado))}
-                      title={`${ev.titulo} • ${ev.tipoNombre} • ${ev.fechaVencimiento.slice(0,10)}`}
+                      title={`${ev.titulo} • ${ev.tipoNombre} • ${ev.fechaVencimiento.slice(0,10)}${ev.descripcion ? " • " + ev.descripcion : ""}`}
                     >
                       {ev.titulo}
                     </button>
@@ -267,7 +267,7 @@ export default function CalendarMonth({ onEdit, onCreate }: Props) {
           className="fixed inset-0 z-[1200] flex items-end bg-black/60"
           onMouseDown={(e) => { if (e.target === e.currentTarget) closeDay(); }}
         >
-          <div className="w-full rounded-t-2xl border border-white/10 bg-[#0f1214] p-4 text-white shadow-2xl">
+          <div className="w-full rounded-t-2xl border border-white/10 bg-[#0f1214] p-4 text-white shadow-2xl max-h-[85vh] overflow-auto">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
               <div className="text-sm font-semibold">
                 {dayOpen.date?.toLocaleDateString(undefined, { weekday: "long", year:"numeric", month:"long", day:"numeric" })}
@@ -301,10 +301,18 @@ export default function CalendarMonth({ onEdit, onCreate }: Props) {
             ) : (
               <ul className="space-y-2">
                 {dayOpen.items!.map(ev => (
-                  <li key={`${ev.documentoVencimientoID}-${ev.titulo}`} className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3">
+                  <li key={`${ev.documentoVencimientoID}-${ev.titulo}`} className="flex items-start justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium">{ev.titulo}</div>
                       <div className="truncate text-xs text-white/70">{ev.tipoNombre} • {ev.fechaVencimiento.slice(0,10)}</div>
+                      {ev.descripcion && (
+                        <div
+                          className="mt-1 text-xs text-white/80 whitespace-pre-wrap break-words"
+                          style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
+                        >
+                          {ev.descripcion}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <span className={classNames("rounded-full px-2 py-0.5 text-[11px] ring-1", chipClasses(ev.estado))}>

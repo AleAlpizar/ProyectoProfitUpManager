@@ -6,4 +6,5 @@ export type CalEvent = {
   tipoNombre: string;
   fechaVencimiento: string; 
   estado: CalEstado;
+  descripcion?: string | null;
 };

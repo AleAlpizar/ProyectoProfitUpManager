@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import * as React from "react";
 import { EstadoBadge, Th, Td, Label, fmtISO } from "./SmallUI";
 import { useAlertas } from "./useVencimientos";
 import type { AlertRowDto, EstadoVto, VencimientoDetalleDto, VencimientoUpdateDto } from "./types";
@@ -48,6 +48,8 @@ export default function AlertasTable({ onEdit }: Props) {
 
   const [busyRow, setBusyRow] = React.useState<number | null>(null);
   const [actionError, setActionError] = React.useState<string | null>(null);
+
+  const [preview, setPreview] = React.useState<{ open: boolean; item?: VencimientoDetalleDto | null; loading?: boolean; error?: string | null }>({ open: false });
 
   const qDocDebounced = useDebounced(qDoc, 300);
 
@@ -183,6 +185,17 @@ export default function AlertasTable({ onEdit }: Props) {
     }
   };
 
+  const doPreview = async (id: number) => {
+    setPreview({ open: true, loading: true, item: null, error: null });
+    try {
+      const detalle = await get<VencimientoDetalleDto>(VENC_API.get(id));
+      setPreview({ open: true, loading: false, item: detalle ?? null, error: null });
+    } catch (e: any) {
+      setPreview({ open: true, loading: false, item: null, error: e?.message ?? "No se pudo cargar el detalle." });
+    }
+  };
+  const closePreview = () => setPreview({ open: false });
+
   return (
     <>
       <section className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -294,7 +307,7 @@ export default function AlertasTable({ onEdit }: Props) {
             </button>
           </div>
 
-          <div className="ml-auto flex gap-2">
+        <div className="ml-auto flex gap-2">
             <button
               type="button"
               onClick={reload}
@@ -405,11 +418,21 @@ export default function AlertasTable({ onEdit }: Props) {
                     <Td>{fmtISO(r.fechaVencimiento)}</Td>
                     <Td>{r.daysToDue < 0 ? `-${Math.abs(r.daysToDue)} días` : `${r.daysToDue} días`}</Td>
                     <Td>
-                      <EstadoBadge estado={r.estado} />
+                      <EstadoBadge estado={r.estado as EstadoVto} />
                     </Td>
                     <Td>{r.tipoNombre}</Td>
                     <Td className="text-right">
                       <div className="inline-flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => doPreview(r.documentoVencimientoID)}
+                          className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20"
+                          title="Ver detalle"
+                          style={{ borderColor: `${WINE}40` }}
+                        >
+                          Ver
+                        </button>
+
                         <button
                           type="button"
                           onClick={() => doEdit(r.documentoVencimientoID)}
@@ -459,6 +482,124 @@ export default function AlertasTable({ onEdit }: Props) {
           </span>
         </div>
       </section>
+
+      {preview.open && (
+        <div
+          className="fixed inset-0 z-[1300] flex items-end md:items-center justify-center bg-black/60"
+          onMouseDown={(e) => { if (e.target === e.currentTarget) closePreview(); }}
+        >
+          <div
+            className="
+              w-[calc(100%-2rem)]
+              max-w-lg
+              rounded-2xl
+              border border-white/10
+              bg-[#0f1214]
+              p-4
+              text-white
+              shadow-2xl
+              max-h-[85vh]
+              overflow-auto
+            "
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="mb-2 flex items-center justify-between">
+              <div className="text-sm font-semibold">Detalle del documento</div>
+              <button
+                className="rounded-full px-2 text-white/80 hover:bg-white/10"
+                onClick={closePreview}
+                aria-label="Cerrar"
+              >
+                ×
+              </button>
+            </div>
+
+            {preview.loading && (
+              <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">
+                Cargando…
+              </div>
+            )}
+
+            {preview.error && (
+              <div className="rounded-xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-200">
+                {preview.error}
+              </div>
+            )}
+
+            {!preview.loading && !preview.error && preview.item && (
+              <div className="space-y-3">
+                <div>
+                  <div className="text-xs text-white/60">Documento</div>
+                  <div className="text-sm font-medium">{preview.item.titulo}</div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-xs text-white/60">Tipo</div>
+                    <div className="text-sm">{preview.item.tipoDocumentoVencimientoID}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-white/60">Vence</div>
+                    <div className="text-sm">{fmtISO(preview.item.fechaVencimiento)}</div>
+                  </div>
+                </div>
+
+                {preview.item.referencia && (
+                  <div>
+                    <div className="text-xs text-white/60">Referencia</div>
+                    <div
+                      className="text-sm break-words"
+                      style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
+                    >
+                      {preview.item.referencia}
+                    </div>
+                  </div>
+                )}
+
+                {preview.item.descripcion && (
+                  <div>
+                    <div className="text-xs text-white/60">Descripción</div>
+                    <div
+                      className="whitespace-pre-wrap text-sm text-white/80 break-words"
+                      style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
+                    >
+                      {preview.item.descripcion}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-3">
+                  {preview.item.fechaEmision && (
+                    <div>
+                      <div className="text-xs text-white/60">Emisión</div>
+                      <div className="text-sm">{fmtISO(preview.item.fechaEmision)}</div>
+                    </div>
+                  )}
+                  <div>
+                    <div className="text-xs text-white/60">Notificar días antes</div>
+                    <div className="text-sm">{preview.item.notificarDiasAntes}</div>
+                  </div>
+                </div>
+
+                <div className="pt-2 text-right">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onEdit(preview.item!.documentoVencimientoID);
+                      closePreview();
+                    }}
+                    className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
+                    style={{ borderColor: `${WINE}66` }}
+                  >
+                    Editar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }

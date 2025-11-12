@@ -19,7 +19,7 @@ type Props = {
   } | null;
 };
 
-type TipoRow = { tipoDocumentoVencimientoID: number; nombre: string; activo: boolean };
+type TipoRow = { tipoDocumentoVencimientoID: number; nombre: string; isActive: boolean };
 
 export default function VencimientoFormModal({ open, onClose, onSaved, initial }: Props) {
   const { get, post, put, loading: apiLoading } = useApi();
@@ -67,7 +67,10 @@ export default function VencimientoFormModal({ open, onClose, onSaved, initial }
     setLoadingTipos(true);
     try {
       const res = await get<TipoRow[]>(VENC_API.tipos);
-      setTipos((res ?? []).filter((t) => t.activo !== false));
+      setTipos((res ?? []).filter((t) => t.isActive !== false));
+    } catch (e: any) {
+      console.error("No se pudieron cargar los tipos:", e?.message ?? e);
+      setTipos([]);
     } finally {
       setLoadingTipos(false);
     }

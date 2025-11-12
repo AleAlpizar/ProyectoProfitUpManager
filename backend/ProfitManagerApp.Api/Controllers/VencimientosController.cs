@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProfitManagerApp.Api.Data.Abstractions;
 using ProfitManagerApp.Api.Dtos;
-using System.Linq;
 
 namespace ProfitManagerApp.Api.Controllers
 {
@@ -29,20 +28,7 @@ namespace ProfitManagerApp.Api.Controllers
             return Ok(rows);
         }
 
-        [HttpGet("tipos")]
-        public async Task<IActionResult> Tipos()
-        {
-            var rows = await _repo.ListTiposActivosAsync();
-            var shaped = rows.Select(t => new
-            {
-                tipoDocumentoVencimientoID = t.TipoDocumentoVencimientoID,
-                nombre = t.Nombre,
-                descripcion = t.Descripcion,
-                activo = t.IsActive
-            });
-            return Ok(shaped);
-        }
-
+       
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {

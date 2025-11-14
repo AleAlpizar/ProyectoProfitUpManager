@@ -15,13 +15,11 @@ using ProfitManagerApp.Data.Infrastructure;
 using ProfitManagerApp.Data.Repositories;
 using QuestPDF.Infrastructure;
 
-
+using ProfitManagerApp.Api.Service.Reporting;
 
 using ApiDbContext = ProfitManagerApp.Api.Infrastructure.AppDbContext;
 
 var builder = WebApplication.CreateBuilder(args);
-
-
 
 const string CorsPolicy = "AllowFrontend";
 
@@ -44,17 +42,17 @@ builder.Services.AddDbContext<ApiDbContext>(opt =>
              ?? throw new InvalidOperationException("ConnectionStrings:Default no está configurado.");
     opt.UseSqlServer(cs);
 });
+
 builder.Services.AddScoped<ProfitManagerApp.Api.Data.Abstractions.IVencimientosRepository, ProfitManagerApp.Data.VencimientosRepository>();
 
 builder.Services.AddProfitManagerData(builder.Configuration);
 builder.Services.AddSingleton<SqlConnectionFactory>();
+
 builder.Services.AddAutoMapper(typeof(ApiMappingProfile).Assembly);
 
 builder.Services.AddScoped<IInventarioRepository, InventarioRepository>();
 builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<ClienteHandler>();
-
-builder.Services.AddAutoMapper(typeof(ApiMappingProfile).Assembly);
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<JwtTokenService>();
@@ -68,21 +66,16 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IReportSessionStore, ReportSessionStore>();
 builder.Services.AddSingleton<IReportExportService, ReportExportService>();
 
-builder.Services.AddMemoryCache();
+builder.Services.AddScoped<ClientesReportService>();
 
-builder.Services.AddSingleton<IReportSessionStore, ReportSessionStore>();
-builder.Services.AddSingleton<IReportExportService, ReportExportService>();
-
-builder.Services.AddScoped<AuthService>();         
 builder.Services.AddScoped<ReportUsersService>();
-
-builder.Services.AddControllers();
 
 builder.Services.AddControllers()
   .AddJsonOptions(o => o.JsonSerializerOptions.Converters
-  .Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
+      .Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
+
 builder.Services.AddEndpointsApiExplorer();
-QuestPDF.Settings.License = LicenseType.Community;   
+QuestPDF.Settings.License = LicenseType.Community;
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -130,8 +123,16 @@ builder.Services
 
         o.Events = new JwtBearerEvents
         {
-            OnAuthenticationFailed = ctx => { Console.WriteLine($"[JWT] OnAuthenticationFailed: {ctx.Exception?.Message}"); return Task.CompletedTask; },
-            OnChallenge = ctx => { Console.WriteLine($"[JWT] OnChallenge: {ctx.Error} - {ctx.ErrorDescription}"); return Task.CompletedTask; },
+            OnAuthenticationFailed = ctx =>
+            {
+                Console.WriteLine($"[JWT] OnAuthenticationFailed: {ctx.Exception?.Message}");
+                return Task.CompletedTask;
+            },
+            OnChallenge = ctx =>
+            {
+                Console.WriteLine($"[JWT] OnChallenge: {ctx.Error} - {ctx.ErrorDescription}");
+                return Task.CompletedTask;
+            },
             OnTokenValidated = async ctx =>
             {
                 try
@@ -214,6 +215,7 @@ app.MapGet("/db-ping", (SqlConnectionFactory f) =>
         return Results.Problem(ex.Message);
     }
 });
+
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ApiDbContext>();
@@ -222,4 +224,3 @@ using (var scope = app.Services.CreateScope())
 
 app.MapControllers();
 app.Run();
-

@@ -18,73 +18,83 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
 {
 
 
-  [HttpGet("{id:int}")]
-  [Authorize]
-  public async Task<IActionResult> GetById([FromRoute] int id, CancellationToken ct)
-  {
-    // info del encabezado
-    var head = await db.Ventas
-        .AsNoTracking()
-        .Where(v => v.VentaID == id)
-        .Select(v => new
-        {
-          v.VentaID,
-          v.ClienteID,
-          v.Fecha,
-          v.Subtotal,
-          v.Descuento,
-          v.Total,
-          v.Estado,
-        })
-        .FirstOrDefaultAsync(ct);
-
-    if (head is null) return NotFound();
-
-    // detalles y consultas foraneas
-    var detalles = await db.VentaDetalles
-        .AsNoTracking()
-        .Where(d => d.VentaID == id)
-        .Select(d => new VentaDetalleDto
-        {
-          ProductoID = d.ProductoID,
-          // subquery segura en SQL: si no hay producto, devuelve null y usamos coalesce en C#
-          Sku = db.Productos
-                    .Where(p => p.ProductoID == d.ProductoID)
-                    .Select(p => p.Sku)
-                    .FirstOrDefault() ?? "",
-          Descripcion = db.Productos
-                    .Where(p => p.ProductoID == d.ProductoID)
-                    .Select(p => p.Nombre)
-                    .FirstOrDefault() ?? "—",
-          Cantidad = d.Cantidad,
-          PrecioUnitario = d.PrecioUnitario,
-          // no existe descuento por línea en el Row actual
-          DescuentoLineaPorcentaje = 0m,
-          Importe = d.Cantidad * d.PrecioUnitario,
-          BodegaID = d.BodegaID
-        })
-        .ToListAsync(ct);
-
-    var cliente = await clientHandler.ObtenerPorIdAsync(head.ClienteID, ct);
-
-    var dto = new VentaGetDto
+    [HttpGet("{id:int}")]
+    [Authorize]
+    public async Task<IActionResult> GetById([FromRoute] int id, CancellationToken ct)
     {
-      VentaID = head.VentaID,
-      ClienteID = head.ClienteID,
-      ClienteNombre = cliente?.Nombre ?? "Nombre no encontrado.",
-      Fecha = head.Fecha,
-      Subtotal = head.Subtotal,
-      Descuento = head.Descuento,
-      Total = head.Total,
-      Detalles = detalles,
-      Estado = head.Estado
-    };
+        var head = await db.Ventas
+            .AsNoTracking()
+            .Where(v => v.VentaID == id)
+            .Select(v => new
+            {
+                v.VentaID,
+                v.ClienteID,
+                v.Fecha,
+                v.Subtotal,
+                v.Descuento,
+                v.Total,
+                v.Estado,
+            })
+            .FirstOrDefaultAsync(ct);
 
-    return Ok(dto);
-  }
+        if (head is null) return NotFound();
+
+        var detalles = await db.VentaDetalles
+            .AsNoTracking()
+            .Where(d => d.VentaID == id)
+            .Select(d => new VentaDetalleDto
+            {
+                ProductoID = d.ProductoID,
+                Sku = db.Productos
+                        .Where(p => p.ProductoID == d.ProductoID)
+                        .Select(p => p.Sku)
+                        .FirstOrDefault() ?? "",
+                Descripcion = db.Productos
+                        .Where(p => p.ProductoID == d.ProductoID)
+                        .Select(p => p.Nombre)
+                        .FirstOrDefault() ?? "—",
+                Cantidad = d.Cantidad,
+                PrecioUnitario = d.PrecioUnitario,
+                DescuentoLineaPorcentaje = 0m,
+                Importe = d.Cantidad * d.PrecioUnitario,
+                BodegaID = d.BodegaID
+            })
+            .ToListAsync(ct);
+
+        string clienteNombre = "Sin cliente asignado";
+
+        if (head.ClienteID.HasValue)
+        {
+            var cliente = await clientHandler.ObtenerPorIdAsync(head.ClienteID.Value, ct);
+            if (cliente is not null)
+            {
+                clienteNombre = cliente.Nombre;
+            }
+            else
+            {
+                clienteNombre = "Nombre no encontrado.";
+            }
+        }
+
+        var dto = new VentaGetDto
+        {
+            VentaID = head.VentaID,
+            ClienteID = head.ClienteID,       
+            ClienteNombre = clienteNombre,
+            Fecha = head.Fecha,
+            Subtotal = head.Subtotal,
+            Descuento = head.Descuento,
+            Total = head.Total,
+            Detalles = detalles,
+            Estado = head.Estado
+        };
+
+        return Ok(dto);
+    }
 
 
-  [HttpPost]
+
+    [HttpPost]
   [Authorize]
   public async Task<IActionResult> Create([FromBody] VentaFromUiDto dto, CancellationToken ct)
   {
@@ -94,7 +104,6 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
         .FirstOrDefaultAsync(c => c.CodigoCliente == dto.ClienteCodigo, ct);
     if (cliente is null) return NotFound(new { code = "CLIENT_NOT_FOUND" });
 
-    // Cargar productos por SKU
     var skus = dto.Lineas.Select(l => l.Sku.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
     var productos = await db.Productos.AsNoTracking()
         .Where(p => skus.Contains(p.Sku))
@@ -104,7 +113,6 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
     if (faltantes.Count > 0)
       return ValidationProblem(title: "SKU_NOT_FOUND", detail: string.Join(", ", faltantes));
 
-    // Parsear bodegas y agrupar inventarios a tocar (ProductoID, BodegaID)
     var touchPairs = new HashSet<(int ProductoID, int BodegaID)>();
     var lineInfos = new List<(ProductoRow Prod, int BodegaID, decimal Cantidad, decimal DescLineaPct)>();
 
@@ -123,20 +131,15 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
       touchPairs.Add((prod.ProductoID, bodId));
       lineInfos.Add((prod, bodId, cant, d));
     }
-
-    // 1) Llaves simples para que EF las traduzca
     var productoIds = lineInfos.Select(x => x.Prod.ProductoID).Distinct().ToList();
     var bodegaIds = lineInfos.Select(x => x.BodegaID).Distinct().ToList();
 
-    // 2) Trae inventarios con "productoIds.Contains" y "bodegaIds.Contains"
     var invRowsList = await db.Inventarios
         .Where(i => productoIds.Contains(i.ProductoID) && bodegaIds.Contains(i.BodegaID))
         .ToListAsync(ct);
 
-    // 3) Diccionario por par (ProductoID, BodegaID)
     var invRows = invRowsList.ToDictionary(i => (i.ProductoID, i.BodegaID));
 
-    // 4) (Opcional pero útil) Validar que exista exactamente la asignación esperada por cada línea
     foreach (var li in lineInfos)
     {
       if (!invRows.ContainsKey((li.Prod.ProductoID, li.BodegaID)))
@@ -145,7 +148,6 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
     }
 
 
-    // Validar bodegas existen y stock suficiente
     var bodegas = await db.Bodegas.AsNoTracking()
         .Where(b => bodegaIds.Contains(b.BodegaID) && b.IsActive)
         .ToDictionaryAsync(b => b.BodegaID, ct);
@@ -162,7 +164,6 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
         return Problem(title: "INSUFFICIENT_STOCK", detail: $"Stock insuficiente para SKU {li.Prod.Sku} en bodega {li.BodegaID}", statusCode: 409);
     }
 
-    // Cálculos
     decimal subtotal = 0m;
     var detalleRows = new List<VentaItemRow>();
     foreach (var li in lineInfos)
@@ -181,12 +182,10 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
     }
     subtotal = Math.Round(subtotal, 2, MidpointRounding.AwayFromZero);
 
-    // Descuento global por cliente (si lo usas)
-    var descClientePct = cliente.DescuentoPorcentaje; // DECIMAL(5,2) 0..100
+    var descClientePct = cliente.DescuentoPorcentaje; 
     var descuentoMonto = Math.Round(subtotal * (descClientePct / 100m), 2, MidpointRounding.AwayFromZero);
     var baseImponible = subtotal - descuentoMonto;
 
-    // Impuesto global simple (ajusta si usas por producto)
     decimal impPct = 0m;
     var impuestoMonto = Math.Round(baseImponible * (impPct / 100m), 2, MidpointRounding.AwayFromZero);
     var total = baseImponible + impuestoMonto;
@@ -198,7 +197,6 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
     using var trx = await db.Database.BeginTransactionAsync(ct);
     try
     {
-      // Insert venta
       var venta = new VentaRow
       {
         ClienteID = cliente.ClienteID,
@@ -217,7 +215,6 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
 
       db.Ventas.Add(venta);
 
-      // Descargar inventario por línea
       foreach (var li in lineInfos)
       {
         var inv = invRows[(li.Prod.ProductoID, li.BodegaID)];

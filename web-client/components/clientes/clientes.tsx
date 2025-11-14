@@ -9,6 +9,7 @@ import { useApi } from "../hooks/useApi";
 import { useConfirm } from "../modals/ConfirmProvider";
 
 import { CardTable, Th, Td, PageBtn, PillBadge } from "../ui/table";
+import ClienteDetails from "./ClienteDetails";
 
 export default function ClientesPage() {
   const [rows, setRows] = React.useState<Cliente[]>([]);
@@ -20,6 +21,7 @@ export default function ClientesPage() {
 
   const [formOpen, setFormOpen] = React.useState(false);
   const [edit, setEdit] = React.useState<Cliente | null>(null);
+  const [view, setView] = React.useState<Cliente | null>(null);
 
   const confirm = useConfirm();
 
@@ -33,8 +35,8 @@ export default function ClientesPage() {
   }, []);
 
   useEffect(() => {
-    document.body.classList.toggle("overflow-hidden", formOpen);
-  }, [formOpen]);
+    document.body.classList.toggle("overflow-hidden", formOpen || !!view);
+  }, [formOpen, view]);
 
   const filtered = React.useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -42,7 +44,7 @@ export default function ClientesPage() {
       const matchQ =
         !term ||
         r.nombre.toLowerCase().includes(term) ||
-        r.correo.toLowerCase().includes(term);
+        (r.correo ?? "").toLowerCase().includes(term);
 
       const matchEstado =
         filterEstado === "Todos"
@@ -98,7 +100,9 @@ export default function ClientesPage() {
     <div className="min-h-screen bg-[#0B0F0E] text-[#E6E9EA] p-6">
       <header className="mb-6">
         <h1 className="text-2xl font-semibold tracking-wide">Clientes</h1>
-        <p className="text-sm text-[#8B9AA0]">Registrar, editar, inactivar y administrar descuentos</p>
+        <p className="text-sm text-[#8B9AA0]">
+          Registrar, editar, inactivar y administrar descuentos
+        </p>
       </header>
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -110,8 +114,19 @@ export default function ClientesPage() {
               placeholder="Buscar por nombre o correo"
               className="w-full rounded-xl border border-white/10 bg-[#121618] pl-9 pr-3 py-2 text-sm outline-none placeholder:text-[#8B9AA0] focus:ring-2 focus:ring-[#A30862]/40 focus:border-transparent transition"
             />
-            <svg className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z" />
+            <svg
+              className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              aria-hidden
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="m21 21-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z"
+              />
             </svg>
           </div>
 
@@ -154,7 +169,9 @@ export default function ClientesPage() {
           {pageRows.map((r) => (
             <tr key={r.clienteID ?? ""} className="hover:bg-white/5 transition">
               <Td strong>{r.codigoCliente}</Td>
-              <Td><div className="font-medium">{r.nombre}</div></Td>
+              <Td>
+                <div className="font-medium">{r.nombre}</div>
+              </Td>
               <Td className="text-[#8B9AA0]">{r.correo}</Td>
               <Td>
                 <PillBadge variant={r.isActive ? "success" : "danger"}>
@@ -165,7 +182,17 @@ export default function ClientesPage() {
                 <div className="inline-flex items-center gap-2">
                   <Button
                     variant="ghost"
-                    onClick={() => { setEdit(r); setFormOpen(true); }}
+                    onClick={() => setView(r)}
+                    className="!rounded-xl !border-white/20 !bg-transparent hover:!bg-white/5"
+                  >
+                    Ver
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setEdit(r);
+                      setFormOpen(true);
+                    }}
                     className="!rounded-xl !border-white/20 !bg-white/5 hover:!bg-white/10"
                   >
                     Editar
@@ -180,7 +207,10 @@ export default function ClientesPage() {
 
           {pageRows.length === 0 && (
             <tr>
-              <td colSpan={5} className="px-4 py-10 text-center text-sm text-[#8B9AA0]">
+              <td
+                colSpan={5}
+                className="px-4 py-10 text-center text-sm text-[#8B9AA0]"
+              >
                 No hay clientes para mostrar.
               </td>
             </tr>
@@ -189,11 +219,36 @@ export default function ClientesPage() {
       </CardTable>
 
       {formOpen && (
-        <Modal frameless onClose={() => { setFormOpen(false); setEdit(null); }}>
+        <Modal
+          frameless
+          onClose={() => {
+            setFormOpen(false);
+            setEdit(null);
+          }}
+        >
           <ClientForm
             initial={edit ?? undefined}
-            onCancel={() => { setFormOpen(false); setEdit(null); }}
+            onCancel={() => {
+              setFormOpen(false);
+              setEdit(null);
+            }}
             onSave={onSaveCliente}
+          />
+        </Modal>
+      )}
+
+      {view && (
+        <Modal
+          frameless
+          onClose={() => {
+            setView(null);
+          }}
+        >
+          <ClienteDetails
+            cliente={view}
+            onClose={() => {
+              setView(null);
+            }}
           />
         </Modal>
       )}
@@ -202,14 +257,30 @@ export default function ClientesPage() {
         <span>
           Mostrando{" "}
           <b className="text-white">
-            {pageRows.length === 0 ? 0 : (page - 1) * pageSize + 1}-{(page - 1) * pageSize + pageRows.length}
+            {pageRows.length === 0 ? 0 : (page - 1) * pageSize + 1}-
+            {(page - 1) * pageSize + pageRows.length}
           </b>{" "}
           de <b className="text-white">{filtered.length}</b>
         </span>
         <div className="flex items-center gap-2">
-          <PageBtn disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</PageBtn>
-          <span> Página <b className="text-white">{page}</b> de <b className="text-white">{totalPages}</b> </span>
-          <PageBtn disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next</PageBtn>
+          <PageBtn
+            disabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            Prev
+          </PageBtn>
+          <span>
+            Página <b className="text-white">{page}</b> de{" "}
+            <b className="text-white">{totalPages}</b>
+          </span>
+          <PageBtn
+            disabled={page >= totalPages}
+            onClick={() =>
+              setPage((p) => Math.min(totalPages, p + 1))
+            }
+          >
+            Next
+          </PageBtn>
         </div>
       </div>
     </div>

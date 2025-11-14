@@ -29,9 +29,19 @@ public sealed class ReportUsersService
         var baseRows = await _auth.GetUsersAsync();
 
         string NormalizeEstado(AuthService.UserListItem u)
-            => string.IsNullOrWhiteSpace(u.EstadoUsuario)
+        {
+            var raw = string.IsNullOrWhiteSpace(u.EstadoUsuario)
                 ? (u.IsActive ? "ACTIVE" : "PAUSED")
-                : u.EstadoUsuario.ToUpperInvariant();
+                : u.EstadoUsuario;
+
+            return raw.ToUpperInvariant() switch
+            {
+                "ACTIVE" => "ACTIVO",
+                "PAUSED" => "PAUSADO",
+                "VACATION" => "VACACIONES",
+                _ => raw.ToUpperInvariant()
+            };
+        }
 
         var data = baseRows
             .Select(u => new ReportUserRow(
@@ -58,7 +68,7 @@ public sealed class ReportUsersService
 
         if (!string.IsNullOrWhiteSpace(f.Estado) && f.Estado != "Todos")
         {
-            var est = f.Estado!.ToUpperInvariant();
+            var est = f.Estado!.ToUpperInvariant();   
             data = data.Where(x => x.EstadoUsuario == est);
         }
 

@@ -38,7 +38,7 @@ public record class ClienteUpdateDto
 {
   [Required, MaxLength(200)] public string Nombre { get; init; } = null!;
   [MaxLength(50)] public string? CodigoCliente { get; init; }
-  [MaxLength(20)] public string? TipoPersona { get; init; }  // "Natural"/"Jurídica" 
+  [MaxLength(20)] public string? TipoPersona { get; init; }  
   [MaxLength(50)] public string? Identificacion { get; init; }
   [EmailAddress, MaxLength(200)] public string? Correo { get; init; }
   [MaxLength(50)] public string? Telefono { get; init; }

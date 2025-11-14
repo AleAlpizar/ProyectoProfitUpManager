@@ -73,19 +73,17 @@ public class ReportsController : ControllerBase
         }
     }
 
-
     private static ReportRegisterDto BuildUsersReportDto(
-    IReadOnlyList<ReportUsersService.ReportUserRow> data,
-    string key, string title, string? q, string? estado, string? rol)
+        IReadOnlyList<ReportUsersService.ReportUserRow> data,
+        string key, string title, string? q, string? estado, string? rol)
     {
         var columnOrder = new List<string>
-    {
-        "UsuarioID","Nombre","Apellido","Correo","Telefono","Rol","EstadoUsuario"
-    };
+        {
+            "Nombre","Apellido","Correo","Telefono","Rol","EstadoUsuario"
+        };
 
         var headers = new Dictionary<string, string>
         {
-            ["UsuarioID"] = "UsuarioID",
             ["Nombre"] = "Nombre",
             ["Apellido"] = "Apellido",
             ["Correo"] = "Correo",
@@ -96,7 +94,6 @@ public class ReportsController : ControllerBase
 
         var rows = data.Select(x => new Dictionary<string, object?>
         {
-            ["UsuarioID"] = x.UsuarioID,
             ["Nombre"] = x.Nombre,
             ["Apellido"] = x.Apellido ?? "",
             ["Correo"] = x.Correo,
@@ -120,5 +117,4 @@ public class ReportsController : ControllerBase
             Meta = meta
         };
     }
-
 }

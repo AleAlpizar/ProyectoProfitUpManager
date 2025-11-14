@@ -36,12 +36,15 @@ public sealed class ReportExportService : IReportExportService
                 .ToList()
             : new List<(string Estado, int Count)>();
 
-        int activos = porEstado.Where(x => x.Estado.Equals("ACTIVE", StringComparison.OrdinalIgnoreCase)).Sum(x => x.Count);
-        int inactivos = porEstado.Where(x => x.Estado.Equals("PAUSED", StringComparison.OrdinalIgnoreCase)).Sum(x => x.Count);
-        int vacaciones = porEstado.Where(x => x.Estado.Equals("VACATION", StringComparison.OrdinalIgnoreCase)).Sum(x => x.Count);
+        int activos = porEstado.Where(x => x.Estado.Equals("ACTIVO", StringComparison.OrdinalIgnoreCase)).Sum(x => x.Count);
+        int pausados = porEstado.Where(x => x.Estado.Equals("PAUSADO", StringComparison.OrdinalIgnoreCase)).Sum(x => x.Count);
+        int vacaciones = porEstado.Where(x => x.Estado.Equals("VACACIONES", StringComparison.OrdinalIgnoreCase)).Sum(x => x.Count);
 
-        var brand = Colors.Pink.Medium;     
-        var bgCard = Colors.Grey.Lighten4;
+        var wine = "#7B1E3A";     
+        var wineSoft = "#F9E6EC"; 
+
+        var brand = wine;
+        var bgCard = wineSoft;
         var zebra1 = Colors.Grey.Lighten5;
         var zebra2 = Colors.White;
 
@@ -85,9 +88,9 @@ public sealed class ReportExportService : IReportExportService
                     col.Item().PaddingBottom(8).Row(r =>
                     {
                         r.RelativeItem().Element(e => KpiCard(e, "Usuarios totales", total.ToString("N0", CultureInfo.InvariantCulture), brand, bgCard));
-                        r.RelativeItem().Element(e => KpiCard(e, "Activos", activos.ToString("N0"), Colors.Green.Darken2, bgCard));
-                        r.RelativeItem().Element(e => KpiCard(e, "Inactivos", inactivos.ToString("N0"), Colors.Grey.Darken2, bgCard));
-                        r.RelativeItem().Element(e => KpiCard(e, "Vacaciones", vacaciones.ToString("N0"), Colors.Orange.Darken2, bgCard));
+                        r.RelativeItem().Element(e => KpiCard(e, "Activos", activos.ToString("N0"), "#8E244D", bgCard));
+                        r.RelativeItem().Element(e => KpiCard(e, "Pausados", pausados.ToString("N0"), "#A63A50", bgCard));
+                        r.RelativeItem().Element(e => KpiCard(e, "Vacaciones", vacaciones.ToString("N0"), "#C75B7A", bgCard));
                     });
 
                     if (porRol.Count > 0)
@@ -99,7 +102,6 @@ public sealed class ReportExportService : IReportExportService
                         });
                     }
 
-                    
                     col.Item().PaddingTop(5).Element(e =>
                     {
                         e.Table(table =>
@@ -212,23 +214,33 @@ public sealed class ReportExportService : IReportExportService
 
     private static void Badge(IContainer c, string label)
     {
-        var (bg, fg) = label?.ToUpperInvariant() switch
+        var normalized = label?.ToUpperInvariant() ?? "";
+
+        var display = normalized switch
         {
-            "ACTIVE" => (Colors.Green.Lighten4, Colors.Green.Darken3),
-            "PAUSED" => (Colors.Grey.Lighten4, Colors.Grey.Darken3),
-            "VACATION" => (Colors.Orange.Lighten4, Colors.Orange.Darken3),
-            _ => (Colors.Grey.Lighten4, Colors.Grey.Darken3)
+            "ACTIVE" => "ACTIVO",
+            "PAUSED" => "PAUSADO",
+            "VACATION" => "VACACIONES",
+            _ => normalized
+        };
+
+        var (bg, fg) = display switch
+        {
+            "ACTIVO" => ("#EFD3DF", "#7B1E3A"), 
+            "PAUSADO" => ("#F3E5F5", "#5E2750"),  
+            "VACACIONES" => ("#FDE4EC", "#AD1457"),  
+            _ => ("#F5F5F5", "#424242")
         };
 
         c.Row(r =>
         {
             r.AutoItem()
-             .Background(bg).Border(0.5f).BorderColor(Colors.Grey.Lighten2)
+             .Background(bg).Border(0.5f).BorderColor("#E0E0E0")
              .PaddingVertical(2).PaddingHorizontal(6)
              .Text(x =>
              {
                  x.DefaultTextStyle(s => s.FontSize(10).SemiBold().FontColor(fg));
-                 x.Span(label ?? "");
+                 x.Span(display);
              });
         });
     }

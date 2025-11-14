@@ -13,7 +13,7 @@ public class ClienteRowConfiguration : IEntityTypeConfiguration<ClienteRow>
     b.Property(x => x.ClienteID).ValueGeneratedOnAdd();
 
     b.Property(x => x.CodigoCliente).HasMaxLength(50);
-    b.HasIndex(x => x.CodigoCliente).IsUnique(); // o .HasFilter("[CodigoCliente] IS NOT NULL")
+    b.HasIndex(x => x.CodigoCliente).IsUnique(); 
 
     b.Property(x => x.Nombre).IsRequired().HasMaxLength(200);
     b.Property(x => x.TipoPersona).IsRequired().HasMaxLength(20).HasDefaultValue("Natural");

@@ -107,7 +107,7 @@ const Sidebar: React.FC = () => {
               title="Reportes"
               icon={<ReportsIcon />}
               isActive={router.pathname.startsWith("/reportes")}
-              href="/reportes"              
+              href="/reportes"
               onClickItem={setCollapsed}
             />
 

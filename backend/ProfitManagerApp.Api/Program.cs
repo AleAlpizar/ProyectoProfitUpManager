@@ -69,6 +69,8 @@ builder.Services.AddSingleton<IReportExportService, ReportExportService>();
 builder.Services.AddScoped<ClientesReportService>();
 
 builder.Services.AddScoped<ReportUsersService>();
+builder.Services.AddScoped<VentasReportService>();
+
 
 builder.Services.AddControllers()
   .AddJsonOptions(o => o.JsonSerializerOptions.Converters

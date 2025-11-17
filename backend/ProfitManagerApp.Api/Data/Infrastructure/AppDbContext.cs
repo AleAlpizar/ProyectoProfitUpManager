@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProfitManagerApp.Api.Enums;
 using ProfitManagerApp.Api.Models.Rows;
+using ProfitManagerApp.Api.Rows;
 
 namespace ProfitManagerApp.Api.Infrastructure
 {
@@ -14,6 +15,7 @@ namespace ProfitManagerApp.Api.Infrastructure
         public DbSet<InventarioRow> Inventarios => Set<InventarioRow>();
         public DbSet<VentaRow> Ventas => Set<VentaRow>();
         public DbSet<VentaItemRow> VentaDetalles => Set<VentaItemRow>();
+        public DbSet<VentaAnulacionRow> VentaAnulaciones => Set<VentaAnulacionRow>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -53,7 +55,9 @@ namespace ProfitManagerApp.Api.Infrastructure
                 e.HasIndex(x => x.Sku).IsUnique();
                 e.Property(x => x.Nombre).IsRequired().HasMaxLength(200);
                 e.Property(x => x.IsActive).HasDefaultValue(true);
+
                 e.Property(x => x.PrecioVenta).HasPrecision(18, 2);
+
             });
 
             modelBuilder.Entity<InventarioRow>(e =>
@@ -61,7 +65,9 @@ namespace ProfitManagerApp.Api.Infrastructure
                 e.ToTable("Inventario", "dbo");
                 e.HasKey(x => x.InventarioID);
                 e.Property(x => x.InventarioID).ValueGeneratedOnAdd();
-                e.Property(x => x.Cantidad).HasPrecision(18, 2);
+
+                e.Property(x => x.Cantidad).HasPrecision(18, 4);
+
                 e.HasIndex(x => new { x.ProductoID, x.BodegaID }).IsUnique();
             });
 
@@ -71,12 +77,11 @@ namespace ProfitManagerApp.Api.Infrastructure
                 e.HasKey(x => x.VentaID);
                 e.Property(x => x.VentaID).ValueGeneratedOnAdd();
 
-                e.Property(x => x.ClienteID); 
-
+                e.Property(x => x.ClienteID);
                 e.Property(x => x.Fecha).IsRequired();
 
                 e.Property(x => x.Subtotal).HasPrecision(18, 2);
-                e.Property(x => x.Descuento).HasPrecision(5, 2);
+                e.Property(x => x.Descuento).HasPrecision(18, 2);
                 e.Property(x => x.Total).HasPrecision(18, 2);
 
                 e.Property(x => x.CreatedAt).IsRequired();
@@ -100,11 +105,27 @@ namespace ProfitManagerApp.Api.Infrastructure
                 e.Property(x => x.ProductoID);
                 e.Property(x => x.BodegaID).IsRequired();
 
-                e.Property(x => x.Cantidad).HasPrecision(18, 2);
-                e.Property(x => x.PrecioUnitario).HasPrecision(18, 2);
+                e.Property(x => x.Cantidad).HasPrecision(18, 4);
+                e.Property(x => x.PrecioUnitario).HasPrecision(18, 4);
 
                 e.HasOne(x => x.Venta)
                     .WithMany(v => v.Detalles)
+                    .HasForeignKey(x => x.VentaID)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<VentaAnulacionRow>(e =>
+            {
+                e.ToTable("VentaAnulacion", "dbo");
+                e.HasKey(x => x.AnulacionID);
+                e.Property(x => x.AnulacionID).ValueGeneratedOnAdd();
+
+                e.Property(x => x.Motivo).HasMaxLength(500);
+                e.Property(x => x.FechaAnulacion).IsRequired();
+                e.Property(x => x.UsuarioID);
+
+                e.HasOne(x => x.Venta)
+                    .WithMany()
                     .HasForeignKey(x => x.VentaID)
                     .OnDelete(DeleteBehavior.Cascade);
             });

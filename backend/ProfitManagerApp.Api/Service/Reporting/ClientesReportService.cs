@@ -160,7 +160,7 @@ namespace ProfitManagerApp.Api.Service.Reporting
                     Total = v.Total,
                     CantidadLineas = detGroup.Count()
                 };
-
+            
             return await query.ToListAsync(ct);
         }
     }

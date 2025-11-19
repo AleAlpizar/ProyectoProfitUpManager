@@ -71,31 +71,31 @@ const ReportesIndexPage: NextPage = () => {
           </a>
         </Link>
 
-        <div className="flex min-h-[170px] flex-col justify-between rounded-3xl border border-white/5 bg-gradient-to-br from-[#171821] to-[#070A0C] p-5 opacity-75">
-          <div className="flex items-start gap-3">
-            <div className="grid h-10 w-10 place-items-center rounded-2xl border border-sky-400/40 bg-sky-400/10">
-              <ProductsIcon />
+        <Link href="/reportes/inventario" legacyBehavior>
+          <a className="group flex min-h-[170px] flex-col justify-between rounded-3xl border border-white/10 bg-gradient-to-br from-[#171821] to-[#0B0F0E] p-5 shadow-[0_18px_45px_rgba(0,0,0,0.45)] transition hover:border-[#B1005F]/60 hover:shadow-[0_22px_55px_rgba(0,0,0,0.7)]">
+            <div className="flex items-start gap-3">
+              <div className="grid h-10 w-10 place-items-center rounded-2xl border border-[#B1005F]/50 bg-[#B1005F]/10">
+                <ProductsIcon />
+              </div>
+              <div>
+                <h2 className="text-base font-semibold tracking-wide text-[#F9FAFB]">
+                  Reporte de inventario
+                </h2>
+                <p className="mt-1 text-xs text-[#9CA3AF]">
+                  Stock por bodega y producto, quiebres, sobrestock, rotación y
+                  movimientos de inventario.
+                </p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-base font-semibold tracking-wide text-[#F9FAFB]">
-                Reporte de inventario{" "}
-                <span className="text-[10px] font-normal text-[#9CA3AF]">
-                  (próximamente)
-                </span>
-              </h2>
-              <p className="mt-1 text-xs text-[#9CA3AF]">
-                Rotación de inventario, quiebres, sobrestock y movimientos por
-                bodega.
-              </p>
-            </div>
-          </div>
 
-          <div className="mt-4">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/5 px-4 py-1.5 text-xs font-semibold text-[#9CA3AF]">
-              En desarrollo
-            </span>
-          </div>
-        </div>
+            <div className="mt-4">
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#B1005F] px-4 py-1.5 text-xs font-semibold text-white shadow-md transition group-hover:bg-[#E11D74]">
+                Ir a reporte de inventario
+                <span className="text-sm">→</span>
+              </span>
+            </div>
+          </a>
+        </Link>
       </section>
     </div>
   );

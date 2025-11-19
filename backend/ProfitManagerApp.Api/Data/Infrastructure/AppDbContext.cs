@@ -16,6 +16,8 @@ namespace ProfitManagerApp.Api.Infrastructure
         public DbSet<VentaRow> Ventas => Set<VentaRow>();
         public DbSet<VentaItemRow> VentaDetalles => Set<VentaItemRow>();
         public DbSet<VentaAnulacionRow> VentaAnulaciones => Set<VentaAnulacionRow>();
+        public DbSet<MovimientoInventarioRow> MovimientosInventario => Set<MovimientoInventarioRow>();
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -129,6 +131,19 @@ namespace ProfitManagerApp.Api.Infrastructure
                     .HasForeignKey(x => x.VentaID)
                     .OnDelete(DeleteBehavior.Cascade);
             });
+            modelBuilder.Entity<MovimientoInventarioRow>(e =>
+            {
+                e.ToTable("MovimientoInventario", "dbo");
+                e.HasKey(x => x.MovimientoID);
+                e.Property(x => x.MovimientoID).ValueGeneratedOnAdd();
+
+                e.Property(x => x.TipoMovimiento).IsRequired().HasMaxLength(50);
+                e.Property(x => x.Cantidad).HasPrecision(18, 4);
+                e.Property(x => x.ReferenciaTipo).HasMaxLength(100);
+                e.Property(x => x.Motivo).HasMaxLength(250);
+                e.Property(x => x.FechaMovimiento).IsRequired();
+            });
+
         }
     }
 }

@@ -9,6 +9,8 @@ using ProfitManagerApp.Api.Models.Rows;
 using ProfitManagerApp.Application.Clientes;
 using ProfitManagerApp.Data;
 using System.Security.Claims;
+using ProfitManagerApp.Api.Rows;
+
 
 namespace ProfitManagerApp.Api.Controllers;
 

@@ -8,15 +8,16 @@ using ProfitManagerApp.Api.Auth;
 using ProfitManagerApp.Api.Data.Abstractions;
 using ProfitManagerApp.Api.Infrastructure;
 using ProfitManagerApp.Api.Mapping;
+using ProfitManagerApp.Api.Models.Rows;
+using ProfitManagerApp.Api.Service.Reporting;
 using ProfitManagerApp.Application.Clientes;
+
+
 using ProfitManagerApp.Data;
 using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Data.Infrastructure;
 using ProfitManagerApp.Data.Repositories;
 using QuestPDF.Infrastructure;
-
-using ProfitManagerApp.Api.Service.Reporting;
-
 using ApiDbContext = ProfitManagerApp.Api.Infrastructure.AppDbContext;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -65,12 +66,15 @@ builder.Services.AddScoped<IVencimientosRepository, VencimientosRepository>();
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IReportSessionStore, ReportSessionStore>();
 builder.Services.AddSingleton<IReportExportService, ReportExportService>();
+builder.Services.AddScoped<InventarioReportService>();
+
 
 builder.Services.AddScoped<ClientesReportService>();
-
-builder.Services.AddScoped<ReportUsersService>();
 builder.Services.AddScoped<VentasReportService>();
 
+builder.Services.AddScoped<InventarioReportService>();
+
+builder.Services.AddScoped<ReportUsersService>();
 
 builder.Services.AddControllers()
   .AddJsonOptions(o => o.JsonSerializerOptions.Converters

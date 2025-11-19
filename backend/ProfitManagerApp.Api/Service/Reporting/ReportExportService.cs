@@ -40,20 +40,20 @@ public sealed class ReportExportService : IReportExportService
         int pausados = porEstado.Where(x => x.Estado.Equals("PAUSADO", StringComparison.OrdinalIgnoreCase)).Sum(x => x.Count);
         int vacaciones = porEstado.Where(x => x.Estado.Equals("VACACIONES", StringComparison.OrdinalIgnoreCase)).Sum(x => x.Count);
 
-        var wine = "#7B1E3A";     
-        var wineSoft = "#F9E6EC"; 
-
-        var brand = wine;
-        var bgCard = wineSoft;
-        var zebra1 = Colors.Grey.Lighten5;
-        var zebra2 = Colors.White;
+        var brand = "#b1005f";           
+        var pageBg = "#05070A";          
+        var cardBg = "#020617";          
+        var zebra1 = "#020617";         
+        var zebra2 = "#030712";         
+        var headerBg = "#020617";       
+        var headerBorder = "#111827";   
 
         var pdf = Document.Create(container =>
         {
             container.Page(page =>
             {
                 page.Size(PageSizes.A4.Landscape());
-                page.Margin(25);
+                page.Margin(20);
 
                 page.Header().Row(row =>
                 {
@@ -61,15 +61,16 @@ public sealed class ReportExportService : IReportExportService
                     {
                         col.Item().Text(x =>
                         {
-                            x.DefaultTextStyle(s => s.FontSize(20).Bold().FontColor(brand));
-                            x.Span(string.IsNullOrWhiteSpace(report.Title) ? "Usuarios" : report.Title);
+                            x.DefaultTextStyle(s => s.FontSize(20).Bold().FontColor(Colors.White));
+                            x.Span(string.IsNullOrWhiteSpace(report.Title) ? "Usuarios" : report.Title)
+                             .FontColor(brand);
                         });
 
                         if (report.Meta is { Count: > 0 })
                         {
                             col.Item().Text(t =>
                             {
-                                t.DefaultTextStyle(s => s.FontSize(10).FontColor(Colors.Grey.Darken2));
+                                t.DefaultTextStyle(s => s.FontSize(10).FontColor("#9CA3AF"));
                                 t.Span("Filtros: ").SemiBold();
                                 t.Span(string.Join("  •  ", report.Meta.Select(kv => $"{kv.Key}={kv.Value}")));
                             });
@@ -77,91 +78,105 @@ public sealed class ReportExportService : IReportExportService
 
                         col.Item().Text(t =>
                         {
-                            t.DefaultTextStyle(s => s.FontSize(9).FontColor(Colors.Grey.Darken2));
+                            t.DefaultTextStyle(s => s.FontSize(9).FontColor("#6B7280"));
                             t.Span($"Generado: {DateTime.Now:yyyy-MM-dd HH:mm}");
                         });
                     });
                 });
 
-                page.Content().PaddingTop(10).Column(col =>
-                {
-                    col.Item().PaddingBottom(8).Row(r =>
-                    {
-                        r.RelativeItem().Element(e => KpiCard(e, "Usuarios totales", total.ToString("N0", CultureInfo.InvariantCulture), brand, bgCard));
-                        r.RelativeItem().Element(e => KpiCard(e, "Activos", activos.ToString("N0"), "#8E244D", bgCard));
-                        r.RelativeItem().Element(e => KpiCard(e, "Pausados", pausados.ToString("N0"), "#A63A50", bgCard));
-                        r.RelativeItem().Element(e => KpiCard(e, "Vacaciones", vacaciones.ToString("N0"), "#C75B7A", bgCard));
-                    });
-
-                    if (porRol.Count > 0)
+                page.Content()
+                    .Background(pageBg)
+                    .PaddingTop(10)
+                    .Column(col =>
                     {
                         col.Item().PaddingBottom(8).Row(r =>
                         {
-                            foreach (var (rol, cnt) in porRol)
-                                r.RelativeItem().Element(e => SmallStat(e, rol, cnt.ToString("N0"), Colors.Blue.Medium, Colors.Grey.Lighten5));
+                            r.RelativeItem().Element(e => KpiCard(e, "Usuarios totales", total.ToString("N0", CultureInfo.InvariantCulture), brand, cardBg));
+                            r.RelativeItem().Element(e => KpiCard(e, "Activos", activos.ToString("N0"), "#22c55e", cardBg));
+                            r.RelativeItem().Element(e => KpiCard(e, "Pausados", pausados.ToString("N0"), "#eab308", cardBg));
+                            r.RelativeItem().Element(e => KpiCard(e, "Vacaciones", vacaciones.ToString("N0"), "#fb923c", cardBg));
                         });
-                    }
 
-                    col.Item().PaddingTop(5).Element(e =>
-                    {
-                        e.Table(table =>
+                        if (porRol.Count > 0)
                         {
-                            table.ColumnsDefinition(cols =>
+                            col.Item().PaddingBottom(8).Row(r =>
                             {
-                                for (int i = 0; i < titles.Count; i++) cols.RelativeColumn();
+                                foreach (var (rol, cnt) in porRol)
+                                    r.RelativeItem().Element(e => SmallStat(e, rol, cnt.ToString("N0"), "#38bdf8", "#020617"));
                             });
+                        }
 
-                            table.Header(h =>
+                        col.Item().PaddingTop(5).Element(e =>
+                        {
+                            e.Border(1).BorderColor("#111827").Background(cardBg).Padding(4).Table(table =>
                             {
-                                foreach (var t in titles)
+                                table.ColumnsDefinition(cols =>
                                 {
-                                    h.Cell().Element(HeaderCell).Text(x =>
-                                    {
-                                        x.DefaultTextStyle(s => s.SemiBold());
-                                        x.Span(t);
-                                    });
+                                    for (int i = 0; i < titles.Count; i++) cols.RelativeColumn();
+                                });
 
-                                    static IContainer HeaderCell(IContainer c) =>
-                                        c.Background(Colors.Grey.Lighten3)
-                                         .PaddingVertical(6).PaddingHorizontal(6);
+                                table.Header(h =>
+                                {
+                                    foreach (var t in titles)
+                                    {
+                                        h.Cell().Element(HeaderCell).Text(x =>
+                                        {
+                                            x.DefaultTextStyle(s => s.SemiBold().FontSize(10).FontColor("#E5E7EB"));
+                                            x.Span(t);
+                                        });
+
+                                        IContainer HeaderCell(IContainer c) =>
+                                            c.Background(headerBg)
+                                             .BorderBottom(1)
+                                             .BorderColor(headerBorder)
+                                             .PaddingVertical(6)
+                                             .PaddingHorizontal(6);
+                                    }
+                                });
+
+                                int idx = 0;
+                                foreach (var r in report.Rows)
+                                {
+                                    bool even = (idx++ % 2 == 0);
+
+                                    for (int c = 0; c < fields.Count; c++)
+                                    {
+                                        var field = fields[c];
+                                        r.TryGetValue(field, out var val);
+                                        var text = val?.ToString() ?? "";
+
+                                        table.Cell().Element(cell =>
+                                        {
+                                            var box = cell
+                                                .Background(even ? zebra1 : zebra2)
+                                                .PaddingVertical(4)
+                                                .PaddingHorizontal(6);
+
+                                            box = box.BorderBottom(0.5f).BorderColor("#111827");
+
+                                            if (!string.IsNullOrEmpty(estadoField) &&
+                                                field.Equals(estadoField, StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                box.Element(x => Badge(x, text));
+                                            }
+                                            else
+                                            {
+                                                box.Text(t =>
+                                                {
+                                                    t.DefaultTextStyle(s => s.FontSize(9).FontColor("#E5E7EB"));
+                                                    t.Span(text);
+                                                });
+                                            }
+                                        });
+                                    }
                                 }
                             });
-
-                            int idx = 0;
-                            foreach (var r in report.Rows)
-                            {
-                                bool even = (idx++ % 2 == 0);
-
-                                for (int c = 0; c < fields.Count; c++)
-                                {
-                                    var field = fields[c];
-                                    r.TryGetValue(field, out var val);
-                                    var text = val?.ToString() ?? "";
-
-                                    table.Cell().Element(cell =>
-                                    {
-                                        var box = cell.Background(even ? zebra1 : zebra2)
-                                                      .PaddingVertical(4).PaddingHorizontal(6);
-
-                                        if (!string.IsNullOrEmpty(estadoField) &&
-                                            field.Equals(estadoField, StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            box.Element(x => Badge(x, text));
-                                        }
-                                        else
-                                        {
-                                            box.Text(t => t.Span(text));
-                                        }
-                                    });
-                                }
-                            }
                         });
                     });
-                });
 
                 page.Footer().AlignRight().Text(t =>
                 {
-                    t.DefaultTextStyle(s => s.FontSize(9).Light().FontColor(Colors.Grey.Darken2));
+                    t.DefaultTextStyle(s => s.FontSize(9).Light().FontColor("#6B7280"));
                     t.Span("Página "); t.CurrentPageNumber(); t.Span(" / "); t.TotalPages();
                 });
             });
@@ -172,7 +187,9 @@ public sealed class ReportExportService : IReportExportService
 
     private static void KpiCard(IContainer c, string title, string value, string color, string bg)
     {
-        c.Background(bg).Border(0.5f).BorderColor(Colors.Grey.Lighten2)
+        c.Background(bg)
+         .Border(1f)
+         .BorderColor("#111827")
          .Padding(10)
          .Column(col =>
          {
@@ -180,7 +197,7 @@ public sealed class ReportExportService : IReportExportService
 
              col.Item().Text(x =>
              {
-                 x.DefaultTextStyle(s => s.FontSize(10).FontColor(Colors.Grey.Darken2));
+                 x.DefaultTextStyle(s => s.FontSize(9).FontColor("#9CA3AF"));
                  x.Span(title);
              });
 
@@ -194,13 +211,15 @@ public sealed class ReportExportService : IReportExportService
 
     private static void SmallStat(IContainer c, string title, string value, string color, string bg)
     {
-        c.Background(bg).Border(0.5f).BorderColor(Colors.Grey.Lighten3)
+        c.Background(bg)
+         .Border(1f)
+         .BorderColor("#111827")
          .Padding(8)
          .Column(col =>
          {
              col.Item().Text(x =>
              {
-                 x.DefaultTextStyle(s => s.FontSize(9).FontColor(Colors.Grey.Darken2));
+                 x.DefaultTextStyle(s => s.FontSize(9).FontColor("#9CA3AF"));
                  x.Span(title);
              });
 
@@ -226,20 +245,23 @@ public sealed class ReportExportService : IReportExportService
 
         var (bg, fg) = display switch
         {
-            "ACTIVO" => ("#EFD3DF", "#7B1E3A"), 
-            "PAUSADO" => ("#F3E5F5", "#5E2750"),  
-            "VACACIONES" => ("#FDE4EC", "#AD1457"),  
-            _ => ("#F5F5F5", "#424242")
+            "ACTIVO" => ("#14532d", "#bbf7d0"),       
+            "PAUSADO" => ("#78350f", "#fee2b3"),      
+            "VACACIONES" => ("#7c2d12", "#fed7aa"),   
+            _ => ("#1f2933", "#e5e7eb")
         };
 
         c.Row(r =>
         {
             r.AutoItem()
-             .Background(bg).Border(0.5f).BorderColor("#E0E0E0")
-             .PaddingVertical(2).PaddingHorizontal(6)
+             .Background(bg)
+             .Border(0.5f)
+             .BorderColor("#111827")
+             .PaddingVertical(2)
+             .PaddingHorizontal(8)
              .Text(x =>
              {
-                 x.DefaultTextStyle(s => s.FontSize(10).SemiBold().FontColor(fg));
+                 x.DefaultTextStyle(s => s.FontSize(9).SemiBold().FontColor(fg));
                  x.Span(display);
              });
         });

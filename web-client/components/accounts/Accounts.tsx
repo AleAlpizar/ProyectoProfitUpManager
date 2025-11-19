@@ -3,7 +3,6 @@ import Link from "next/link";
 
 import { HouseIcon } from "../icons/breadcrumb/house-icon";
 import { UsersIcon } from "../icons/breadcrumb/users-icon";
-import { ExportIcon } from "../icons/accounts/export-icon";
 
 import { useSession } from "../hooks/useSession";
 import {
@@ -19,8 +18,18 @@ import EditUser from "./EditUser";
 import Button from "../buttons/button";
 import { useConfirm } from "../modals/ConfirmProvider";
 
-import { CardTable, Th, Td, PageBtn, StatusPill, SELECT_CLS } from "../ui/table";
-import { registerUsersReport, exportUsersPdf } from "../../helpers/reportClient";
+import {
+  CardTable,
+  Th,
+  Td,
+  PageBtn,
+  StatusPill,
+  SELECT_CLS,
+} from "../ui/table";
+import {
+  registerUsersReport,
+  exportUsersPdf,
+} from "../../helpers/reportClient";
 
 type UserRow = {
   id: string;
@@ -63,7 +72,8 @@ export default function Accounts() {
     email: u.correo,
     role: u.rol,
     team: "—",
-    status: (u.estadoUsuario as Status) ?? (u.isActive ? "ACTIVE" : "PAUSED"),
+    status:
+      (u.estadoUsuario as Status) ?? (u.isActive ? "ACTIVE" : "PAUSED"),
     telefono: u.telefono ?? "",
   });
 
@@ -79,7 +89,9 @@ export default function Accounts() {
     }
   }, [isAuthenticated, hasRole, authHeader]);
 
-  React.useEffect(() => { load(); }, [load]);
+  React.useEffect(() => {
+    load();
+  }, [load]);
 
   const filtered = React.useMemo(() => {
     const term = q.trim().toLowerCase();
@@ -109,7 +121,11 @@ export default function Accounts() {
     if (!u.usuarioId || newRole === u.role) return;
     const ok = await confirm({
       title: "Confirmar cambio de rol",
-      message: <>¿Cambiar el rol de <b>{u.name}</b> a <b>{newRole}</b>?</>,
+      message: (
+        <>
+          ¿Cambiar el rol de <b>{u.name}</b> a <b>{newRole}</b>?
+        </>
+      ),
       confirmText: "Sí, cambiar",
       tone: "warning",
     });
@@ -117,7 +133,9 @@ export default function Accounts() {
 
     try {
       await updateUserRole(u.usuarioId, newRole, authHeader as any);
-      setRows((prev) => prev.map((x) => (x.id === u.id ? { ...x, role: newRole } : x)));
+      setRows((prev) =>
+        prev.map((x) => (x.id === u.id ? { ...x, role: newRole } : x))
+      );
     } catch (e: any) {
       alert(e?.message || "No se pudo cambiar el rol");
     }
@@ -125,10 +143,19 @@ export default function Accounts() {
 
   const onChangeStatus = async (u: UserRow, status: Status) => {
     if (!u.usuarioId || status === u.status) return;
-    const human = status === "ACTIVE" ? "Activo" : status === "PAUSED" ? "Inactivo" : "Vacaciones";
+    const human =
+      status === "ACTIVE"
+        ? "Activo"
+        : status === "PAUSED"
+        ? "Inactivo"
+        : "Vacaciones";
     const ok = await confirm({
       title: "Confirmar cambio de estado",
-      message: <>¿Cambiar el estado de <b>{u.name}</b> a <b>{human}</b>?</>,
+      message: (
+        <>
+          ¿Cambiar el estado de <b>{u.name}</b> a <b>{human}</b>?
+        </>
+      ),
       confirmText: "Sí, cambiar",
       tone: "warning",
     });
@@ -136,7 +163,9 @@ export default function Accounts() {
 
     try {
       await setUserStatus(u.usuarioId, status, authHeader as any);
-      setRows((prev) => prev.map((x) => (x.id === u.id ? { ...x, status } : x)));
+      setRows((prev) =>
+        prev.map((x) => (x.id === u.id ? { ...x, status } : x))
+      );
     } catch (e: any) {
       alert(e?.message || "No se pudo cambiar el estado");
     }
@@ -164,7 +193,7 @@ export default function Accounts() {
         q,
         estado: filter,
         key: "usuarios",
-        title: "Usuarios"
+        title: "Usuarios",
       });
 
       await exportUsersPdf(authHeader as any, "usuarios");
@@ -181,7 +210,9 @@ export default function Accounts() {
         <ol className="flex items-center gap-2 text-sm text-[#8B9AA0]">
           <li className="flex items-center gap-2">
             <HouseIcon />
-            <Link href="/" className="hover:text-white transition">Inicio</Link>
+            <Link href="/" className="hover:text-white transition">
+              Inicio
+            </Link>
             <span className="px-1 text-[#8B9AA0]">/</span>
           </li>
           <li className="flex items-center gap-2">
@@ -193,7 +224,9 @@ export default function Accounts() {
 
       <header className="mb-6">
         <h1 className="text-2xl font-semibold tracking-wide">Cuentas</h1>
-        <p className="text-sm text-[#8B9AA0]">Registrar, editar, inactivar y exportar cuentas</p>
+        <p className="text-sm text-[#8B9AA0]">
+          Registrar, editar, inactivar y exportar cuentas
+        </p>
       </header>
 
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -205,8 +238,19 @@ export default function Accounts() {
               placeholder="Buscar por nombre, correo o #"
               className="w-full rounded-xl border border-white/10 bg-[#121618] pl-9 pr-3 py-2 text-sm outline-none placeholder:text-[#8B9AA0] focus:ring-2 focus:ring-[#A30862]/40 focus:border-transparent transition"
             />
-            <svg className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z" />
+            <svg
+              className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 opacity-70"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              aria-hidden
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="m21 21-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z"
+              />
             </svg>
           </label>
 
@@ -223,7 +267,9 @@ export default function Accounts() {
         </div>
 
         <div className="flex items-center gap-3">
-          {isAuthenticated && hasRole("Administrador") && <AddUser onCreated={handleCreated} />}
+          {isAuthenticated && hasRole("Administrador") && (
+            <AddUser onCreated={handleCreated} />
+          )}
 
           <div className="inline-flex gap-2">
             <button
@@ -233,7 +279,7 @@ export default function Accounts() {
               onClick={handleExportPdf}
               title="Exportar PDF"
             >
-              {exporting ? "Exportando…" : <>Exportar PDF <ExportIcon /></>}
+              {exporting ? "Exportando…" : "Exportar PDF"}
             </button>
           </div>
         </div>
@@ -252,7 +298,10 @@ export default function Accounts() {
         <tbody className="[&>tr:not(:last-child)]:border-b [&>tr]:border-white/10">
           {loading && (
             <tr>
-              <td colSpan={4} className="px-4 py-10 text-center text-sm text-[#8B9AA0]">
+              <td
+                colSpan={4}
+                className="px-4 py-10 text-center text-sm text-[#8B9AA0]"
+              >
                 Cargando usuarios…
               </td>
             </tr>
@@ -267,20 +316,32 @@ export default function Accounts() {
                       {u.name.slice(0, 1).toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-medium">{u.name}</div>
-                      <div className="truncate text-xs text-[#8B9AA0]">{u.email}</div>
+                      <div className="truncate text-sm font-medium">
+                        {u.name}
+                      </div>
+                      <div className="truncate text-xs text-[#8B9AA0]">
+                        {u.email}
+                      </div>
                     </div>
                   </div>
                 </Td>
 
                 <Td>
                   <div className="flex items-center justify-between gap-3">
-                    <span className="truncate text-sm font-semibold">{u.role}</span>
+                    <span className="truncate text-sm font-semibold">
+                      {u.role}
+                    </span>
                     {isAuthenticated && hasRole("Administrador") && (
                       <select
                         className={SELECT_CLS}
-                        value={u.role === "Administrador" ? "Administrador" : "Empleado"}
-                        onChange={(e) => onChangeRole(u, e.target.value as Role)}
+                        value={
+                          u.role === "Administrador"
+                            ? "Administrador"
+                            : "Empleado"
+                        }
+                        onChange={(e) =>
+                          onChangeRole(u, e.target.value as Role)
+                        }
                         title="Cambiar rol"
                       >
                         <option value="Empleado">Empleado</option>
@@ -297,7 +358,9 @@ export default function Accounts() {
                       <select
                         className={SELECT_CLS}
                         value={u.status}
-                        onChange={(e) => onChangeStatus(u, e.target.value as Status)}
+                        onChange={(e) =>
+                          onChangeStatus(u, e.target.value as Status)
+                        }
                         title="Cambiar estado"
                       >
                         <option value="ACTIVE">Activo</option>
@@ -324,7 +387,10 @@ export default function Accounts() {
 
           {!loading && pageRows.length === 0 && (
             <tr>
-              <td colSpan={4} className="px-4 py-10 text-center text-sm text-[#8B9AA0]">
+              <td
+                colSpan={4}
+                className="px-4 py-10 text-center text-sm text-[#8B9AA0]"
+              >
                 No hay cuentas para mostrar.
               </td>
             </tr>
@@ -336,20 +402,44 @@ export default function Accounts() {
         <span>
           Mostrando{" "}
           <b className="text-white">
-            {pageRows.length === 0 ? 0 : (page - 1) * pageSize + 1}-{(page - 1) * pageSize + pageRows.length}
+            {pageRows.length === 0
+              ? 0
+              : (page - 1) * pageSize + 1}
+            -
+            {(page - 1) * pageSize + pageRows.length}
           </b>{" "}
           de <b className="text-white">{filtered.length}</b>
         </span>
 
         <div className="flex items-center gap-2">
-          <PageBtn disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</PageBtn>
-          <span> Página <b className="text-white">{page}</b> de <b className="text-white">{totalPages}</b></span>
-          <PageBtn disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next</PageBtn>
+          <PageBtn
+            disabled={page <= 1}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            Prev
+          </PageBtn>
+          <span>
+            {" "}
+            Página <b className="text-white">{page}</b> de{" "}
+            <b className="text-white">{totalPages}</b>
+          </span>
+          <PageBtn
+            disabled={page >= totalPages}
+            onClick={() =>
+              setPage((p) => Math.min(totalPages, p + 1))
+            }
+          >
+            Next
+          </PageBtn>
         </div>
       </div>
 
       {editUser && (
-        <EditUser user={editUser} onSaved={load} onClose={() => setEditUser(null)} />
+        <EditUser
+          user={editUser}
+          onSaved={load}
+          onClose={() => setEditUser(null)}
+        />
       )}
     </div>
   );

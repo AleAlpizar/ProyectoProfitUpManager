@@ -1,5 +1,6 @@
 import type { AppProps } from "next/app";
 import React from "react";
+import { useRouter } from "next/router";
 
 import "../styles/globals.css";
 import { Layout } from "../components/layout/layout";
@@ -7,8 +8,28 @@ import { useSession } from "../components/hooks/useSession";
 import { ConfirmProvider } from "../components/modals/ConfirmProvider";
 
 function SessionGate({ children }: { children: React.ReactNode }) {
-  const { ready } = useSession();
-  if (!ready) return <div style={{ minHeight: "100vh", background: "#0B0F0E" }} />;
+  const { ready, isAuthenticated } = useSession();
+  const router = useRouter();
+
+  const isAuthRoute =
+    router.pathname === "/login" || router.pathname === "/forgot-password";
+
+  React.useEffect(() => {
+    if (!ready) return;
+
+    if (!isAuthenticated && !isAuthRoute) {
+      router.replace("/login");
+    }
+  }, [ready, isAuthenticated, isAuthRoute, router]);
+
+  if (!ready) {
+    return <div style={{ minHeight: "100vh", background: "#0B0F0E" }} />;
+  }
+
+  if (!isAuthenticated && !isAuthRoute) {
+    return <div style={{ minHeight: "100vh", background: "#0B0F0E" }} />;
+  }
+
   return <>{children}</>;
 }
 

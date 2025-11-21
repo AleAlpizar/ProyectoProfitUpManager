@@ -2,7 +2,7 @@ import React from "react";
 import { useRouter } from "next/router";
 import { useSession } from "../hooks/useSession";
 
-export default function LoginPage() {
+export default function Login() {
   const router = useRouter();
   const { login, isAuthenticated } = useSession();
 
@@ -17,7 +17,7 @@ export default function LoginPage() {
   }, [isAuthenticated, router]);
 
   const isEmailValid = React.useMemo(() => /\S+@\S+\.\S+/.test(email), [email]);
-  const isPassValid = password.length >= 6; 
+  const isPassValid = password.length >= 6;
   const canSubmit = isEmailValid && isPassValid && !loading;
 
   const vino = {
@@ -125,11 +125,25 @@ export default function LoginPage() {
                 title={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
               >
                 {showPass ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
                     <path d="M3 3l18 18M10.585 10.585A2 2 0 1013.414 13.414M9.88 4.64A9.996 9.996 0 0121 12c-1.2 2.8-3.8 5.5-9 5.5-1.4 0-2.7-.2-3.9-.7M6.2 6.2C4.1 7.5 2.7 9.4 2 12c1.2 2.8 3.8 5.5 9 5.5 1.1 0 2.1-.1 3.1-.3" />
                   </svg>
                 ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z" />
                     <circle cx="12" cy="12" r="3" />
                   </svg>
@@ -139,7 +153,6 @@ export default function LoginPage() {
             <p className="text-[11px] text-white/40">Mínimo 6 caracteres</p>
           </div>
 
-          {}
           <button
             type="submit"
             disabled={!canSubmit}
@@ -162,7 +175,6 @@ export default function LoginPage() {
               "text-xs underline underline-offset-4 hover:text-white",
               "text-white/90",
             ].join(" ")}
-
           >
             ¿Olvidaste tu contraseña?
           </button>
@@ -175,5 +187,3 @@ export default function LoginPage() {
     </main>
   );
 }
-
-(LoginPage as any).noChrome = true;

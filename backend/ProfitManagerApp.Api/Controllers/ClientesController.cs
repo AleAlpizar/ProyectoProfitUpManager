@@ -9,9 +9,10 @@ namespace ProfitManagerApp.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Administrador,Vendedor")] 
+
 public class ClientesController(ClienteHandler handlers) : ControllerBase
 {
-
     private int? GetUserId()
     {
         var v =
@@ -23,7 +24,6 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
     }
 
     [HttpPost]
-    [Authorize]
     public async Task<IActionResult> Create([FromBody] ClienteCreateDto dto, CancellationToken ct)
     {
         var user = GetUserId();
@@ -60,7 +60,6 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
     }
 
     [HttpGet("{id:int}")]
-    [Authorize]
     public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
         var model = await handlers.ObtenerPorIdAsync(id, ct);
@@ -70,14 +69,14 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
             model.ClienteID, model.CodigoCliente, model.Nombre, model.TipoPersona,
             model.Identificacion, model.Correo, model.Telefono, model.Direccion,
             model.FechaRegistro, model.IsActive, model.CreatedAt,
-            model.CreatedBy, model.UpdatedAt, model.UpdatedBy, model.DescuentoPorcentaje, model.DescuentoDescripcion
+            model.CreatedBy, model.UpdatedAt, model.UpdatedBy,
+            model.DescuentoPorcentaje, model.DescuentoDescripcion
         );
 
         return Ok(read);
     }
 
-    [HttpGet()]
-    [Authorize]
+    [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken ct)
     {
         var model = await handlers.ObtenerClientes(ct);
@@ -85,7 +84,6 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
     }
 
     [HttpPatch("{id:int}/activo")]
-    [Authorize]
     public async Task<IActionResult> PatchActivo([FromRoute] int id, [FromBody] ClientePatchActivoDto dto, CancellationToken ct)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -103,7 +101,6 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    [Authorize]
     public async Task<IActionResult> Put([FromRoute] int id, [FromBody] ClienteUpdateDto dto, CancellationToken ct)
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
@@ -113,7 +110,8 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
             var model = await handlers.ActualizarAsync(
                 id,
                 dto.Nombre, dto.CodigoCliente, dto.TipoPersona, dto.Identificacion,
-                dto.Correo, dto.Telefono, dto.Direccion, dto.IsActive, dto.DescuentoPorcentaje ?? 0, dto.DescuentoDescripcion ?? "",
+                dto.Correo, dto.Telefono, dto.Direccion, dto.IsActive,
+                dto.DescuentoPorcentaje ?? 0, dto.DescuentoDescripcion ?? "",
                 User, ct);
 
             if (model is null) return NotFound();

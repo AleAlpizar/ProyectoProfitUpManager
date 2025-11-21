@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using ProfitManagerApp.Api.Dto;
 using ProfitManagerApp.Api.Infrastructure;
@@ -10,6 +11,7 @@ namespace ProfitManagerApp.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Administrador,Vendedor")] 
     public class BodegasController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -131,17 +133,17 @@ namespace ProfitManagerApp.Api.Controllers
             await _db.SaveChangesAsync();
             return NoContent();
         }
+
         [HttpPost("{id:int}/reactivar")]
         public async Task<IActionResult> Reactivar([FromRoute] int id)
         {
             var entity = await _db.Bodegas.FirstOrDefaultAsync(x => x.BodegaID == id);
             if (entity is null) return NotFound();
-            if (entity.IsActive) return NoContent();   
+            if (entity.IsActive) return NoContent();
             entity.IsActive = true;
             await _db.SaveChangesAsync();
             return NoContent();
         }
-
     }
 
     public record PagedResult<T>(IReadOnlyList<T> Items, int Total, int Page, int PageSize);

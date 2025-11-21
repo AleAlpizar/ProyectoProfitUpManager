@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-export type Rol = "Administrador" | "Empleado";
+export type Rol = "Administrador" | "Vendedor" | "Empleado";
 
 export type Me = {
   usuarioID: number;
@@ -23,7 +23,10 @@ export function useSession() {
   useEffect(() => {
     try {
       requestAnimationFrame(() => {
-        const t = typeof window !== "undefined" ? localStorage.getItem(TOKEN_KEY) : null;
+        const t =
+          typeof window !== "undefined"
+            ? localStorage.getItem(TOKEN_KEY)
+            : null;
         if (t) setToken(t);
         setReady(true);
       });
@@ -84,7 +87,6 @@ export function useSession() {
         setMe(meData);
       }
     } catch {
-      // ignore
     }
 
     setReady(true);
@@ -122,6 +124,8 @@ export function useSession() {
   );
 
   const isAdmin = me?.rol === "Administrador";
+  const isSeller = me?.rol === "Vendedor";
+  const isEmployee = me?.rol === "Empleado";
 
   return {
     me,
@@ -133,5 +137,7 @@ export function useSession() {
     logout,
     hasRole,
     isAdmin,
+    isSeller,
+    isEmployee,
   };
 }

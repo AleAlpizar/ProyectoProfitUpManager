@@ -52,7 +52,7 @@ public class AuthService
                     Correo = dto.Correo,
                     PasswordHash = hash,
                     Salt = (string?)salt,
-                    dto.Telefono,    
+                    dto.Telefono,
                     CreatedBy = createdBy
                 },
                 commandType: CommandType.StoredProcedure
@@ -75,7 +75,7 @@ public class AuthService
         { throw new ApplicationException("EMAIL_DUPLICATE"); }
     }
 
-    public async Task<(int userId, string nombre, string? apellido, string correo, string rol, string pwdHash)?> GetByCorreoAsync(string correo)
+    public async Task<(int userId, string nombre, string? apellido, string correo, string rol, string estadoUsuario, string pwdHash)?> GetByCorreoAsync(string correo)
     {
         using var sql = new SqlConnection(_cn);
         var row = await sql.QueryFirstOrDefaultAsync(
@@ -92,7 +92,26 @@ public class AuthService
         string? apellido = row.Apellido as string;
         string pwdHash = row.PasswordHash;
 
-        return (userId, nombre, apellido, correoOut, rol, pwdHash);
+        string estadoUsuario = (string?)row.EstadoUsuario ?? "";
+
+        if (string.IsNullOrWhiteSpace(estadoUsuario))
+        {
+            bool isActive = false;
+            try
+            {
+                isActive = row.IsActive is bool b
+                    ? b
+                    : (row.IsActive is int i && i == 1);
+            }
+            catch
+            {
+                isActive = true; 
+            }
+
+            estadoUsuario = isActive ? "ACTIVE" : "PAUSED";
+        }
+
+        return (userId, nombre, apellido, correoOut, rol, estadoUsuario, pwdHash);
     }
 
     public async Task CreateSessionAsync(int userId, string token, DateTime expireAt, string? device, string? ip)
@@ -126,7 +145,7 @@ public class AuthService
         string? Telefono,
         string Rol,
         bool IsActive,
-        string EstadoUsuario 
+        string EstadoUsuario
     );
 
     public async Task<IEnumerable<UserListItem>> GetUsersAsync()
@@ -281,3 +300,4 @@ public class AuthService
         tx.Commit();
     }
 }
+

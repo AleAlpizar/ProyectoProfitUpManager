@@ -1,9 +1,14 @@
-﻿using System.Security.Claims;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using ProfitManagerApp.Api.Dtos;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Administrador")] 
 public class ReportsController : ControllerBase
 {
     private readonly IReportSessionStore _store;
@@ -36,13 +41,18 @@ public class ReportsController : ControllerBase
     }
 
     [HttpGet("users/register-from-db")]
-    public async Task<IActionResult> RegisterUsersFromDb([FromQuery] string? q, [FromQuery] string? estado, [FromQuery] string? rol,
-                                                         [FromQuery] string key = "usuarios", [FromQuery] string title = "Usuarios")
+    public async Task<IActionResult> RegisterUsersFromDb(
+        [FromQuery] string? q,
+        [FromQuery] string? estado,
+        [FromQuery] string? rol,
+        [FromQuery] string key = "usuarios",
+        [FromQuery] string title = "Usuarios")
     {
         var uid = GetUserId();
         if (uid is null) return Unauthorized();
 
-        var data = await _users.GetUsersForReportAsync(new ReportUsersService.ReportFilter { Q = q, Estado = estado, Rol = rol });
+        var data = await _users.GetUsersForReportAsync(
+            new ReportUsersService.ReportFilter { Q = q, Estado = estado, Rol = rol });
 
         var dto = BuildUsersReportDto(data, key, title, q, estado, rol);
         _store.Register(uid.Value, dto);
@@ -62,7 +72,6 @@ public class ReportsController : ControllerBase
         try
         {
             var bytes = _export.ToPdf(report);
-
             var fileName = $"Control Usuarios - {DateTime.Now:yyyy-MM-dd}.pdf";
 
             return File(bytes, "application/pdf", fileName);

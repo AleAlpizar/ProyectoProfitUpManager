@@ -149,7 +149,7 @@ export default function ClientesPage() {
               setFormOpen(true);
             }}
           >
-            + Nuevo cliente
+             Nuevo cliente
           </Button>
         </div>
       </div>

@@ -1,11 +1,13 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using ProfitManagerApp.Api.Dtos;
 using ProfitManagerApp.Api.Data.Abstractions;
 using ProfitManagerApp.Domain.Inventory.Dto;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize(Roles = "Administrador,Vendedor")] 
 public class InventarioController : ControllerBase
 {
     private readonly IInventarioRepository _repo;
@@ -54,7 +56,6 @@ public class InventarioController : ControllerBase
         return NoContent();
     }
 
- 
     [HttpGet("stock")]
     public async Task<IActionResult> Stock([FromQuery] int? bodegaId, [FromQuery] int? productoId, CancellationToken ct)
     {

@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.Data.SqlClient;
 using ProfitManagerApp.Api.Dtos;
 using ProfitManagerApp.Api.Data.Abstractions;
@@ -9,6 +10,7 @@ namespace ProfitManagerApp.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Administrador,Vendedor")] 
     public class ProductosController : ControllerBase
     {
         private readonly IInventarioRepository _inventarioRepository;

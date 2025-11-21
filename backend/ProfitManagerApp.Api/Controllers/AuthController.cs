@@ -3,11 +3,13 @@ using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using ProfitManagerApp.Api.Auth;
 using static AuthService;
 
 [ApiController]
 [Route("auth")]
+[Authorize] 
 public class AuthController : ControllerBase
 {
     private readonly AuthService _auth;
@@ -27,7 +29,6 @@ public class AuthController : ControllerBase
 
         return int.TryParse(v, out var id) ? id : (int?)null;
     }
-
     [HttpPost("register")]
     [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
@@ -43,13 +44,33 @@ public class AuthController : ControllerBase
             return Conflict(new { message = "El correo ya está registrado." });
         }
     }
-
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
     {
         var u = await _auth.GetByCorreoAsync(dto.Correo);
-        if (u is null) return Unauthorized(new { message = "Credenciales inválidas" });
+        if (u is null)
+            return Unauthorized(new { message = "Credenciales inválidas" });
+
+        var estado = (u.Value.estadoUsuario ?? "ACTIVE").ToUpperInvariant();
+
+        if (estado != "ACTIVE")
+        {
+            if (estado == "PAUSED")
+            {
+                return StatusCode(StatusCodes.Status403Forbidden,
+                    new { message = "Tu usuario está inactivo. No puedes iniciar sesión, contacta al administrador." });
+            }
+
+            if (estado == "VACATION")
+            {
+                return StatusCode(StatusCodes.Status403Forbidden,
+                    new { message = "Tu usuario está en vacaciones, por eso no puedes iniciar sesión." });
+            }
+
+            return StatusCode(StatusCodes.Status403Forbidden,
+                new { message = "Tu usuario no está activo, por eso no puedes iniciar sesión." });
+        }
 
         if (!AuthService.VerifyPassword(dto.Password, u.Value.pwdHash))
             return Unauthorized(new { message = "Credenciales inválidas" });
@@ -65,7 +86,6 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("logout")]
-    [Authorize]
     public async Task<IActionResult> Logout()
     {
         var bearer = Request.Headers["Authorization"].ToString();
@@ -77,7 +97,6 @@ public class AuthController : ControllerBase
     }
 
     [HttpGet("me")]
-    [Authorize]
     public async Task<ActionResult<MeDto>> Me()
     {
         var email = User.FindFirstValue(ClaimTypes.Email)
@@ -103,7 +122,6 @@ public class AuthController : ControllerBase
     public record ChangePasswordDto(string CurrentPassword, string NewPassword);
 
     [HttpPost("password/change")]
-    [Authorize]
     public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
     {
         if (string.IsNullOrWhiteSpace(dto.CurrentPassword) || string.IsNullOrWhiteSpace(dto.NewPassword))
@@ -141,7 +159,6 @@ public class AuthController : ControllerBase
         var data = await _auth.GetUsersAsync();
         return Ok(data);
     }
-
 
     public record UpdateUserDto(string? Nombre, string? Apellido, string? Correo, string? Telefono, string? Rol);
 

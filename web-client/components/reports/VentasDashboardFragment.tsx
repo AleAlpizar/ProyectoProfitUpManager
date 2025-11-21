@@ -630,7 +630,7 @@ export const VentasDashboardFragment: React.FC = () => {
                     </span>
                   </p>
                   <p className="mt-0.5 text-[11px] text-slate-300">
-                    Bodega {s.bodegaID} · Vendido:{" "}
+                    {s.bodegaID === 0 ? "Stock global" : `Bodega ${s.bodegaID}`} · Vendido:{" "}
                     <span className="font-semibold">
                       {formatNumber(s.cantidadVendidaPeriodo)}
                     </span>{" "}
@@ -639,6 +639,7 @@ export const VentasDashboardFragment: React.FC = () => {
                       {formatNumber(s.stockActual)}
                     </span>
                   </p>
+
                 </div>
               ))
             )}

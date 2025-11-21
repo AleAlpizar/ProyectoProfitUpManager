@@ -1,6 +1,7 @@
 import React from "react";
 import type { BodegaDto } from "../hooks/useBodegas";
 import { useApi } from "../hooks/useApi";
+import { useConfirm } from "../modals/ConfirmProvider";
 
 type Props = {
   initial?: Partial<BodegaDto> | null;
@@ -23,6 +24,8 @@ export default function BodegaForm({ initial, onSaved, onClose }: Props) {
   const { post, put } = useApi();
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+
+  const confirm = useConfirm();
 
   const buildPayload = React.useCallback(
     () => ({
@@ -54,11 +57,37 @@ export default function BodegaForm({ initial, onSaved, onClose }: Props) {
   const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError(null);
+
+    // Validación previa para no mostrar confirm si falta nombre
+    const payload = buildPayload();
+    if (!payload.nombre) {
+      setError("El nombre es obligatorio");
+      return;
+    }
+
+    const ok = await confirm({
+      title: isEdit ? "Guardar cambios de bodega" : "Crear bodega",
+      message: (
+        <>
+          {isEdit ? "¿Deseas guardar los cambios de la bodega" : "¿Deseas crear la bodega"}{" "}
+          <b>{payload.nombre}</b>?
+        </>
+      ),
+      confirmText: isEdit ? "Sí, guardar" : "Sí, crear",
+      cancelText: "Cancelar",
+      tone: isEdit ? "warning" : "brand",
+    });
+
+    if (!ok) return;
+
     setLoading(true);
     try {
       let res: BodegaDto | null = null;
-      if (isEdit && initial?.bodegaID) res = await updateBodega(initial.bodegaID);
-      else res = await createBodega();
+      if (isEdit && initial?.bodegaID) {
+        res = await updateBodega(initial.bodegaID);
+      } else {
+        res = await createBodega();
+      }
       if (res) onSaved?.(res);
     } catch (err: any) {
       setError(err?.message ?? "No se pudo guardar la bodega");

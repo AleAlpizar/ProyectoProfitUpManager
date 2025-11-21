@@ -49,20 +49,20 @@ export const ConfirmProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const toneClasses: Record<ConfirmTone, { btn: string; ring: string }> = {
     default: {
-      btn: "bg-white/10 hover:bg-white/15 text-white",
-      ring: "focus:ring-white/30",
+      btn: "bg-[#A30862] hover:opacity-95 text-white",
+      ring: "focus:ring-[#A30862]/40",
     },
     brand: {
       btn: "bg-[#A30862] hover:opacity-95 text-white",
       ring: "focus:ring-[#A30862]/40",
     },
     danger: {
-      btn: "bg-[#6C0F1C] hover:bg-[#801a2a] text-[#F7C6CF]",
-      ring: "focus:ring-[#6C0F1C]/40",
+      btn: "bg-[#A30862] hover:opacity-95 text-white",
+      ring: "focus:ring-[#A30862]/40",
     },
     warning: {
-      btn: "bg-amber-500 hover:bg-amber-600 text-black",
-      ring: "focus:ring-amber-400/40",
+      btn: "bg-[#A30862] hover:opacity-95 text-white",
+      ring: "focus:ring-[#A30862]/40",
     },
   };
 

@@ -95,7 +95,6 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
             onSubmit={onSubmit}
             className="w-full max-w-4xl rounded-3xl border border-white/10 bg-[#13171A] text-[#E6E9EA] shadow-[0_30px_80px_rgba(0,0,0,.55)] ring-1 ring-black/20"
           >
-            {/* Header */}
             <div className="flex items-start justify-between gap-4 px-6 pt-5">
               <div>
                 <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-2.5 py-1 text-[11px] text-[#8B9AA0]">
@@ -126,7 +125,6 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
               </div>
             )}
 
-            {/* Form body */}
             <div className="grid grid-cols-1 gap-4 px-6 pb-2 md:grid-cols-2">
               <Field label="Primer nombre" value={form.nombre} onChange={onChange("nombre")} autoFocus />
               <Field label="Apellidos" value={form.apellido ?? ""} onChange={onChange("apellido")} />
@@ -153,7 +151,6 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
               </label>
             </div>
 
-            {/* Actions */}
             <div className="mx-6 my-6 flex items-center justify-end gap-2">
               <Button
                 type="button"

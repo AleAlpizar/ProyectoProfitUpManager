@@ -187,6 +187,19 @@ export default function Accounts() {
   async function handleExportPdf() {
     if (!isAuthenticated || !hasRole("Administrador")) return;
 
+    const ok = await confirm({
+      title: "Exportar usuarios a PDF",
+      message: (
+        <>
+          ¿Deseas generar el PDF de <b>usuarios</b> con los filtros actuales?
+        </>
+      ),
+      confirmText: "Sí, exportar",
+      cancelText: "Cancelar",
+      tone: "brand",
+    });
+    if (!ok) return;
+
     try {
       setExporting(true);
       await registerUsersReport(authHeader as any, {

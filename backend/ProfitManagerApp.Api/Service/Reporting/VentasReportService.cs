@@ -235,43 +235,28 @@ namespace ProfitManagerApp.Api.Service.Reporting
 
             const decimal UMBRAL_STOCK_BAJO = 3m;
 
-            var ventasPorProdBod = detallesList
-                .Where(d => d.ProductoID.HasValue)
-                .GroupBy(d => new { d.ProductoID, d.BodegaID })
-                .ToDictionary(
-                    g => (ProductoID: g.Key.ProductoID!.Value, g.Key.BodegaID),
-                    g => g.Sum(x => x.Cantidad)
-                );
-
-            var stockPorProdBod = inventarios
-                .ToDictionary(
-                    i => (i.ProductoID, i.BodegaID),
-                    i => i.Cantidad
-                );
-
             var posiblesIssues = new List<VentaStockIssueDto>();
 
-            foreach (var kv in ventasPorProdBod)
+            foreach (var prod in productosActivos)
             {
-                var key = kv.Key;
-                var vendido = kv.Value;
-                stockPorProdBod.TryGetValue(key, out var stockActual);
+                cantVendidaPorProducto.TryGetValue(prod.ProductoID, out var vendido);
+                stockPorProducto.TryGetValue(prod.ProductoID, out var stockTotal);
 
-                if (vendido <= 0) continue;
-                if (stockActual > UMBRAL_STOCK_BAJO) continue;
+                if (vendido <= 0)
+                    continue;
 
-                productos.TryGetValue(key.ProductoID, out var prod);
-                bodegas.TryGetValue(key.BodegaID, out var bod);
+                if (stockTotal > UMBRAL_STOCK_BAJO)
+                    continue;
 
-                var criticidad = vendido / (stockActual <= 0 ? 1 : stockActual);
+                var criticidad = vendido / (stockTotal <= 0 ? 1 : stockTotal);
 
                 posiblesIssues.Add(new VentaStockIssueDto
                 {
-                    ProductoID = key.ProductoID,
-                    BodegaID = key.BodegaID,
-                    Sku = prod?.Sku ?? string.Empty,
-                    NombreProducto = prod?.Nombre ?? "(Producto)",
-                    StockActual = stockActual,
+                    ProductoID = prod.ProductoID,
+                    BodegaID = 0,
+                    Sku = prod.Sku ?? string.Empty,
+                    NombreProducto = prod.Nombre ?? "(Producto)",
+                    StockActual = stockTotal,
                     CantidadVendidaPeriodo = vendido,
                     IndiceCriticidad = Math.Round(criticidad, 2, MidpointRounding.AwayFromZero)
                 });

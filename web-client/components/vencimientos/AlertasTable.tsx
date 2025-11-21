@@ -2,9 +2,15 @@
 import * as React from "react";
 import { EstadoBadge, Th, Td, Label, fmtISO } from "./SmallUI";
 import { useAlertas } from "./useVencimientos";
-import type { AlertRowDto, EstadoVto, VencimientoDetalleDto, VencimientoUpdateDto } from "./types";
+import type {
+  AlertRowDto,
+  EstadoVto,
+  VencimientoDetalleDto,
+  VencimientoUpdateDto,
+} from "./types";
 import { useApi } from "@/components/hooks/useApi";
 import { VENC_API } from "@/components/vencimientos/api.routes";
+import { useConfirm } from "@/components/modals/ConfirmProvider";
 
 function useDebounced<T>(value: T, ms = 350) {
   const [debounced, setDebounced] = React.useState(value);
@@ -34,6 +40,7 @@ const WINE = "#A30862";
 export default function AlertasTable({ onEdit }: Props) {
   const { data, loading, error, reload } = useAlertas(7);
   const { get, del, put } = useApi();
+  const confirm = useConfirm();
 
   const [qDoc, setQDoc] = React.useState("");
   const [qFecha, setQFecha] = React.useState("");
@@ -49,7 +56,12 @@ export default function AlertasTable({ onEdit }: Props) {
   const [busyRow, setBusyRow] = React.useState<number | null>(null);
   const [actionError, setActionError] = React.useState<string | null>(null);
 
-  const [preview, setPreview] = React.useState<{ open: boolean; item?: VencimientoDetalleDto | null; loading?: boolean; error?: string | null }>({ open: false });
+  const [preview, setPreview] = React.useState<{
+    open: boolean;
+    item?: VencimientoDetalleDto | null;
+    loading?: boolean;
+    error?: string | null;
+  }>({ open: false });
 
   const qDocDebounced = useDebounced(qDoc, 300);
 
@@ -60,7 +72,9 @@ export default function AlertasTable({ onEdit }: Props) {
       select.dark-select:focus { outline:none; box-shadow:0 0 0 2px ${WINE}40; border-color:${WINE}66; }
     `;
     document.head.appendChild(style);
-    return () => { document.head.removeChild(style); };
+    return () => {
+      document.head.removeChild(style);
+    };
   }, []);
 
   const tipos = React.useMemo(() => {
@@ -71,7 +85,9 @@ export default function AlertasTable({ onEdit }: Props) {
 
   const toggleSort = (key: SortKey) => {
     setSort((cur) =>
-      cur.key === key ? { key, dir: cur.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }
+      cur.key === key
+        ? { key, dir: cur.dir === "asc" ? "desc" : "asc" }
+        : { key, dir: "asc" }
     );
   };
 
@@ -86,7 +102,13 @@ export default function AlertasTable({ onEdit }: Props) {
     };
 
     const filtered = data
-      .filter((r) => !qDocDebounced || r.titulo.toLowerCase().includes(qDocDebounced.trim().toLowerCase()))
+      .filter(
+        (r) =>
+          !qDocDebounced ||
+          r.titulo
+            .toLowerCase()
+            .includes(qDocDebounced.trim().toLowerCase())
+      )
       .filter((r) => !qFecha || fmtISO(r.fechaVencimiento) === qFecha)
       .filter((r) => !qTipo || r.tipoNombre === qTipo)
       .filter((r) => !qEstado || r.estado === qEstado)
@@ -104,7 +126,10 @@ export default function AlertasTable({ onEdit }: Props) {
         case "faltan":
           return (a.daysToDue - b.daysToDue) * dir;
         default:
-          return a.fechaVencimiento.localeCompare(b.fechaVencimiento) * dir;
+          return (
+            a.fechaVencimiento.localeCompare(b.fechaVencimiento) *
+            dir
+          );
       }
     };
 
@@ -112,16 +137,25 @@ export default function AlertasTable({ onEdit }: Props) {
   }, [data, qDocDebounced, qFecha, qTipo, qEstado, rango, sort]);
 
   const counts = React.useMemo(() => {
-    const base = { total: data.length, VIGENTE: 0, PROXIMO: 0, VENCIDO: 0 } as Record<
-      "total" | EstadoVto,
-      number
-    >;
+    const base = {
+      total: data.length,
+      VIGENTE: 0,
+      PROXIMO: 0,
+      VENCIDO: 0,
+    } as Record<"total" | EstadoVto, number>;
     data.forEach((r) => (base[r.estado] += 1));
     return base;
   }, [data]);
 
   const exportCsv = () => {
-    const header = ["Documento", "Vence", "Faltan", "Estado", "Tipo", "Referencia"].join(",");
+    const header = [
+      "Documento",
+      "Vence",
+      "Faltan",
+      "Estado",
+      "Tipo",
+      "Referencia",
+    ].join(",");
     const lines = rows.map((r) =>
       [
         safeCsv(r.titulo),
@@ -133,7 +167,9 @@ export default function AlertasTable({ onEdit }: Props) {
       ].join(",")
     );
     const csv = [header, ...lines].join("\n");
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([csv], {
+      type: "text/csv;charset=utf-8",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -145,7 +181,20 @@ export default function AlertasTable({ onEdit }: Props) {
   const doEdit = (id: number) => onEdit(id);
 
   const doDelete = async (id: number, titulo: string) => {
-    if (!confirm(`¿Eliminar “${titulo}”? Esta acción no se puede deshacer.`)) return;
+    const ok = await confirm({
+      title: "Eliminar vencimiento",
+      message: (
+        <>
+          ¿Eliminar el vencimiento <b>{titulo}</b>?<br />
+          Esta acción no se puede deshacer.
+        </>
+      ),
+      confirmText: "Sí, eliminar",
+      cancelText: "Cancelar",
+      tone: "danger",
+    });
+    if (!ok) return;
+
     setActionError(null);
     setBusyRow(id);
     try {
@@ -158,17 +207,36 @@ export default function AlertasTable({ onEdit }: Props) {
     }
   };
 
-  const doDone = async (id: number) => {
+  const doDone = async (id: number, titulo: string) => {
+    const ok = await confirm({
+      title: "Marcar como hecha",
+      message: (
+        <>
+          ¿Marcar el vencimiento <b>{titulo}</b> como hecho?
+          <br />
+          Ya no aparecerá en las alertas.
+        </>
+      ),
+      confirmText: "Sí, marcar",
+      cancelText: "Cancelar",
+      tone: "brand",
+    });
+    if (!ok) return;
+
     setActionError(null);
     setBusyRow(id);
     try {
-      const detalle = await get<VencimientoDetalleDto>(VENC_API.get(id));
-      if (!detalle) throw new Error("No se encontró el documento.");
+      const detalle = await get<VencimientoDetalleDto>(
+        VENC_API.get(id)
+      );
+      if (!detalle)
+        throw new Error("No se encontró el documento.");
 
       const payload: VencimientoUpdateDto = {
         titulo: detalle.titulo,
         descripcion: detalle.descripcion ?? null,
-        tipoDocumentoVencimientoID: detalle.tipoDocumentoVencimientoID,
+        tipoDocumentoVencimientoID:
+          detalle.tipoDocumentoVencimientoID,
         referencia: detalle.referencia ?? null,
         fechaEmision: detalle.fechaEmision ?? null,
         fechaVencimiento: detalle.fechaVencimiento,
@@ -179,19 +247,38 @@ export default function AlertasTable({ onEdit }: Props) {
       await put<void>(VENC_API.update(id), payload);
       await reload();
     } catch (e: any) {
-      setActionError(e?.message ?? "No se pudo marcar como hecha.");
+      setActionError(
+        e?.message ?? "No se pudo marcar como hecha."
+      );
     } finally {
       setBusyRow(null);
     }
   };
 
   const doPreview = async (id: number) => {
-    setPreview({ open: true, loading: true, item: null, error: null });
+    setPreview({
+      open: true,
+      loading: true,
+      item: null,
+      error: null,
+    });
     try {
-      const detalle = await get<VencimientoDetalleDto>(VENC_API.get(id));
-      setPreview({ open: true, loading: false, item: detalle ?? null, error: null });
+      const detalle = await get<VencimientoDetalleDto>(
+        VENC_API.get(id)
+      );
+      setPreview({
+        open: true,
+        loading: false,
+        item: detalle ?? null,
+        error: null,
+      });
     } catch (e: any) {
-      setPreview({ open: true, loading: false, item: null, error: e?.message ?? "No se pudo cargar el detalle." });
+      setPreview({
+        open: true,
+        loading: false,
+        item: null,
+        error: e?.message ?? "No se pudo cargar el detalle.",
+      });
     }
   };
   const closePreview = () => setPreview({ open: false });
@@ -200,7 +287,9 @@ export default function AlertasTable({ onEdit }: Props) {
     <>
       <section className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-semibold text-white/90">Filtros</h2>
+          <h2 className="text-base font-semibold text-white/90">
+            Filtros
+          </h2>
           <div className="flex items-center gap-2 text-xs text-white/60">
             <span>Total: {counts.total}</span>
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/20 px-2 py-0.5 text-emerald-300 ring-1 ring-emerald-400/30">
@@ -245,14 +334,22 @@ export default function AlertasTable({ onEdit }: Props) {
                 className="dark-select w-full appearance-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 pr-9 text-sm text-white outline-none focus:border-[#A30862]/40 focus:ring-2 focus:ring-[#A30862]/40"
                 title="Filtrar por tipo"
               >
-                <option value="" className="text-black">Todos</option>
+                <option value="" className="text-black">
+                  Todos
+                </option>
                 {Array.from(tipos).map((t) => (
-                  <option key={t} value={t} className="text-black">
+                  <option
+                    key={t}
+                    value={t}
+                    className="text-black"
+                  >
                     {t}
                   </option>
                 ))}
               </select>
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/60">▾</span>
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/60">
+                ▾
+              </span>
             </div>
           </div>
 
@@ -284,30 +381,52 @@ export default function AlertasTable({ onEdit }: Props) {
         </div>
 
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <TipoPill label="Todos" active={!qTipo} onClick={() => setQTipo("")} />
+          <TipoPill
+            label="Todos"
+            active={!qTipo}
+            onClick={() => setQTipo("")}
+          />
           {tipos.map((t) => (
-            <TipoPill key={t} label={t} active={qTipo === t} onClick={() => setQTipo(t)} />
+            <TipoPill
+              key={t}
+              label={t}
+              active={qTipo === t}
+              onClick={() => setQTipo(t)}
+            />
           ))}
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <div className="flex items-center gap-1 text-xs">
             <span className="text-white/70">Vence en:</span>
-            <button onClick={() => setRango("")} className={chipCls(rango === "")} title="Sin filtro">
+            <button
+              onClick={() => setRango("")}
+              className={chipCls(rango === "")}
+              title="Sin filtro"
+            >
               Todos
             </button>
-            <button onClick={() => setRango("hoy")} className={chipCls(rango === "hoy")}>
+            <button
+              onClick={() => setRango("hoy")}
+              className={chipCls(rango === "hoy")}
+            >
               Hoy
             </button>
-            <button onClick={() => setRango("7")} className={chipCls(rango === "7")}>
+            <button
+              onClick={() => setRango("7")}
+              className={chipCls(rango === "7")}
+            >
               ≤ 7 días
             </button>
-            <button onClick={() => setRango("30")} className={chipCls(rango === "30")}>
+            <button
+              onClick={() => setRango("30")}
+              className={chipCls(rango === "30")}
+            >
               ≤ 30 días
             </button>
           </div>
 
-        <div className="ml-auto flex gap-2">
+          <div className="ml-auto flex gap-2">
             <button
               type="button"
               onClick={reload}
@@ -363,27 +482,47 @@ export default function AlertasTable({ onEdit }: Props) {
             <thead>
               <tr className="bg-white/5 text-left text-xs uppercase tracking-wide text-white/60">
                 <Th>
-                  <SortBtn onClick={() => toggleSort("titulo")} active={sort.key === "titulo"} dir={sort.dir}>
+                  <SortBtn
+                    onClick={() => toggleSort("titulo")}
+                    active={sort.key === "titulo"}
+                    dir={sort.dir}
+                  >
                     Documento
                   </SortBtn>
                 </Th>
                 <Th>
-                  <SortBtn onClick={() => toggleSort("fecha")} active={sort.key === "fecha"} dir={sort.dir}>
+                  <SortBtn
+                    onClick={() => toggleSort("fecha")}
+                    active={sort.key === "fecha"}
+                    dir={sort.dir}
+                  >
                     Vence
                   </SortBtn>
                 </Th>
                 <Th>
-                  <SortBtn onClick={() => toggleSort("faltan")} active={sort.key === "faltan"} dir={sort.dir}>
+                  <SortBtn
+                    onClick={() => toggleSort("faltan")}
+                    active={sort.key === "faltan"}
+                    dir={sort.dir}
+                  >
                     Faltan
                   </SortBtn>
                 </Th>
                 <Th>
-                  <SortBtn onClick={() => toggleSort("estado")} active={sort.key === "estado"} dir={sort.dir}>
+                  <SortBtn
+                    onClick={() => toggleSort("estado")}
+                    active={sort.key === "estado"}
+                    dir={sort.dir}
+                  >
                     Estado
                   </SortBtn>
                 </Th>
                 <Th>
-                  <SortBtn onClick={() => toggleSort("tipo")} active={sort.key === "tipo"} dir={sort.dir}>
+                  <SortBtn
+                    onClick={() => toggleSort("tipo")}
+                    active={sort.key === "tipo"}
+                    dir={sort.dir}
+                  >
                     Tipo
                   </SortBtn>
                 </Th>
@@ -393,7 +532,10 @@ export default function AlertasTable({ onEdit }: Props) {
             <tbody className="divide-y divide-white/10">
               {loading && rows.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-white/60">
+                  <td
+                    colSpan={6}
+                    className="px-4 py-8 text-center text-white/60"
+                  >
                     Cargando…
                   </td>
                 </tr>
@@ -401,31 +543,53 @@ export default function AlertasTable({ onEdit }: Props) {
 
               {!loading && rows.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-white/60">
+                  <td
+                    colSpan={6}
+                    className="px-4 py-8 text-center text-white/60"
+                  >
                     No hay resultados para los filtros aplicados.
                   </td>
                 </tr>
               )}
 
               {rows.map((r) => {
-                const isBusy = busyRow === r.documentoVencimientoID;
+                const isBusy =
+                  busyRow === r.documentoVencimientoID;
                 return (
                   <tr
                     key={r.documentoVencimientoID}
-                    className={`hover:bg-white/5 ${r.estado === "PROXIMO" ? "bg-yellow-500/5" : ""}`}
+                    className={`hover:bg-white/5 ${
+                      r.estado === "PROXIMO"
+                        ? "bg-yellow-500/5"
+                        : ""
+                    }`}
                   >
-                    <Td className="font-medium text-white">{r.titulo}</Td>
+                    <Td className="font-medium text-white">
+                      {r.titulo}
+                    </Td>
                     <Td>{fmtISO(r.fechaVencimiento)}</Td>
-                    <Td>{r.daysToDue < 0 ? `-${Math.abs(r.daysToDue)} días` : `${r.daysToDue} días`}</Td>
                     <Td>
-                      <EstadoBadge estado={r.estado as EstadoVto} />
+                      {r.daysToDue < 0
+                        ? `-${Math.abs(
+                            r.daysToDue
+                          )} días`
+                        : `${r.daysToDue} días`}
+                    </Td>
+                    <Td>
+                      <EstadoBadge
+                        estado={r.estado as EstadoVto}
+                      />
                     </Td>
                     <Td>{r.tipoNombre}</Td>
                     <Td className="text-right">
                       <div className="inline-flex gap-2">
                         <button
                           type="button"
-                          onClick={() => doPreview(r.documentoVencimientoID)}
+                          onClick={() =>
+                            doPreview(
+                              r.documentoVencimientoID
+                            )
+                          }
                           className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20"
                           title="Ver detalle"
                           style={{ borderColor: `${WINE}40` }}
@@ -435,7 +599,11 @@ export default function AlertasTable({ onEdit }: Props) {
 
                         <button
                           type="button"
-                          onClick={() => doEdit(r.documentoVencimientoID)}
+                          onClick={() =>
+                            doEdit(
+                              r.documentoVencimientoID
+                            )
+                          }
                           className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-50"
                           disabled={isBusy}
                           title="Editar"
@@ -445,21 +613,35 @@ export default function AlertasTable({ onEdit }: Props) {
                         </button>
                         <button
                           type="button"
-                          onClick={() => doDone(r.documentoVencimientoID)}
+                          onClick={() =>
+                            doDone(
+                              r.documentoVencimientoID,
+                              r.titulo
+                            )
+                          }
                           className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-xs text-emerald-200 hover:bg-emerald-400/20 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 disabled:opacity-50"
                           disabled={isBusy}
                           title="Marcar como hecha"
                         >
-                          {isBusy ? "Aplicando…" : "Hecha"}
+                          {isBusy
+                            ? "Aplicando…"
+                            : "Hecha"}
                         </button>
                         <button
                           type="button"
-                          onClick={() => doDelete(r.documentoVencimientoID, r.titulo)}
+                          onClick={() =>
+                            doDelete(
+                              r.documentoVencimientoID,
+                              r.titulo
+                            )
+                          }
                           className="rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-1.5 text-xs text-rose-200 hover:bg-rose-400/20 focus:outline-none focus:ring-2 focus:ring-rose-400/30 disabled:opacity-50"
                           disabled={isBusy}
                           title="Eliminar"
                         >
-                          {isBusy ? "Eliminando…" : "Eliminar"}
+                          {isBusy
+                            ? "Eliminando…"
+                            : "Eliminar"}
                         </button>
                       </div>
                     </Td>
@@ -486,7 +668,10 @@ export default function AlertasTable({ onEdit }: Props) {
       {preview.open && (
         <div
           className="fixed inset-0 z-[1300] flex items-end md:items-center justify-center bg-black/60"
-          onMouseDown={(e) => { if (e.target === e.currentTarget) closePreview(); }}
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget)
+              closePreview();
+          }}
         >
           <div
             className="
@@ -505,7 +690,9 @@ export default function AlertasTable({ onEdit }: Props) {
             aria-modal="true"
           >
             <div className="mb-2 flex items-center justify-between">
-              <div className="text-sm font-semibold">Detalle del documento</div>
+              <div className="text-sm font-semibold">
+                Detalle del documento
+              </div>
               <button
                 className="rounded-full px-2 text-white/80 hover:bg-white/10"
                 onClick={closePreview}
@@ -527,76 +714,118 @@ export default function AlertasTable({ onEdit }: Props) {
               </div>
             )}
 
-            {!preview.loading && !preview.error && preview.item && (
-              <div className="space-y-3">
-                <div>
-                  <div className="text-xs text-white/60">Documento</div>
-                  <div className="text-sm font-medium">{preview.item.titulo}</div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
+            {!preview.loading &&
+              !preview.error &&
+              preview.item && (
+                <div className="space-y-3">
                   <div>
-                    <div className="text-xs text-white/60">Tipo</div>
-                    <div className="text-sm">{preview.item.tipoDocumentoVencimientoID}</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-white/60">Vence</div>
-                    <div className="text-sm">{fmtISO(preview.item.fechaVencimiento)}</div>
-                  </div>
-                </div>
-
-                {preview.item.referencia && (
-                  <div>
-                    <div className="text-xs text-white/60">Referencia</div>
-                    <div
-                      className="text-sm break-words"
-                      style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
-                    >
-                      {preview.item.referencia}
+                    <div className="text-xs text-white/60">
+                      Documento
+                    </div>
+                    <div className="text-sm font-medium">
+                      {preview.item.titulo}
                     </div>
                   </div>
-                )}
 
-                {preview.item.descripcion && (
-                  <div>
-                    <div className="text-xs text-white/60">Descripción</div>
-                    <div
-                      className="whitespace-pre-wrap text-sm text-white/80 break-words"
-                      style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
-                    >
-                      {preview.item.descripcion}
-                    </div>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-3">
-                  {preview.item.fechaEmision && (
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <div className="text-xs text-white/60">Emisión</div>
-                      <div className="text-sm">{fmtISO(preview.item.fechaEmision)}</div>
+                      <div className="text-xs text-white/60">
+                        Tipo
+                      </div>
+                      <div className="text-sm">
+                        {
+                          preview.item
+                            .tipoDocumentoVencimientoID
+                        }
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text_WHITE/60">
+                        Vence
+                      </div>
+                      <div className="text-sm">
+                        {fmtISO(
+                          preview.item.fechaVencimiento
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {preview.item.referencia && (
+                    <div>
+                      <div className="text-xs text_WHITE/60">
+                        Referencia
+                      </div>
+                      <div
+                        className="text-sm break-words"
+                        style={{
+                          overflowWrap: "anywhere",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {preview.item.referencia}
+                      </div>
                     </div>
                   )}
-                  <div>
-                    <div className="text-xs text-white/60">Notificar días antes</div>
-                    <div className="text-sm">{preview.item.notificarDiasAntes}</div>
+
+                  {preview.item.descripcion && (
+                    <div>
+                      <div className="text-xs text_WHITE/60">
+                        Descripción
+                      </div>
+                      <div
+                        className="whitespace-pre-wrap text-sm text_WHITE/80 break-words"
+                        style={{
+                          overflowWrap: "anywhere",
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {preview.item.descripcion}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3">
+                    {preview.item.fechaEmision && (
+                      <div>
+                        <div className="text-xs text_WHITE/60">
+                          Emisión
+                        </div>
+                        <div className="text-sm">
+                          {fmtISO(
+                            preview.item.fechaEmision
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    <div>
+                      <div className="text-xs text_WHITE/60">
+                        Notificar días antes
+                      </div>
+                      <div className="text-sm">
+                        {preview.item.notificarDiasAntes}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 text-right">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onEdit(
+                          preview.item!
+                            .documentoVencimientoID
+                        );
+                        closePreview();
+                      }}
+                      className="rounded-xl border border_WHITE/15 bg_WHITE/5 px-4 py-2 text-sm hover:bg_WHITE/10"
+                      style={{ borderColor: `${WINE}66` }}
+                    >
+                      Editar
+                    </button>
                   </div>
                 </div>
-
-                <div className="pt-2 text-right">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onEdit(preview.item!.documentoVencimientoID);
-                      closePreview();
-                    }}
-                    className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
-                    style={{ borderColor: `${WINE}66` }}
-                  >
-                    Editar
-                  </button>
-                </div>
-              </div>
-            )}
+              )}
           </div>
         </div>
       )}
@@ -619,11 +848,15 @@ function SortBtn({
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex items-center gap-1 hover:underline ${active ? "text-white" : ""}`}
+      className={`inline-flex items-center gap-1 hover:underline ${
+        active ? "text-white" : ""
+      }`}
       title="Ordenar"
     >
       {children}
-      <span className="text-xs">{active ? (dir === "asc" ? "▲" : "▼") : "↕"}</span>
+      <span className="text-xs">
+        {active ? (dir === "asc" ? "▲" : "▼") : "↕"}
+      </span>
     </button>
   );
 }
@@ -631,18 +864,30 @@ function SortBtn({
 function chipCls(active: boolean) {
   return [
     "rounded-full px-2.5 py-1 text-xs ring-1 transition",
-    active ? "bg-white/20 ring-white/30 text-white" : "bg-white/5 ring-white/15 text-white/80 hover:bg-white/10",
+    active
+      ? "bg-white/20 ring-white/30 text-white"
+      : "bg-white/5 ring-white/15 text-white/80 hover:bg-white/10",
   ].join(" ");
 }
 
-function TipoPill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
+function TipoPill({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={[
         "whitespace-nowrap rounded-full px-3 py-1 text-xs ring-1 transition",
-        active ? "text-white bg-[#A30862]/20 ring-[#A30862]/40" : "text-white/80 bg-white/5 ring-white/15 hover:bg-white/10",
+        active
+          ? "text-white bg-[#A30862]/20 ring-[#A30862]/40"
+          : "text-white/80 bg-white/5 ring-white/15 hover:bg-white/10",
       ].join(" ")}
       title={`Filtrar: ${label}`}
     >

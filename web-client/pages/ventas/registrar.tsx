@@ -8,6 +8,7 @@ import Button from "@/components/buttons/button";
 import { formatMoney } from "@/helpers/ui-helpers";
 import { ProductoInLine } from "./types";
 import { useRouter } from "next/router";
+
 interface Line {
   lineId: string;
   producto?: ProductoInLine;
@@ -138,13 +139,6 @@ export default function RegistrarVentaPage() {
   }
 
   const realizarVenta = async () => {
-    // TODO: VALIDACIONES
-    // setErrorMsg(null);
-    // const err = validateBeforePost();
-    // if (err) {
-    //   setErrorMsg(err);
-    //   return;
-    // }
     console.log(clientSelected);
     const payload = {
       clienteCodigo: clientSelected!.codigoCliente,
@@ -154,7 +148,7 @@ export default function RegistrarVentaPage() {
         sku: l.producto!.sku,
         cantidad: l.cantidad ?? 1,
         descuento: l.descuento ?? 0,
-        bodega: { id: String(l.Bodega!.id) }, // mínimo necesario para backend actual
+        bodega: { id: String(l.Bodega!.id) },
       })),
     };
 
@@ -168,17 +162,44 @@ export default function RegistrarVentaPage() {
       setNotes("");
       console.log(res);
       router.replace(`/ventas/${res.ventaID}`);
-      
     } catch (e: any) {
       setErrorMsg(e?.message ?? "No se pudo registrar la venta.");
     }
     setShowConfirm(false);
   };
 
-  // const registrarVenta = () => {};
-
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-6">
+      <header className="mb-4">
+        <nav className="mb-3 flex items-center text-sm text-[#8B9AA0]">
+          <div className="flex items-center gap-1">
+            <svg
+              className="h-4 w-4 opacity-80"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden
+            >
+              <path d="M3 10.25 12 3l9 7.25V21a1 1 0 0 1-1 1h-5.5v-6.5h-5V22H4a1 1 0 0 1-1-1v-10.75Z" />
+            </svg>
+            <span>Inicio</span>
+          </div>
+
+          <span className="mx-2 text-[#4B5563]">/</span>
+
+          <div className="flex items-center gap-1 text-white">
+            <svg
+              className="h-4 w-4 opacity-80"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden
+            >
+              <path d="M5 4h14a1 1 0 0 1 1 1v3H4V5a1 1 0 0 1 1-1Zm-1 6h16v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z" />
+            </svg>
+            <span>Ventas</span>
+          </div>
+        </nav>
+      </header>
+
       <SectionHeader
         title="Registrar venta"
         subtitle="Formulario visual: cliente, productos, descuentos e inventario"
@@ -235,21 +256,6 @@ export default function RegistrarVentaPage() {
         </div>
       </section>
 
-      {/* <section className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <div className="mb-1 text-xs text-white/60">Vínculo a cliente</div>
-          <Badge tone="success">Venta vinculada a cliente — (Lucia)</Badge>
-        </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <div className="mb-1 text-xs text-white/60">Vínculo a inventario</div>
-          <Badge tone="success">Vinculación a inventario</Badge>
-        </div>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-          <div className="mb-1 text-xs text-white/60">Reducción de stock</div>
-          <Badge tone="success">Reducción automática</Badge>
-        </div>
-      </section> */}
-
       <section className="rounded-2xl border border-white/10 bg-white/5">
         <div className="flex items-center justify-between px-4 py-3">
           <h2 className="text-sm font-semibold text-white/90">
@@ -259,11 +265,12 @@ export default function RegistrarVentaPage() {
             type="button"
             variant="primary"
             className="!bg-[#A30862] hover:!opacity-95 focus:!ring-2 focus:!ring-[#A30862]/40"
-            onClick={() => setLines((prev) => [...prev, { lineId: crypto.randomUUID() }])}
+            onClick={() =>
+              setLines((prev) => [...prev, { lineId: crypto.randomUUID() }])
+            }
           >
             + Agregar producto
           </Button>
-
         </div>
 
         <div className="overflow-x-auto border-t border-white/10">
@@ -282,108 +289,104 @@ export default function RegistrarVentaPage() {
             {lines && lines.length > 0 ? (
               <tbody className="divide-y divide-white/10">
                 {lines.map((line) => (
-                  <>
-                    <tr className="hover:bg-white/5">
-                      {/* Producto */}
-                      <Td>
-                        <select
-                          className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
-                          value={line.producto?.sku ?? ""}
-                          onChange={handleProductChange(line.lineId)}
-                        >
-                          <option value="" disabled className="text-black">
-                            Selecciona producto
-                          </option>
-                          {clients &&
-                            products.map((product) => (
-                              <option
-                                key={product.sku}
-                                value={product.sku || ""}
-                                className="text-black"
-                              >
-                                {product.nombre} - {product.sku}
-                              </option>
-                            ))}
-                        </select>
-                      </Td>
-                      {/* Bodega */}
-                      <Td>
-                        <select
-                          className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
-                          value={line.Bodega?.id ?? ""}
-                          onChange={handleBodegaChange(line.lineId)}
-                        >
-                          <option value="" disabled className="text-black">
-                            Selecciona bodega
-                          </option>
-                          {line.producto?.bodegas?.map((b) => (
+                  <tr key={line.lineId} className="hover:bg-white/5">
+                    <Td>
+                      <select
+                        className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+                        value={line.producto?.sku ?? ""}
+                        onChange={handleProductChange(line.lineId)}
+                      >
+                        <option value="" disabled className="text-black">
+                          Selecciona producto
+                        </option>
+                        {clients &&
+                          products.map((product) => (
                             <option
-                              key={b.id}
-                              value={String(b.id)}
+                              key={product.sku}
+                              value={product.sku || ""}
                               className="text-black"
                             >
-                              {`${b.nombre} (${b.cantidad})`}
+                              {product.nombre} - {product.sku}
                             </option>
                           ))}
-                        </select>
-                      </Td>
+                      </select>
+                    </Td>
+                    <Td>
+                      <select
+                        className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+                        value={line.Bodega?.id ?? ""}
+                        onChange={handleBodegaChange(line.lineId)}
+                      >
+                        <option value="" disabled className="text-black">
+                          Selecciona bodega
+                        </option>
+                        {line.producto?.bodegas?.map((b) => (
+                          <option
+                            key={b.id}
+                            value={String(b.id)}
+                            className="text-black"
+                          >
+                            {`${b.nombre} (${b.cantidad})`}
+                          </option>
+                        ))}
+                      </select>
+                    </Td>
 
-                      {/* Cantidad */}
-                      <Td>
-                        <input
-                          type="number"
-                          defaultValue={1}
-                          onChange={(e) =>
-                            handleCantidadChange(line, Number(e.target.value))
-                          }
-                          className="w-24 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
-                        />
-                      </Td>
-                      {/* Precio */}
-                      <Td>
-                        <span className="w-32 rounded-xl px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20">
-                          {" "}
-                          {formatMoney(line.producto?.precioVenta ?? 0)}{" "}
-                        </span>
-                      </Td>
-                      {/* Descuento */}
-                      <Td>
-                        <input
-                          type="number"
-                          defaultValue={line.descuento ?? 0}
-                          onChange={(e) =>
-                            handleDescuentoChange(line, Number(e.target.value))
-                          }
-                          className="w-28 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
-                        />
-                      </Td>
-                      {/* Subtotal */}
-                      <Td className="font-semibold text-white/90">
-                        {formatMoney(line.subtotal ?? 0)}
-                      </Td>
-                      <Td className="text-right">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setLines((prev) =>
-                              prev.filter((l) => l.lineId !== line.lineId)
-                            )
-                          }
-                          className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white hover:bg-white/10"
-                        >
-                          Quitar
-                        </button>
-                      </Td>
-                    </tr>
-                  </>
+                    <Td>
+                      <input
+                        type="number"
+                        defaultValue={1}
+                        onChange={(e) =>
+                          handleCantidadChange(line, Number(e.target.value))
+                        }
+                        className="w-24 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+                      />
+                    </Td>
+                    <Td>
+                      <span className="w-32 rounded-xl px-3 py-2 text-sm text-white outline-none transition">
+                        {formatMoney(line.producto?.precioVenta ?? 0)}
+                      </span>
+                    </Td>
+                    <Td>
+                      <input
+                        type="number"
+                        defaultValue={line.descuento ?? 0}
+                        onChange={(e) =>
+                          handleDescuentoChange(
+                            line,
+                            Number(e.target.value)
+                          )
+                        }
+                        className="w-28 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+                      />
+                    </Td>
+                    <Td className="font-semibold text-white/90">
+                      {formatMoney(line.subtotal ?? 0)}
+                    </Td>
+                    <Td className="text-right">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setLines((prev) =>
+                            prev.filter((l) => l.lineId !== line.lineId)
+                          )
+                        }
+                        className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white hover:bg-white/10"
+                      >
+                        Quitar
+                      </button>
+                    </Td>
+                  </tr>
                 ))}
               </tbody>
             ) : (
               <tbody className="divide-y divide-white/10">
                 <tr aria-colspan={42}>
-                  <span className="text-left text-xs tracking-wide text-white/30 w-full m-4">
-                    Agrega una columna a para iniciar.
-                  </span>
+                  <td className="px-4 py-4">
+                    <span className="text-left text-xs tracking-wide text-white/30">
+                      Agrega una columna para iniciar.
+                    </span>
+                  </td>
                 </tr>
               </tbody>
             )}
@@ -422,12 +425,6 @@ export default function RegistrarVentaPage() {
         )}
 
         <div className="flex items-center justify-end gap-2 border-t border-white/10 px-4 py-3">
-          {/* <button
-            type="button"
-            className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
-          >
-            Guardar borrador
-          </button> */}
           <Button
             type="button"
             variant="primary"
@@ -437,7 +434,6 @@ export default function RegistrarVentaPage() {
           >
             Registrar venta
           </Button>
-
         </div>
       </section>
 

@@ -99,6 +99,35 @@ export default function ClientesPage() {
   return (
     <div className="min-h-screen bg-[#0B0F0E] text-[#E6E9EA] p-6">
       <header className="mb-6">
+        {/* Breadcrumb */}
+        <nav className="mb-3 flex items-center text-sm text-[#8B9AA0]">
+          <div className="flex items-center gap-1">
+            <svg
+              className="h-4 w-4 opacity-80"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden
+            >
+              <path d="M3 10.25 12 3l9 7.25V21a1 1 0 0 1-1 1h-5.5v-6.5h-5V22H4a1 1 0 0 1-1-1v-10.75Z" />
+            </svg>
+            <span>Inicio</span>
+          </div>
+
+          <span className="mx-2 text-[#4B5563]">/</span>
+
+          <div className="flex items-center gap-1 text-white">
+            <svg
+              className="h-4 w-4 opacity-80"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden
+            >
+              <path d="M8 4a3 3 0 1 1-3 3 3 3 0 0 1 3-3Zm8 0a3 3 0 1 1-3 3 3 3 0 0 1 3-3ZM4 14.25A3.25 3.25 0 0 1 7.25 11h1.5A3.25 3.25 0 0 1 12 14.25V18H4Zm9.75-3.25h1.5A3.25 3.25 0 0 1 18.5 14.25V18h-8v-3.75A3.25 3.25 0 0 1 13.75 11Z" />
+            </svg>
+            <span>Clientes</span>
+          </div>
+        </nav>
+
         <h1 className="text-2xl font-semibold tracking-wide">Clientes</h1>
         <p className="text-sm text-[#8B9AA0]">
           Registrar, editar, inactivar y administrar descuentos
@@ -149,7 +178,7 @@ export default function ClientesPage() {
               setFormOpen(true);
             }}
           >
-             Nuevo cliente
+            Nuevo cliente
           </Button>
         </div>
       </div>
@@ -275,9 +304,7 @@ export default function ClientesPage() {
           </span>
           <PageBtn
             disabled={page >= totalPages}
-            onClick={() =>
-              setPage((p) => Math.min(totalPages, p + 1))
-            }
+            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
           >
             Next
           </PageBtn>

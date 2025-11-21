@@ -33,7 +33,6 @@ export default function ProductoCreateForm() {
   useEffect(() => {
     if (successId) {
       setShowSuccess(true);
-      // ocultar automático luego de unos segundos
       const t = setTimeout(() => setShowSuccess(false), 3500);
       return () => clearTimeout(t);
     }
@@ -59,7 +58,6 @@ export default function ProductoCreateForm() {
   const showBodegasError =
     !!bodegasError && !loadingBodegas && bodegas.length === 0;
 
-  // Confirmación con tu propio modal + envío
   const handleSubmit = async () => {
     if (!canSubmit || loading) return;
     setShowSuccess(false);
@@ -83,13 +81,46 @@ export default function ProductoCreateForm() {
 
   return (
     <div className="mx-auto w-full max-w-7xl lg:max-w-[1200px] p-4 md:p-6">
+      {/* Breadcrumb */}
+      <header className="mb-4">
+        <nav className="mb-3 flex items-center text-sm text-[#8B9AA0]">
+          <div className="flex items-center gap-1">
+            <svg
+              className="h-4 w-4 opacity-80"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden
+            >
+              <path d="M3 10.25 12 3l9 7.25V21a1 1 0 0 1-1 1h-5.5v-6.5h-5V22H4a1 1 0 0 1-1-1v-10.75Z" />
+            </svg>
+            <span>Inicio</span>
+          </div>
+
+          <span className="mx-2 text-[#4B5563]">/</span>
+
+          <div className="flex items-center gap-1 text-white">
+            <svg
+              className="h-4 w-4 opacity-80"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden
+            >
+              <path d="M4 7a1 1 0 0 1 .7-.95l7-2.33a1 1 0 0 1 .6 0l7 2.33A1 1 0 0 1 20 7v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1ZM6 8.12V16h12V8.12l-6-2-6 2Z" />
+            </svg>
+            <span>Productos</span>
+          </div>
+        </nav>
+      </header>
+
       <div className="rounded-3xl border border-white/10 bg-[#13171A] p-5 shadow-[0_30px_80px_rgba(0,0,0,.35)] ring-1 ring-black/20">
         <div className="mb-4">
           <div className="inline-flex items-center gap-2 rounded-full bg-[#A30862]/10 px-2.5 py-1 text-[11px] text-[#E6E9EA]">
             Registro de producto
           </div>
           <h2 className="mt-2 text-xl font-semibold text-white">Nuevo producto</h2>
-          <p className="text-sm text-[#8B9AA0]">Completa los campos obligatorios marcados con *</p>
+          <p className="text-sm text-[#8B9AA0]">
+            Completa los campos obligatorios marcados con *
+          </p>
         </div>
 
         <div className="space-y-3">
@@ -98,7 +129,10 @@ export default function ProductoCreateForm() {
               role="status"
               className="flex items-start justify-between gap-3 rounded-2xl border border-[#A30862]/40 bg-[#A30862]/10 px-4 py-3 text-sm text-[#F2C7DA]"
             >
-              <span>✅ Producto <b className="text-white">#{successId}</b> se guardó correctamente.</span>
+              <span>
+                ✅ Producto <b className="text-white">#{successId}</b> se guardó
+                correctamente.
+              </span>
               <button
                 type="button"
                 onClick={() => setShowSuccess(false)}
@@ -118,12 +152,18 @@ export default function ProductoCreateForm() {
             </div>
           )}
           {showUnidadesError && (
-            <div role="alert" className="rounded-2xl border border-rose-400/40 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
+            <div
+              role="alert"
+              className="rounded-2xl border border-rose-400/40 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
+            >
               Error al cargar unidades: {unidadesError}
             </div>
           )}
           {showBodegasError && (
-            <div role="alert" className="rounded-2xl border border-rose-400/40 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
+            <div
+              role="alert"
+              className="rounded-2xl border border-rose-400/40 bg-rose-400/10 px-4 py-3 text-sm text-rose-200"
+            >
               Error al cargar bodegas: {bodegasError}
             </div>
           )}
@@ -159,17 +199,24 @@ export default function ProductoCreateForm() {
 
           {/* Unidad de almacenamiento */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-[#8B9AA0]">Unidad de almacenamiento*</label>
+            <label className="text-xs text-[#8B9AA0]">
+              Unidad de almacenamiento*
+            </label>
             <select
               className="select-dark w-full"
               value={values.unidadAlmacenamientoID ?? ""}
               onChange={(e) =>
-                setField("unidadAlmacenamientoID", e.target.value === "" ? null : Number(e.target.value))
+                setField(
+                  "unidadAlmacenamientoID",
+                  e.target.value === "" ? null : Number(e.target.value)
+                )
               }
               disabled={loadingUnits}
               aria-invalid={!!errors.unidadAlmacenamientoID}
             >
-              <option value="">{loadingUnits ? "Cargando..." : "Selecciona una unidad"}</option>
+              <option value="">
+                {loadingUnits ? "Cargando..." : "Selecciona una unidad"}
+              </option>
               {unidades.map((u) => (
                 <option key={u.unidadID} value={u.unidadID}>
                   {u.nombre} {u.codigo ? `(${u.codigo})` : ""}
@@ -177,7 +224,9 @@ export default function ProductoCreateForm() {
               ))}
             </select>
             {errors.unidadAlmacenamientoID ? (
-              <span className="text-xs text-rose-300">{errors.unidadAlmacenamientoID}</span>
+              <span className="text-xs text-rose-300">
+                {errors.unidadAlmacenamientoID}
+              </span>
             ) : null}
           </div>
 
@@ -187,10 +236,16 @@ export default function ProductoCreateForm() {
             <select
               className="select-dark w-full"
               value={bodegaID}
-              onChange={(e) => setBodegaID(e.target.value === "" ? "" : Number(e.target.value))}
+              onChange={(e) =>
+                setBodegaID(
+                  e.target.value === "" ? "" : Number(e.target.value)
+                )
+              }
               disabled={loadingBodegas}
             >
-              <option value="">{loadingBodegas ? "Cargando..." : "Selecciona una bodega"}</option>
+              <option value="">
+                {loadingBodegas ? "Cargando..." : "Selecciona una bodega"}
+              </option>
               {bodegas.map((b) => (
                 <option key={b.bodegaID} value={b.bodegaID}>
                   {b.nombre} {b.codigo ? `(${b.codigo})` : ""}
@@ -229,7 +284,12 @@ export default function ProductoCreateForm() {
             step="0.01"
             placeholder="0"
             value={values.descuento ?? ""}
-            onChange={(e) => setField("descuento", e.target.value === "" ? null : Number(e.target.value))}
+            onChange={(e) =>
+              setField(
+                "descuento",
+                e.target.value === "" ? null : Number(e.target.value)
+              )
+            }
             className="rounded-2xl border border-white/10 bg-[#1C2224] text-[#E6E9EA] focus:ring-2 focus:ring-[#A30862]/40"
           />
 
@@ -293,16 +353,16 @@ export default function ProductoCreateForm() {
       {/* ====== ESTILOS PARA SELECT AQUÍ MISMO ====== */}
       <style jsx global>{`
         .select-dark {
-          border-radius: 1rem;           /* rounded-2xl */
-          border: 1px solid rgba(255,255,255,0.10);
-          background-color: #1C2224;
-          color: #E6E9EA;
-          padding: 0.5rem 0.75rem;       /* px-3 py-2 */
-          font-size: 0.875rem;           /* text-sm */
+          border-radius: 1rem;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          background-color: #1c2224;
+          color: #e6e9ea;
+          padding: 0.5rem 0.75rem;
+          font-size: 0.875rem;
           outline: none;
           appearance: none;
           color-scheme: dark;
-          transition: box-shadow .2s, border-color .2s, background-color .2s;
+          transition: box-shadow 0.2s, border-color 0.2s, background-color 0.2s;
         }
         .select-dark:focus {
           border-color: rgba(163, 8, 98, 0.6);
@@ -310,19 +370,21 @@ export default function ProductoCreateForm() {
         }
         .select-dark option,
         .select-dark optgroup {
-          background-color: #1C2226;
-          color: #E6E9EA;
+          background-color: #1c2226;
+          color: #e6e9ea;
         }
         .select-dark option:disabled {
-          color: #8B9AA0;
+          color: #8b9aa0;
         }
         .select-dark option:hover,
         .select-dark option:checked,
         .select-dark option:active {
           background-color: rgba(163, 8, 98, 0.28);
-          color: #FFFFFF;
+          color: #ffffff;
         }
-        .select-dark::-ms-expand { display: none; }
+        .select-dark::-ms-expand {
+          display: none;
+        }
       `}</style>
     </div>
   );

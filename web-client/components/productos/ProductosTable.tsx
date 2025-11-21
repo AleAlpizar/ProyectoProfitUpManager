@@ -230,7 +230,7 @@ export default function ProductosTable({ filtroId }: Props) {
     setOpenEditarStock({ productoID: row.productoID, productoNombre: row.nombre, bodegaID: null });
 
   return (
-    <div className="mt-4">
+    <div className="mt-4 px-4 sm:px-6">
       <style jsx global>{`
         select.dark-select option {
           background: ${SURFACE_SOFT};

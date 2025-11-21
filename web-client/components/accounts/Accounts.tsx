@@ -205,7 +205,7 @@ export default function Accounts() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0F0E] text-[#E6E9EA] p-6 sm:px-16">
+    <div className="min-h-screen bg-[#0B0F0E] text-[#E6E9EA] p-6 sm:px-6">
       <nav aria-label="Breadcrumb" className="mb-3">
         <ol className="flex items-center gap-2 text-sm text-[#8B9AA0]">
           <li className="flex items-center gap-2">

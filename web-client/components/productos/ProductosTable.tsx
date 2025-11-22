@@ -8,6 +8,7 @@ import { useBodegas } from "../hooks/useBodegas";
 import { useApi } from "@/components/hooks/useApi";
 
 import { CardTable, Th, Td, PillBadge } from "@/components/ui/table";
+import { ProductoFiltroDropdown } from "./ProductoFiltroDropdown";
 
 type ProductoMini = {
   productoID: number;
@@ -18,18 +19,17 @@ type ProductoMini = {
   precioVenta?: number | null;
   isActive?: boolean;
 };
+
 type Row = ProductoMini;
 type Props = { filtroId: number | "" };
 type EstadoFiltro = "activos" | "inactivos" | "todos";
 type Unidad = { unidadID: number; codigo: string; nombre: string; activo: boolean };
 
 const WINE = "#A30862";
-const SURFACE = "#121618";
-const SURFACE_SOFT = "#0F1214";
 
 export default function ProductosTable({ filtroId }: Props) {
   const { call } = useApi();
-  const { detalle, loadDetalle, loading: detalleLoading, error: detalleError } = useProductoDetalle();
+  const { detalle, loadDetalle } = useProductoDetalle();
   const { inactivar } = useProductoInactivar();
   const { data: bodegas = [] } = useBodegas();
 
@@ -50,7 +50,9 @@ export default function ProductosTable({ filtroId }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const items = await call<Row[]>(`/api/productos/mini?estado=${estado}`, { method: "GET" });
+      const items = await call<Row[]>(`/api/productos/mini?estado=${estado}`, {
+        method: "GET",
+      });
       setRows(items.map((p) => ({ ...p, isActive: p.isActive ?? true })));
     } catch {
       setError("Error al cargar productos.");
@@ -73,7 +75,10 @@ export default function ProductosTable({ filtroId }: Props) {
     })();
   }, [call]);
 
-  const [toast, setToast] = React.useState<{ kind: "ok" | "err" | "warn"; msg: string } | null>(null);
+  const [toast, setToast] = React.useState<{
+    kind: "ok" | "err" | "warn";
+    msg: string;
+  } | null>(null);
 
   const [editModal, setEditModal] = React.useState<{
     open: boolean;
@@ -110,12 +115,18 @@ export default function ProductosTable({ filtroId }: Props) {
     productoNombre?: string;
   } | null>(null);
 
+  const [filtroProductoId, setFiltroProductoId] =
+    React.useState<number | "">(filtroId);
+  React.useEffect(() => {
+    setFiltroProductoId(filtroId);
+  }, [filtroId]);
+
   const filtered = React.useMemo(() => {
     if (!rows || rows.length === 0) return [];
-    if (filtroId === "") return rows;
-    const id = Number(filtroId);
+    if (filtroProductoId === "") return rows;
+    const id = Number(filtroProductoId);
     return rows.filter((p) => p.productoID === id);
-  }, [rows, filtroId]);
+  }, [rows, filtroProductoId]);
 
   const openEdit = async (p: Row) => {
     try {
@@ -188,8 +199,8 @@ export default function ProductosTable({ filtroId }: Props) {
                 precioVenta: editModal.precioVenta,
                 sku: editModal.sku ?? r.sku,
               }
-            : r
-        )
+            : r,
+        ),
       );
 
       setToast({ kind: "ok", msg: "Producto actualizado correctamente." });
@@ -209,14 +220,24 @@ export default function ProductosTable({ filtroId }: Props) {
     if (!confirm(`¿Inactivar el producto "${row.nombre}"?`)) return;
     const { ok } = await inactivar(row.productoID);
     if (!ok) throw new Error();
-    setRows((prev) => prev.map((r) => (r.productoID === row.productoID ? { ...r, isActive: false } : r)));
+    setRows((prev) =>
+      prev.map((r) =>
+        r.productoID === row.productoID ? { ...r, isActive: false } : r,
+      ),
+    );
     setToast({ kind: "ok", msg: `Producto "${row.nombre}" inactivado.` });
   };
 
   const doReactivar = async (row: Row) => {
     if (!confirm(`¿Reactivar el producto "${row.nombre}"?`)) return;
-    await call<void>(`/api/productos/${row.productoID}/activar`, { method: "POST" });
-    setRows((prev) => prev.map((r) => (r.productoID === row.productoID ? { ...r, isActive: true } : r)));
+    await call<void>(`/api/productos/${row.productoID}/activar`, {
+      method: "POST",
+    });
+    setRows((prev) =>
+      prev.map((r) =>
+        r.productoID === row.productoID ? { ...r, isActive: true } : r,
+      ),
+    );
     setToast({ kind: "ok", msg: `Producto "${row.nombre}" reactivado.` });
   };
 
@@ -227,32 +248,25 @@ export default function ProductosTable({ filtroId }: Props) {
   const closeDetalle = () => setDetalleId(null);
 
   const abrirModalStock = (row: Row) =>
-    setOpenEditarStock({ productoID: row.productoID, productoNombre: row.nombre, bodegaID: null });
+    setOpenEditarStock({
+      productoID: row.productoID,
+      productoNombre: row.nombre,
+      bodegaID: null,
+    });
 
   return (
-    <div className="mt-4 px-4 sm:px-6">
-      <style jsx global>{`
-        select.dark-select option {
-          background: ${SURFACE_SOFT};
-          color: #e6e9ea;
-        }
-      `}</style>
+    <div className="mt-1">
+      <div className="mb-1 flex flex-wrap items-center gap-2">
+        <label className="text-sm text-white/80">Filtrar por producto:</label>
+        <ProductoFiltroDropdown
+          value={filtroProductoId}
+          onChange={setFiltroProductoId}
+        />
+      </div>
 
-      <div className="mb-3 flex flex-wrap items-center gap-3">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
         <label className="text-sm text-white/80">Mostrar:</label>
-        <div className="relative">
-          <select
-            value={estado}
-            onChange={(e) => setEstado(e.target.value as EstadoFiltro)}
-            className="dark-select appearance-none rounded-xl border border-white/10 bg-[#0f1214] px-3 py-2 pr-9 text-sm text-white outline-none focus:border-white/20"
-          >
-            <option value="activos">Activos</option>
-            <option value="inactivos">Inactivos</option>
-            <option value="todos">Todos</option>
-          </select>
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/60">▾</span>
-        </div>
-
+        <EstadoDropdown value={estado} onChange={setEstado} />
         <button
           onClick={() => load()}
           className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm font-medium text-white hover:bg-white/10"
@@ -317,15 +331,21 @@ export default function ProductosTable({ filtroId }: Props) {
               const activo = p.isActive ?? true;
               return (
                 <tr key={p.productoID} className="hover:bg-white/5">
-                  <Td className="font-mono text-[#E6E9EA]/80">{p.sku ?? "—"}</Td>
+                  <Td className="font-mono text-[#E6E9EA]/80">
+                    {p.sku ?? "—"}
+                  </Td>
                   <Td>
                     <span className="font-medium text-white">{p.nombre}</span>
                   </Td>
                   <Td>
-                    <span className="text-[#E6E9EA]/80">{p.descripcion ?? "—"}</span>
+                    <span className="text-[#E6E9EA]/80">
+                      {p.descripcion ?? "—"}
+                    </span>
                   </Td>
                   <Td>
-                    <PillBadge variant={p.descuento ? "warning" : "default"}>{p.descuento ?? 0}%</PillBadge>
+                    <PillBadge variant={p.descuento ? "warning" : "default"}>
+                      {p.descuento ?? 0}%
+                    </PillBadge>
                   </Td>
 
                   <Td>
@@ -353,7 +373,10 @@ export default function ProductosTable({ filtroId }: Props) {
                         <button
                           onClick={() => doInactivar(p)}
                           className="rounded-xl border px-3 py-1.5 text-xs font-semibold text-white transition"
-                          style={{ backgroundColor: `${WINE}1A`, borderColor: `${WINE}4D` }}
+                          style={{
+                            backgroundColor: `${WINE}1A`,
+                            borderColor: `${WINE}4D`,
+                          }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = `${WINE}33`;
                           }}
@@ -367,7 +390,10 @@ export default function ProductosTable({ filtroId }: Props) {
                         <button
                           onClick={() => doReactivar(p)}
                           className="rounded-xl border px-3 py-1.5 text-xs font-semibold text-white transition"
-                          style={{ backgroundColor: `${WINE}1A`, borderColor: `${WINE}4D` }}
+                          style={{
+                            backgroundColor: `${WINE}1A`,
+                            borderColor: `${WINE}4D`,
+                          }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = `${WINE}33`;
                           }}
@@ -382,7 +408,10 @@ export default function ProductosTable({ filtroId }: Props) {
                       <button
                         onClick={() => abrirModalStock(p)}
                         className="rounded-xl border px-3 py-1.5 text-xs font-medium text-white transition"
-                        style={{ backgroundColor: `${WINE}14`, borderColor: "rgba(255,255,255,0.12)" }}
+                        style={{
+                          backgroundColor: `${WINE}14`,
+                          borderColor: "rgba(255,255,255,0.12)",
+                        }}
                       >
                         Editar stock
                       </button>
@@ -393,7 +422,10 @@ export default function ProductosTable({ filtroId }: Props) {
                     <button
                       onClick={() => showDetalle(p.productoID)}
                       className="rounded-xl border px-3 py-1.5 text-xs font-medium text-white transition"
-                      style={{ backgroundColor: `${WINE}14`, borderColor: "rgba(255,255,255,0.12)" }}
+                      style={{
+                        backgroundColor: `${WINE}14`,
+                        borderColor: "rgba(255,255,255,0.12)",
+                      }}
                     >
                       Ver detalle
                     </button>
@@ -436,11 +468,13 @@ export default function ProductosTable({ filtroId }: Props) {
                   largo: d.largo,
                   alto: d.alto,
                   ancho: d.ancho,
-                  unidadAlmacenamientoID: d.unidadAlmacenamientoID as number | undefined,
+                  unidadAlmacenamientoID:
+                    (d.unidadAlmacenamientoID as number | undefined),
                   activo: currentRow?.isActive ?? true,
                 };
 
-                const unidadNombreDetalle = unidadNombre(merged.unidadAlmacenamientoID) ?? "—";
+                const unidadNombreDetalle =
+                  unidadNombre(merged.unidadAlmacenamientoID) ?? "—";
 
                 return (
                   <>
@@ -456,7 +490,8 @@ export default function ProductosTable({ filtroId }: Props) {
                     <div className="flex items-center gap-3">
                       {merged.precioVenta != null && (
                         <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-sm text-white">
-                          Precio: ₡{Number(merged.precioVenta).toLocaleString()}
+                          Precio: ₡
+                          {Number(merged.precioVenta).toLocaleString()}
                         </span>
                       )}
                       <span
@@ -485,7 +520,9 @@ export default function ProductosTable({ filtroId }: Props) {
 
             <div className="grid gap-4 p-5 md:grid-cols-2">
               <div className="rounded-2xl border border-white/10 bg-[#0f1214] p-5">
-                <h4 className="mb-3 text-sm font-semibold text-white">Información básica</h4>
+                <h4 className="mb-3 text-sm font-semibold text-white">
+                  Información básica
+                </h4>
                 {(() => {
                   const currentRow = rows.find((r) => r.productoID === detalleId);
                   const d = (detalle as any) ?? {};
@@ -496,7 +533,11 @@ export default function ProductosTable({ filtroId }: Props) {
                   return (
                     <>
                       <Info label="Código interno" value={merged.codigoInterno} />
-                      <Info label="Descripción" value={merged.descripcion ?? "—"} full />
+                      <Info
+                        label="Descripción"
+                        value={merged.descripcion ?? "—"}
+                        full
+                      />
                     </>
                   );
                 })()}
@@ -523,7 +564,9 @@ export default function ProductosTable({ filtroId }: Props) {
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-[#0f1214] p-5">
-                <h4 className="mb-3 text-sm font-semibold text-white">Dimensiones & peso</h4>
+                <h4 className="mb-3 text-sm font-semibold text-white">
+                  Dimensiones &amp; peso
+                </h4>
                 <Info label="Peso (kg)" value={(detalle as any)?.peso} />
                 <Info label="Largo (cm)" value={(detalle as any)?.largo} />
                 <Info label="Alto (cm)" value={(detalle as any)?.alto} />
@@ -531,7 +574,9 @@ export default function ProductosTable({ filtroId }: Props) {
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-[#0f1214] p-5">
-                <h4 className="mb-3 text-sm font-semibold text-white">Almacenamiento</h4>
+                <h4 className="mb-3 text-sm font-semibold text-white">
+                  Almacenamiento
+                </h4>
                 {(() => {
                   const d = (detalle as any) ?? {};
                   const name = unidadNombre(d.unidadAlmacenamientoID) ?? "—";
@@ -570,7 +615,9 @@ export default function ProductosTable({ filtroId }: Props) {
               <Field label="Nombre*">
                 <Input
                   value={editModal.nombre}
-                  onChange={(e) => setEditModal((v) => ({ ...v, nombre: e.target.value }))}
+                  onChange={(e) =>
+                    setEditModal((v) => ({ ...v, nombre: e.target.value }))
+                  }
                 />
               </Field>
 
@@ -581,7 +628,12 @@ export default function ProductosTable({ filtroId }: Props) {
                   max={100}
                   step="0.01"
                   value={editModal.descuento ?? 0}
-                  onChange={(e) => setEditModal((v) => ({ ...v, descuento: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setEditModal((v) => ({
+                      ...v,
+                      descuento: Number(e.target.value),
+                    }))
+                  }
                 />
               </Field>
 
@@ -590,7 +642,12 @@ export default function ProductosTable({ filtroId }: Props) {
                   type="number"
                   step="0.01"
                   value={editModal.precioVenta ?? 0}
-                  onChange={(e) => setEditModal((v) => ({ ...v, precioVenta: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setEditModal((v) => ({
+                      ...v,
+                      precioVenta: Number(e.target.value),
+                    }))
+                  }
                 />
               </Field>
 
@@ -599,21 +656,33 @@ export default function ProductosTable({ filtroId }: Props) {
                   type="number"
                   step="0.01"
                   value={editModal.precioCosto ?? 0}
-                  onChange={(e) => setEditModal((v) => ({ ...v, precioCosto: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setEditModal((v) => ({
+                      ...v,
+                      precioCosto: Number(e.target.value),
+                    }))
+                  }
                 />
               </Field>
 
               <Field label="SKU">
                 <Input
                   value={editModal.sku ?? ""}
-                  onChange={(e) => setEditModal((v) => ({ ...v, sku: e.target.value }))}
+                  onChange={(e) =>
+                    setEditModal((v) => ({ ...v, sku: e.target.value }))
+                  }
                 />
               </Field>
 
               <Field label="Código interno">
                 <Input
                   value={editModal.codigoInterno ?? ""}
-                  onChange={(e) => setEditModal((v) => ({ ...v, codigoInterno: e.target.value }))}
+                  onChange={(e) =>
+                    setEditModal((v) => ({
+                      ...v,
+                      codigoInterno: e.target.value,
+                    }))
+                  }
                 />
               </Field>
 
@@ -623,7 +692,9 @@ export default function ProductosTable({ filtroId }: Props) {
                   onChange={(e) =>
                     setEditModal((v) => ({
                       ...v,
-                      unidadAlmacenamientoID: e.target.value ? Number(e.target.value) : null,
+                      unidadAlmacenamientoID: e.target.value
+                        ? Number(e.target.value)
+                        : null,
                     }))
                   }
                   className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40"
@@ -642,7 +713,12 @@ export default function ProductosTable({ filtroId }: Props) {
                   type="number"
                   step="0.01"
                   value={editModal.peso ?? 0}
-                  onChange={(e) => setEditModal((v) => ({ ...v, peso: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setEditModal((v) => ({
+                      ...v,
+                      peso: Number(e.target.value),
+                    }))
+                  }
                 />
               </Field>
 
@@ -651,7 +727,12 @@ export default function ProductosTable({ filtroId }: Props) {
                   type="number"
                   step="0.01"
                   value={editModal.largo ?? 0}
-                  onChange={(e) => setEditModal((v) => ({ ...v, largo: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setEditModal((v) => ({
+                      ...v,
+                      largo: Number(e.target.value),
+                    }))
+                  }
                 />
               </Field>
 
@@ -660,7 +741,12 @@ export default function ProductosTable({ filtroId }: Props) {
                   type="number"
                   step="0.01"
                   value={editModal.alto ?? 0}
-                  onChange={(e) => setEditModal((v) => ({ ...v, alto: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setEditModal((v) => ({
+                      ...v,
+                      alto: Number(e.target.value),
+                    }))
+                  }
                 />
               </Field>
 
@@ -669,14 +755,24 @@ export default function ProductosTable({ filtroId }: Props) {
                   type="number"
                   step="0.01"
                   value={editModal.ancho ?? 0}
-                  onChange={(e) => setEditModal((v) => ({ ...v, ancho: Number(e.target.value) }))}
+                  onChange={(e) =>
+                    setEditModal((v) => ({
+                      ...v,
+                      ancho: Number(e.target.value),
+                    }))
+                  }
                 />
               </Field>
 
               <Field label="Descripción" full>
                 <Textarea
                   value={editModal.descripcion}
-                  onChange={(e) => setEditModal((v) => ({ ...v, descripcion: e.target.value }))}
+                  onChange={(e) =>
+                    setEditModal((v) => ({
+                      ...v,
+                      descripcion: e.target.value,
+                    }))
+                  }
                   className="min-h-[92px]"
                 />
               </Field>
@@ -701,7 +797,6 @@ export default function ProductosTable({ filtroId }: Props) {
           </div>
         </div>
       )}
-
       {confirmSaveOpen && (
         <div
           className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 px-4"
@@ -754,18 +849,21 @@ export default function ProductosTable({ filtroId }: Props) {
   );
 }
 
-const Info: React.FC<{ label: string; value: any; full?: boolean }> = ({ label, value, full = false }) => (
+
+const Info: React.FC<{ label: string; value: any; full?: boolean }> = ({
+  label,
+  value,
+  full = false,
+}) => (
   <p className={full ? "col-span-2" : ""}>
     <span className="text-[#8B9AA0]">{label}:</span>{" "}
     <span className="text-white">{value ?? "—"}</span>
   </p>
 );
 
-const Field: React.FC<React.PropsWithChildren<{ label: string; full?: boolean }>> = ({
-  label,
-  full,
-  children,
-}) => (
+const Field: React.FC<
+  React.PropsWithChildren<{ label: string; full?: boolean }>
+> = ({ label, full, children }) => (
   <div className={full ? "md:col-span-2" : ""}>
     <div className="mb-1 text-xs text-white/70">{label}</div>
     {children}
@@ -776,10 +874,78 @@ const baseInput =
   "w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition " +
   "focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40 placeholder:text-white/40";
 
-const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => (
+const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (
+  props,
+) => (
   <input {...props} className={[baseInput, props.className ?? ""].join(" ")} />
 );
 
-const Textarea: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement>> = (props) => (
-  <textarea {...props} className={["min-h-[110px]", baseInput, props.className ?? ""].join(" ")} />
+const Textarea: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement>> = (
+  props,
+) => (
+  <textarea
+    {...props}
+    className={["min-h-[110px]", baseInput, props.className ?? ""].join(" ")}
+  />
 );
+
+
+const estadoLabels: Record<EstadoFiltro, string> = {
+  activos: "Activos",
+  inactivos: "Inactivos",
+  todos: "Todos",
+};
+
+const EstadoDropdown: React.FC<{
+  value: EstadoFiltro;
+  onChange: (v: EstadoFiltro) => void;
+}> = ({ value, onChange }) => {
+  const [open, setOpen] = React.useState(false);
+  const ref = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (!ref.current) return;
+      if (!ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleSelect = (v: EstadoFiltro) => {
+    onChange(v);
+    setOpen(false);
+  };
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="flex min-w-[150px] items-center justify-between rounded-xl border border-white/10 bg-[#0f1214] px-3 py-2 text-sm text-white outline-none hover:border-white/20"
+      >
+        <span>{estadoLabels[value]}</span>
+        <span className="ml-2 text-white/60">▾</span>
+      </button>
+
+      {open && (
+        <div className="absolute z-20 mt-1 w-full min-w-[150px] overflow-hidden rounded-xl border border-white/10 bg-[#0b0e10] shadow-xl">
+          {(["activos", "inactivos", "todos"] as EstadoFiltro[]).map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => handleSelect(opt)}
+              className={`block w-full px-3 py-2 text-left text-sm ${
+                opt === value
+                  ? "bg-[#1c2224] text-white font-medium"
+                  : "bg-[#0b0e10] text-white/80 hover:bg-[#1c2224] hover:text-white"
+              }`}
+            >
+              {estadoLabels[opt]}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};

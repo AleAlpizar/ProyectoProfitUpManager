@@ -1,6 +1,5 @@
 import React from "react";
 import { Link, Navbar } from "@nextui-org/react";
-import { SupportIcon } from "../icons/navbar/support-icon";
 import { Box } from "../styles/box";
 import { BurguerButton } from "./burguer-button";
 import { NotificationsDropdown } from "./notifications-dropdown";
@@ -12,7 +11,6 @@ interface Props {
 
 const BG = "#121618";
 const TEXT = "#E6E9EA";
-const MUTED = "#8B9AA0";
 const BORDER = "rgba(255,255,255,0.08)";
 
 export const NavbarWrapper: React.FC<Props> = ({ children }) => {
@@ -49,7 +47,7 @@ export const NavbarWrapper: React.FC<Props> = ({ children }) => {
           position: "sticky",
           top: 0,
           backdropFilter: "none",
-          bg: BG,                 
+          bg: BG,
           boxShadow: "none",
           borderBottom: `1px solid ${BORDER}`,
           justifyContent: "space-between",
@@ -85,16 +83,6 @@ export const NavbarWrapper: React.FC<Props> = ({ children }) => {
             <NotificationsDropdown />
           </Navbar.Content>
 
-          <Navbar.Content hideIn={"md"}>
-            <button
-              aria-label="Soporte"
-              title="Soporte"
-              style={{ color: MUTED }}
-              className="hover:opacity-90"
-            >
-              <SupportIcon />
-            </button>
-          </Navbar.Content>
 
           <Navbar.Content>
             <UserDropdown />
@@ -112,7 +100,12 @@ export const NavbarWrapper: React.FC<Props> = ({ children }) => {
               }}
               isActive={index === 2}
             >
-              <Link color="inherit" css={{ minWidth: "100%" }} href="#" className="hover:opacity-90">
+              <Link
+                color="inherit"
+                css={{ minWidth: "100%" }}
+                href="#"
+                className="hover:opacity-90"
+              >
                 {item}
               </Link>
             </Navbar.CollapseItem>

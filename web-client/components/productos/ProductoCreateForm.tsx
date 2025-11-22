@@ -20,10 +20,10 @@ export default function ProductoCreateForm() {
   } = useProductoCreate();
 
   const { data: unidadesRaw, loading: loadingUnits, error: unidadesError } = useUnidades();
-  const { data: bodegasRaw,  loading: loadingBodegas, error: bodegasError } = useBodegas();
+  const { data: bodegasRaw, loading: loadingBodegas, error: bodegasError } = useBodegas();
 
   const unidades = useMemo(() => unidadesRaw ?? [], [unidadesRaw]);
-  const bodegas  = useMemo(() => bodegasRaw  ?? [], [bodegasRaw]);
+  const bodegas = useMemo(() => bodegasRaw ?? [], [bodegasRaw]);
 
   const [bodegaID, setBodegaID] = useState<number | "">("");
   const [showSuccess, setShowSuccess] = useState(false);
@@ -64,7 +64,11 @@ export default function ProductoCreateForm() {
 
     const ok = await confirm({
       title: "Confirmar registro",
-      message: <>¿Deseas registrar este <b>producto</b> con la información ingresada?</>,
+      message: (
+        <>
+          ¿Deseas registrar este <b>producto</b> con la información ingresada?
+        </>
+      ),
       tone: "brand",
       confirmText: "Registrar",
       cancelText: "Cancelar",
@@ -81,7 +85,6 @@ export default function ProductoCreateForm() {
 
   return (
     <div className="mx-auto w-full max-w-7xl lg:max-w-[1200px] p-4 md:p-6">
-      {/* Breadcrumb */}
       <header className="mb-4">
         <nav className="mb-3 flex items-center text-sm text-[#8B9AA0]">
           <div className="flex items-center gap-1">
@@ -130,8 +133,7 @@ export default function ProductoCreateForm() {
               className="flex items-start justify-between gap-3 rounded-2xl border border-[#A30862]/40 bg-[#A30862]/10 px-4 py-3 text-sm text-[#F2C7DA]"
             >
               <span>
-                ✅ Producto <b className="text-white">#{successId}</b> se guardó
-                correctamente.
+                ✅ Producto <b className="text-white">#{successId}</b> se guardó correctamente.
               </span>
               <button
                 type="button"
@@ -169,7 +171,6 @@ export default function ProductoCreateForm() {
           )}
         </div>
 
-        {/* Form grid */}
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
           <LabeledInput
             label="SKU*"
@@ -197,11 +198,8 @@ export default function ProductoCreateForm() {
             className="rounded-2xl border border-white/10 bg-[#1C2224] text-[#E6E9EA] focus:ring-2 focus:ring-[#A30862]/40"
           />
 
-          {/* Unidad de almacenamiento */}
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-[#8B9AA0]">
-              Unidad de almacenamiento*
-            </label>
+            <label className="text-xs text-[#8B9AA0]">Unidad de almacenamiento*</label>
             <select
               className="select-dark w-full"
               value={values.unidadAlmacenamientoID ?? ""}
@@ -230,16 +228,13 @@ export default function ProductoCreateForm() {
             ) : null}
           </div>
 
-          {/* Bodega */}
           <div className="flex flex-col gap-1">
             <label className="text-xs text-[#8B9AA0]">Bodega (opcional)</label>
             <select
               className="select-dark w-full"
               value={bodegaID}
               onChange={(e) =>
-                setBodegaID(
-                  e.target.value === "" ? "" : Number(e.target.value)
-                )
+                setBodegaID(e.target.value === "" ? "" : Number(e.target.value))
               }
               disabled={loadingBodegas}
             >
@@ -327,7 +322,6 @@ export default function ProductoCreateForm() {
           />
         </div>
 
-        {/* Descripción */}
         <div className="mt-4 flex flex-col gap-1">
           <label className="text-xs text-[#8B9AA0]">Descripción</label>
           <textarea
@@ -338,7 +332,6 @@ export default function ProductoCreateForm() {
           />
         </div>
 
-        {/* Actions */}
         <div className="mt-5 flex items-center justify-end">
           <button
             onClick={handleSubmit}
@@ -350,7 +343,6 @@ export default function ProductoCreateForm() {
         </div>
       </div>
 
-      {/* ====== ESTILOS PARA SELECT AQUÍ MISMO ====== */}
       <style jsx global>{`
         .select-dark {
           border-radius: 1rem;
@@ -364,24 +356,23 @@ export default function ProductoCreateForm() {
           color-scheme: dark;
           transition: box-shadow 0.2s, border-color 0.2s, background-color 0.2s;
         }
+
         .select-dark:focus {
           border-color: rgba(163, 8, 98, 0.6);
           box-shadow: 0 0 0 2px rgba(163, 8, 98, 0.4);
         }
+
+        /* 🔧 Arreglo: dejamos el fondo nativo y usamos texto oscuro
+           para que se vea sobre el menú blanco del sistema */
         .select-dark option,
         .select-dark optgroup {
-          background-color: #1c2226;
-          color: #e6e9ea;
+          color: #111827;
         }
+
         .select-dark option:disabled {
-          color: #8b9aa0;
+          color: #6b7280;
         }
-        .select-dark option:hover,
-        .select-dark option:checked,
-        .select-dark option:active {
-          background-color: rgba(163, 8, 98, 0.28);
-          color: #ffffff;
-        }
+
         .select-dark::-ms-expand {
           display: none;
         }

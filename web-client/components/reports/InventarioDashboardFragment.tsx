@@ -48,15 +48,81 @@ const pillClass = (active: boolean) =>
 const apiBase =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5151";
 
+const buildAuthHeaders = (): Record<string, string> => {
+  if (typeof window === "undefined") return {};
+
+  const headers: Record<string, string> = {};
+
+  try {
+    const lsToken =
+      window.localStorage.getItem("auth_token") ??
+      window.localStorage.getItem("sessionToken") ??
+      window.localStorage.getItem("authToken") ??
+      window.localStorage.getItem("token");
+
+    if (lsToken) {
+      headers["Authorization"] = `Bearer ${lsToken}`;
+      headers["X-Session-Token"] = lsToken;
+    }
+
+    const cookie = document.cookie ?? "";
+    const match =
+      cookie.match(/session_token=([^;]+)/) ??
+      cookie.match(/authToken=([^;]+)/) ??
+      cookie.match(/token=([^;]+)/);
+
+    if (match) {
+      const token = decodeURIComponent(match[1]);
+      if (!headers["Authorization"]) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+      if (!headers["X-Session-Token"]) {
+        headers["X-Session-Token"] = token;
+      }
+    }
+  } catch (err) {
+    console.warn("No se pudo leer token de autenticación en el navegador", err);
+  }
+
+  return headers;
+};
+
 const fetcher = async (relativeUrl: string) => {
   const url = `${apiBase}${relativeUrl}`;
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...buildAuthHeaders(),
+  };
+
   const res = await fetch(url, {
     method: "GET",
-    headers: { "Content-Type": "application/json" },
+    headers,
+    credentials: "include",
   });
 
+  if (res.status === 401) {
+    console.warn(
+      `API no autorizada (401) en ${relativeUrl}. Revisa que estés logueado y que el backend reciba el token/cookie.`
+    );
+
+    if (
+      relativeUrl.startsWith("/api/productos/mini") ||
+      relativeUrl.startsWith("/api/bodegas")
+    ) {
+      return [];
+    }
+
+    throw new Error("HTTP_401");
+  }
+
   if (!res.ok) {
-    console.error("Error en fetch inventario dashboard", res.status, url);
+    console.error(
+      "Error en fetch inventario dashboard",
+      res.status,
+      relativeUrl,
+      url
+    );
     throw new Error(`HTTP_${res.status}`);
   }
 
@@ -111,8 +177,20 @@ export const InventarioDashboardFragment: React.FC = () => {
     if (Array.isArray(bodegasMini)) return bodegasMini;
     if (Array.isArray(bodegasMini.items)) return bodegasMini.items;
     if (Array.isArray(bodegasMini.data)) return bodegasMini.data;
+    if (Array.isArray(bodegasMini.bodegas)) return bodegasMini.bodegas;
+    if (Array.isArray(bodegasMini.results)) return bodegasMini.results;
     return [];
   }, [bodegasMini]);
+
+  const productosList = React.useMemo(() => {
+    if (!productosMini) return [];
+    if (Array.isArray(productosMini)) return productosMini;
+    if (Array.isArray(productosMini.items)) return productosMini.items;
+    if (Array.isArray(productosMini.data)) return productosMini.data;
+    if (Array.isArray(productosMini.productos)) return productosMini.productos;
+    if (Array.isArray(productosMini.results)) return productosMini.results;
+    return [];
+  }, [productosMini]);
 
   const apiUrl = React.useMemo(() => {
     const params = new URLSearchParams();
@@ -325,11 +403,7 @@ export const InventarioDashboardFragment: React.FC = () => {
       else if (tNorm.startsWith("sal")) tipo = "Salida";
 
       const cantidad = Number(
-        m.CantidadTotal ??
-          m.cantidadTotal ??
-          m.Cantidad ??
-          m.cantidad ??
-          0
+        m.CantidadTotal ?? m.cantidadTotal ?? m.Cantidad ?? m.cantidad ?? 0
       );
 
       if (!isNaN(cantidad)) {
@@ -437,7 +511,7 @@ export const InventarioDashboardFragment: React.FC = () => {
     const desde = kardexDesde || null;
     const hasta = kardexHasta || null;
 
-    return kardex.filter((m: any) => {
+    const filtrados = kardex.filter((m: any) => {
       const prodId = String(m.ProductoID ?? m.productoID ?? "");
       const bodId = String(m.BodegaID ?? m.bodegaID ?? "");
 
@@ -481,6 +555,49 @@ export const InventarioDashboardFragment: React.FC = () => {
 
       return true;
     });
+
+    const getFechaTs = (m: any) => {
+      const rawFecha =
+        m.FechaMovimiento ??
+        m.fechaMovimiento ??
+        m.Fecha ??
+        m.fecha ??
+        m.FechaMov ??
+        m.fechaMov;
+      const d = new Date(rawFecha);
+      return Number.isNaN(d.getTime()) ? 0 : d.getTime();
+    };
+
+    const getNombreProd = (m: any) =>
+      String(
+        m.NombreProducto ??
+          m.nombreProducto ??
+          m.Nombre ??
+          m.nombre ??
+          ""
+      );
+
+    const getTipo = (m: any) =>
+      String(
+        m.TipoMovimiento ?? m.tipoMovimiento ?? m.Tipo ?? m.tipo ?? ""
+      );
+
+    filtrados.sort((a: any, b: any) => {
+      const fa = getFechaTs(a);
+      const fb = getFechaTs(b);
+      if (fa !== fb) return fb - fa; 
+
+      const pa = getNombreProd(a);
+      const pb = getNombreProd(b);
+      const cmpProd = pa.localeCompare(pb);
+      if (cmpProd !== 0) return cmpProd;
+
+      const ta = getTipo(a);
+      const tb = getTipo(b);
+      return ta.localeCompare(tb);
+    });
+
+    return filtrados;
   }, [
     kardex,
     kardexProductoId,
@@ -619,7 +736,7 @@ export const InventarioDashboardFragment: React.FC = () => {
                 onChange={(e) => setSelectedProductoId(e.target.value)}
               >
                 <option value="all">Todos</option>
-                {(productosMini ?? []).map((p: any, idx: number) => {
+                {productosList.map((p: any, idx: number) => {
                   const id = p.ProductoID ?? p.productoID ?? p.id ?? idx;
                   return (
                     <option key={`prod-${id}-${idx}`} value={id}>
@@ -707,7 +824,7 @@ export const InventarioDashboardFragment: React.FC = () => {
               onChange={(e) => setStockProductoId(e.target.value)}
             >
               <option value="all">Todos los productos</option>
-              {(productosMini ?? []).map((p: any, idx: number) => {
+              {productosList.map((p: any, idx: number) => {
                 const id = p.ProductoID ?? p.productoID ?? p.id ?? idx;
                 return (
                   <option key={`stock-prod-${id}-${idx}`} value={id}>
@@ -750,7 +867,9 @@ export const InventarioDashboardFragment: React.FC = () => {
                       Producto
                     </th>
                     <th className="px-2 py-1 text-left font-normal">SKU</th>
-                    <th className="px-2 py-1 text-left font-normal">Bodega</th>
+                    <th className="px-2 py-1 text-left font-normal">
+                      Bodega
+                    </th>
                     <th className="px-2 py-1 text-right font-normal">
                       Existencia
                     </th>
@@ -1032,7 +1151,7 @@ export const InventarioDashboardFragment: React.FC = () => {
               onChange={(e) => setKardexProductoId(e.target.value)}
             >
               <option value="all">Todos los productos</option>
-              {(productosMini ?? []).map((p: any, idx: number) => {
+              {productosList.map((p: any, idx: number) => {
                 const id = p.ProductoID ?? p.productoID ?? p.id ?? idx;
                 return (
                   <option key={`kdx-prod-${id}-${idx}`} value={id}>
@@ -1248,7 +1367,6 @@ export const InventarioDashboardFragment: React.FC = () => {
           </div>
         </div>
       </section>
-
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-white/10 bg-[#050816] p-4">
           <h2 className="mb-3 text-sm font-semibold text-slate-100">
@@ -1299,7 +1417,6 @@ export const InventarioDashboardFragment: React.FC = () => {
             )}
           </div>
         </div>
-
         <div className="rounded-2xl border border-white/10 bg-[#050816] p-4">
           <h2 className="mb-3 text-sm font-semibold text-slate-100">
             Cobertura de inventario (días estimados)

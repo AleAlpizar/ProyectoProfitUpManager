@@ -58,7 +58,6 @@ export default function BodegaForm({ initial, onSaved, onClose }: Props) {
     e.preventDefault();
     setError(null);
 
-    // Validación previa para no mostrar confirm si falta nombre
     const payload = buildPayload();
     if (!payload.nombre) {
       setError("El nombre es obligatorio");

@@ -1,4 +1,5 @@
 "use client";
+
 import React from "react";
 import EditarCantidadModal from "@/components/inventario/EditarCantidadModal";
 
@@ -7,7 +8,6 @@ import { useProductoInactivar } from "../hooks/useProductoInactivar";
 import { useBodegas } from "../hooks/useBodegas";
 import { useApi } from "@/components/hooks/useApi";
 
-import { CardTable, Th, Td, PillBadge } from "@/components/ui/table";
 import { ProductoFiltroDropdown } from "./ProductoFiltroDropdown";
 
 type ProductoMini = {
@@ -71,6 +71,7 @@ export default function ProductosTable({ filtroId }: Props) {
         const list = await call<Unidad[]>(`/api/unidades`, { method: "GET" });
         setUnidades((list ?? []).filter((u) => u.activo));
       } catch {
+        // ignorar
       }
     })();
   }, [call]);
@@ -199,8 +200,8 @@ export default function ProductosTable({ filtroId }: Props) {
                 precioVenta: editModal.precioVenta,
                 sku: editModal.sku ?? r.sku,
               }
-            : r,
-        ),
+            : r
+        )
       );
 
       setToast({ kind: "ok", msg: "Producto actualizado correctamente." });
@@ -222,8 +223,8 @@ export default function ProductosTable({ filtroId }: Props) {
     if (!ok) throw new Error();
     setRows((prev) =>
       prev.map((r) =>
-        r.productoID === row.productoID ? { ...r, isActive: false } : r,
-      ),
+        r.productoID === row.productoID ? { ...r, isActive: false } : r
+      )
     );
     setToast({ kind: "ok", msg: `Producto "${row.nombre}" inactivado.` });
   };
@@ -235,8 +236,8 @@ export default function ProductosTable({ filtroId }: Props) {
     });
     setRows((prev) =>
       prev.map((r) =>
-        r.productoID === row.productoID ? { ...r, isActive: true } : r,
-      ),
+        r.productoID === row.productoID ? { ...r, isActive: true } : r
+      )
     );
     setToast({ kind: "ok", msg: `Producto "${row.nombre}" reactivado.` });
   };
@@ -300,151 +301,161 @@ export default function ProductosTable({ filtroId }: Props) {
         </div>
       )}
 
-      <CardTable>
-        <thead>
-          <tr className="bg-[#1C2224]">
-            <Th>SKU</Th>
-            <Th>Nombre</Th>
-            <Th>Descripción</Th>
-            <Th>Descuento (%)</Th>
-            <Th>Estado</Th>
-            <Th>Acciones</Th>
-            <Th>Detalles</Th>
-          </tr>
-        </thead>
-
-        <tbody className="[&>tr:not(:last-child)]:border-b [&>tr]:border-white/10">
-          {loading && rows.length === 0 ? (
-            <tr>
-              <td colSpan={7} className="px-3 py-3 text-center text-[#8B9AA0]">
-                Cargando…
-              </td>
+      <div className="mt-2 overflow-hidden rounded-2xl border border-white/10 bg-[#111518] shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
+        <table className="min-w-full border-collapse">
+          <thead>
+            <tr className="bg-[#1C2224]">
+              <Th>SKU</Th>
+              <Th>Nombre</Th>
+              <Th>Descripción</Th>
+              <Th>Descuento (%)</Th>
+              <Th>Estado</Th>
+              <Th>Acciones</Th>
+              <Th>Detalles</Th>
             </tr>
-          ) : filtered.length === 0 ? (
-            <tr>
-              <td colSpan={7} className="px-3 py-3 text-center text-[#8B9AA0]">
-                No hay productos.
-              </td>
-            </tr>
-          ) : (
-            filtered.map((p) => {
-              const activo = p.isActive ?? true;
-              return (
-                <tr key={p.productoID} className="hover:bg-white/5">
-                  <Td className="font-mono text-[#E6E9EA]/80">
-                    {p.sku ?? "—"}
-                  </Td>
-                  <Td>
-                    <span className="font-medium text-white">{p.nombre}</span>
-                  </Td>
-                  <Td>
-                    <span className="text-[#E6E9EA]/80">
-                      {p.descripcion ?? "—"}
-                    </span>
-                  </Td>
-                  <Td>
-                    <PillBadge variant={p.descuento ? "warning" : "default"}>
-                      {p.descuento ?? 0}%
-                    </PillBadge>
-                  </Td>
+          </thead>
 
-                  <Td>
-                    {activo ? (
-                      <span className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-200">
-                        Activo
+          <tbody className="[&>tr:not(:last-child)]:border-b [&>tr]:border-white/5">
+            {loading && rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="px-4 py-3 text-center text-[#8B9AA0]"
+                >
+                  Cargando…
+                </td>
+              </tr>
+            ) : filtered.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={7}
+                  className="px-4 py-3 text-center text-[#8B9AA0]"
+                >
+                  No hay productos.
+                </td>
+              </tr>
+            ) : (
+              filtered.map((p) => {
+                const activo = p.isActive ?? true;
+                return (
+                  <tr key={p.productoID} className="hover:bg-white/5">
+                    <Td className="font-mono text-[#E6E9EA]/80">
+                      {p.sku ?? "—"}
+                    </Td>
+                    <Td strong>
+                      <span className="font-medium text-white">
+                        {p.nombre}
                       </span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-full border border-rose-400/30 bg-rose-400/10 px-3 py-1 text-xs font-medium text-rose-200">
-                        Inactivo
+                    </Td>
+                    <Td>
+                      <span className="text-[#E6E9EA]/80">
+                        {p.descripcion ?? "—"}
                       </span>
-                    )}
-                  </Td>
+                    </Td>
+                    <Td>
+                      <PillBadge variant={p.descuento ? "warning" : "default"}>
+                        {p.descuento ?? 0}%
+                      </PillBadge>
+                    </Td>
 
-                  <Td>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        onClick={() => openEdit(p)}
-                        className="rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/10"
-                      >
-                        Editar
-                      </button>
-
+                    <Td>
                       {activo ? (
-                        <button
-                          onClick={() => doInactivar(p)}
-                          className="rounded-xl border px-3 py-1.5 text-xs font-semibold text-white transition"
-                          style={{
-                            backgroundColor: `${WINE}1A`,
-                            borderColor: `${WINE}4D`,
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = `${WINE}33`;
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = `${WINE}1A`;
-                          }}
-                        >
-                          Inactivar
-                        </button>
+                        <span className="inline-flex items-center rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-xs font-medium text-emerald-200">
+                          Activo
+                        </span>
                       ) : (
+                        <span className="inline-flex items-center rounded-full border border-rose-400/30 bg-rose-400/10 px-3 py-1 text-xs font-medium text-rose-200">
+                          Inactivo
+                        </span>
+                      )}
+                    </Td>
+
+                    <Td>
+                      <div className="flex flex-wrap items-center gap-2">
                         <button
-                          onClick={() => doReactivar(p)}
-                          className="rounded-xl border px-3 py-1.5 text-xs font-semibold text-white transition"
+                          onClick={() => openEdit(p)}
+                          className="rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-white/10"
+                        >
+                          Editar
+                        </button>
+
+                        {activo ? (
+                          <button
+                            onClick={() => doInactivar(p)}
+                            className="rounded-xl border px-3 py-1.5 text-xs font-semibold text-white transition"
+                            style={{
+                              backgroundColor: `${WINE}1A`,
+                              borderColor: `${WINE}4D`,
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = `${WINE}33`;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = `${WINE}1A`;
+                            }}
+                          >
+                            Inactivar
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => doReactivar(p)}
+                            className="rounded-xl border px-3 py-1.5 text-xs font-semibold text-white transition"
+                            style={{
+                              backgroundColor: `${WINE}1A`,
+                              borderColor: `${WINE}4D`,
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = `${WINE}33`;
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = `${WINE}1A`;
+                            }}
+                          >
+                            Reactivar
+                          </button>
+                        )}
+
+                        <button
+                          onClick={() => abrirModalStock(p)}
+                          className="rounded-xl border px-3 py-1.5 text-xs font-medium text-white transition"
                           style={{
-                            backgroundColor: `${WINE}1A`,
-                            borderColor: `${WINE}4D`,
-                          }}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = `${WINE}33`;
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = `${WINE}1A`;
+                            backgroundColor: `${WINE}14`,
+                            borderColor: "rgba(255,255,255,0.12)",
                           }}
                         >
-                          Reactivar
+                          Editar stock
                         </button>
-                      )}
+                      </div>
+                    </Td>
 
+                    <Td>
                       <button
-                        onClick={() => abrirModalStock(p)}
+                        onClick={() => showDetalle(p.productoID)}
                         className="rounded-xl border px-3 py-1.5 text-xs font-medium text-white transition"
                         style={{
                           backgroundColor: `${WINE}14`,
                           borderColor: "rgba(255,255,255,0.12)",
                         }}
                       >
-                        Editar stock
+                        Ver detalle
                       </button>
-                    </div>
-                  </Td>
-
-                  <Td>
-                    <button
-                      onClick={() => showDetalle(p.productoID)}
-                      className="rounded-xl border px-3 py-1.5 text-xs font-medium text-white transition"
-                      style={{
-                        backgroundColor: `${WINE}14`,
-                        borderColor: "rgba(255,255,255,0.12)",
-                      }}
-                    >
-                      Ver detalle
-                    </button>
-                  </Td>
-                </tr>
-              );
-            })
-          )}
-        </tbody>
-      </CardTable>
+                    </Td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {detalleId !== null && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 px-4 sm:px-10 pt-24 pb-8"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) closeDetalle();
           }}
         >
-          <div className="relative w-full max-w-5xl overflow-hidden rounded-2xl border border-white/10 bg-[#0B0E10] shadow-2xl">
+          <div className="relative w-full max-w-4xl mx-auto overflow-hidden rounded-2xl border border-white/10 bg-[#0B0E10] shadow-2xl">
             <div
               className="flex items-center justify-between px-6 py-4"
               style={{
@@ -483,7 +494,8 @@ export default function ProductosTable({ filtroId }: Props) {
                         {merged.nombre ?? "Detalle del producto"}
                       </h3>
                       <p className="text-sm text-white/70">
-                        SKU: {merged.sku ?? "—"} · Unidad: {unidadNombreDetalle}
+                        SKU: {merged.sku ?? "—"} · Unidad:{" "}
+                        {unidadNombreDetalle}
                       </p>
                     </div>
 
@@ -797,6 +809,7 @@ export default function ProductosTable({ filtroId }: Props) {
           </div>
         </div>
       )}
+
       {confirmSaveOpen && (
         <div
           className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 px-4"
@@ -875,20 +888,19 @@ const baseInput =
   "focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40 placeholder:text-white/40";
 
 const Input: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (
-  props,
+  props
 ) => (
   <input {...props} className={[baseInput, props.className ?? ""].join(" ")} />
 );
 
 const Textarea: React.FC<React.TextareaHTMLAttributes<HTMLTextAreaElement>> = (
-  props,
+  props
 ) => (
   <textarea
     {...props}
     className={["min-h-[110px]", baseInput, props.className ?? ""].join(" ")}
   />
 );
-
 
 const estadoLabels: Record<EstadoFiltro, string> = {
   activos: "Activos",
@@ -949,3 +961,58 @@ const EstadoDropdown: React.FC<{
     </div>
   );
 };
+
+type PillVariant = "success" | "danger" | "warning" | "default";
+
+const PillBadge: React.FC<
+  React.PropsWithChildren<{ variant?: PillVariant }>
+> = ({ variant = "default", children }) => {
+  const map: Record<PillVariant, string> = {
+    success: "border-lime-400/40 text-lime-300 bg-lime-400/5",
+    danger: "border-rose-400/40 text-rose-300 bg-rose-400/5",
+    warning: "border-amber-400/40 text-amber-300 bg-amber-400/5",
+    default: "border-white/15 text-[#8B9AA0] bg-white/5",
+  };
+  return (
+    <span
+      className={[
+        "inline-flex h-7 items-center justify-center rounded-full px-3",
+        "text-xs font-medium whitespace-nowrap border",
+        map[variant],
+      ].join(" ")}
+    >
+      {children}
+    </span>
+  );
+};
+
+const Th: React.FC<React.PropsWithChildren<{ className?: string }>> = ({
+  className = "",
+  children,
+}) => (
+  <th
+    className={[
+      "px-4 py-2 text-left text-[11px] font-semibold uppercase tracking-wide text-[#8B9AA0]",
+      className,
+    ].join(" ")}
+  >
+    {children}
+  </th>
+);
+
+const Td: React.FC<
+  React.PropsWithChildren<{
+    className?: string;
+    strong?: boolean;
+  }>
+> = ({ className = "", strong = false, children }) => (
+  <td
+    className={[
+      "px-4 py-2 text-sm",
+      strong ? "font-semibold text-white" : "text-[#E6E9EA]",
+      className,
+    ].join(" ")}
+  >
+    {children}
+  </td>
+);

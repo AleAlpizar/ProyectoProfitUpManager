@@ -1,7 +1,6 @@
 import React from "react";
 import { Text, Link } from "@nextui-org/react";
 import NextLink from "next/link";
-import dynamic from "next/dynamic";
 
 import { Box } from "../styles/box";
 import { Flex } from "../styles/flex";
@@ -12,10 +11,6 @@ import { CardBalance2 } from "./card-balance2";
 import { CardBalance3 } from "./card-balance3";
 import { CardAgents } from "./card-agents";
 import { CardTransactions } from "./card-transactions";
-
-const Chart = dynamic(() => import("../charts/steam").then((mod) => mod.Steam), {
-  ssr: false,
-});
 
 const BG_ROOT = "#0B0F0E";
 const SURFACE = "#121618";
@@ -95,7 +90,15 @@ export const Content: React.FC = () => (
               py: "$10",
             }}
           >
-            <Chart />
+            <Text
+              css={{
+                color: MUTED,
+                fontSize: "0.875rem",
+                textAlign: "center",
+              }}
+            >
+              Aquí se mostrará el gráfico de estadísticas.
+            </Text>
           </Box>
         </Box>
       </Flex>
@@ -192,3 +195,5 @@ export const Content: React.FC = () => (
     </Flex>
   </Box>
 );
+
+export default Content;

@@ -31,7 +31,7 @@ function getTokenNow(): string | null {
 
 export function useAuthToken() {
   const [token, setToken] = useState<string | null>(getTokenNow());
-  const [ready, setReady] = useState<boolean>(true); 
+  const [ready, setReady] = useState<boolean>(true);
 
   useEffect(() => {
     const keys = ["auth_token", "token", "jwt", "access_token"];

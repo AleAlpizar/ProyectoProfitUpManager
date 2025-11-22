@@ -1,7 +1,9 @@
-﻿using System.Data;
+﻿using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Security.Cryptography;
 using Dapper;
 using Microsoft.Data.SqlClient;
-using System.Security.Cryptography;
 
 public class AuthService
 {
@@ -64,18 +66,25 @@ public class AuthService
                 commandType: CommandType.StoredProcedure
             );
 
-            await sql.ExecuteAsync(@"UPDATE dbo.Usuario SET EstadoUsuario = 'ACTIVE' WHERE UsuarioID = @uid",
-                new { uid = usuarioId });
+            await sql.ExecuteAsync(
+                @"UPDATE dbo.Usuario SET EstadoUsuario = 'ACTIVE' WHERE UsuarioID = @uid",
+                new { uid = usuarioId }
+            );
 
             return usuarioId;
         }
         catch (SqlException ex) when (ex.Number is 2601 or 2627)
-        { throw new ApplicationException("EMAIL_DUPLICATE"); }
+        {
+            throw new ApplicationException("EMAIL_DUPLICATE");
+        }
         catch (SqlException ex) when (ex.Message.Contains("EMAIL_DUPLICATE"))
-        { throw new ApplicationException("EMAIL_DUPLICATE"); }
+        {
+            throw new ApplicationException("EMAIL_DUPLICATE");
+        }
     }
 
-    public async Task<(int userId, string nombre, string? apellido, string correo, string rol, string estadoUsuario, string pwdHash)?> GetByCorreoAsync(string correo)
+    public async Task<(int userId, string nombre, string? apellido, string correo, string rol, string estadoUsuario, string pwdHash)?>
+        GetByCorreoAsync(string correo)
     {
         using var sql = new SqlConnection(_cn);
         var row = await sql.QueryFirstOrDefaultAsync(
@@ -105,7 +114,7 @@ public class AuthService
             }
             catch
             {
-                isActive = true; 
+                isActive = true;
             }
 
             estadoUsuario = isActive ? "ACTIVE" : "PAUSED";
@@ -117,24 +126,45 @@ public class AuthService
     public async Task CreateSessionAsync(int userId, string token, DateTime expireAt, string? device, string? ip)
     {
         using var sql = new SqlConnection(_cn);
-        await sql.ExecuteAsync("dbo.usp_Sesion_Create",
+        await sql.OpenAsync();
+        using var tx = sql.BeginTransaction();
+
+        await sql.ExecuteAsync(
+            "dbo.usp_Sesion_Create",
             new { UsuarioID = userId, Token = token, DeviceInfo = device, IP = ip, ExpireAt = expireAt },
-            commandType: CommandType.StoredProcedure);
+            commandType: CommandType.StoredProcedure,
+            transaction: tx
+        );
+
+        await sql.ExecuteAsync(
+            @"UPDATE dbo.Usuario
+              SET LastLogin = SYSUTCDATETIME()
+              WHERE UsuarioID = @uid",
+            new { uid = userId },
+            transaction: tx
+        );
+
+        tx.Commit();
     }
 
     public async Task<int> InvalidateSessionAsync(string token)
     {
         using var sql = new SqlConnection(_cn);
-        return await sql.ExecuteScalarAsync<int>("dbo.usp_Sesion_Invalidate",
-            new { Token = token }, commandType: CommandType.StoredProcedure);
+        return await sql.ExecuteScalarAsync<int>(
+            "dbo.usp_Sesion_Invalidate",
+            new { Token = token },
+            commandType: CommandType.StoredProcedure
+        );
     }
 
     public async Task UpdateUserRoleAsync(int usuarioId, string rol, int? by)
     {
         using var sql = new SqlConnection(_cn);
-        await sql.ExecuteAsync("dbo.usp_UsuarioRol_AssignOrUpdate",
+        await sql.ExecuteAsync(
+            "dbo.usp_UsuarioRol_AssignOrUpdate",
             new { UsuarioID = usuarioId, NombreRol = rol, AssignedBy = by },
-            commandType: CommandType.StoredProcedure);
+            commandType: CommandType.StoredProcedure
+        );
     }
 
     public record UserListItem(
@@ -159,13 +189,11 @@ public class AuthService
                 u.Apellido,
                 u.Correo,
                 u.Telefono,
-                Rol = ISNULL((
-                    SELECT TOP (1) r.NombreRol
-                    FROM dbo.UsuarioRol ur
-                    JOIN dbo.Rol r ON r.RolID = ur.RolID
-                    WHERE ur.UsuarioID = u.UsuarioID
-                    ORDER BY ur.AssignedAt DESC
-                ), 'Empleado'),
+                Rol = ISNULL((SELECT TOP (1) r.NombreRol
+                              FROM dbo.UsuarioRol ur
+                              JOIN dbo.Rol r ON r.RolID = ur.RolID
+                              WHERE ur.UsuarioID = u.UsuarioID
+                              ORDER BY ur.AssignedAt DESC), 'Empleado'),
                 u.IsActive,
                 u.EstadoUsuario
             FROM dbo.Usuario u
@@ -174,7 +202,11 @@ public class AuthService
         return data;
     }
 
-    public async Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword, string? currentToken)
+    public async Task<bool> ChangePasswordAsync(
+        int userId,
+        string currentPassword,
+        string newPassword,
+        string? currentToken)
     {
         using var sql = new SqlConnection(_cn);
         await sql.OpenAsync();
@@ -187,10 +219,16 @@ public class AuthService
         ", new { uid = userId }, tx);
 
         if (row.UsuarioID == 0)
-        { tx.Rollback(); return false; }
+        {
+            tx.Rollback();
+            return false;
+        }
 
         if (!VerifyPassword(currentPassword, row.PasswordHash))
-        { tx.Rollback(); return false; }
+        {
+            tx.Rollback();
+            return false;
+        }
 
         var salt = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
         var newHash = HashPassword(newPassword, salt);
@@ -256,8 +294,12 @@ public class AuthService
 
     public async Task UpdateUserBasicAsync(
         int usuarioId,
-        string? nombre, string? apellido, string? correo, string? telefono,
-        string? rol, int? by)
+        string? nombre,
+        string? apellido,
+        string? correo,
+        string? telefono,
+        string? rol,
+        int? by)
     {
         using var sql = new SqlConnection(_cn);
         await sql.OpenAsync();
@@ -270,6 +312,7 @@ public class AuthService
                 FROM dbo.Usuario
                 WHERE Correo = @correo AND UsuarioID <> @usuarioId
             ", new { correo, usuarioId }, tx);
+
             if (exists > 0)
             {
                 tx.Rollback();
@@ -293,11 +336,90 @@ public class AuthService
             await sql.ExecuteAsync(
                 "dbo.usp_UsuarioRol_AssignOrUpdate",
                 new { UsuarioID = usuarioId, NombreRol = rol, AssignedBy = by },
-                tx, commandType: CommandType.StoredProcedure
+                tx,
+                commandType: CommandType.StoredProcedure
             );
         }
 
         tx.Commit();
     }
-}
 
+    public async Task<UserProfileDto?> GetProfileAsync(int usuarioId)
+    {
+        using var sql = new SqlConnection(_cn);
+
+        var row = await sql.QueryFirstOrDefaultAsync(@"
+            SELECT TOP 1
+                u.UsuarioID,
+                u.Nombre,
+                u.Apellido,
+                u.Correo,
+                u.Telefono,
+                u.FechaRegistro,
+                u.LastLogin,
+                u.EstadoUsuario,
+                Rol = ISNULL((SELECT TOP (1) r.NombreRol
+                              FROM dbo.UsuarioRol ur
+                              JOIN dbo.Rol r ON r.RolID = ur.RolID
+                              WHERE ur.UsuarioID = u.UsuarioID
+                              ORDER BY ur.AssignedAt DESC), 'Empleado')
+            FROM dbo.Usuario u
+            WHERE u.UsuarioID = @uid
+        ", new { uid = usuarioId });
+
+        if (row == null) return null;
+
+        string estado = (string?)row.EstadoUsuario ?? "ACTIVE";
+
+        return new UserProfileDto(
+            row.UsuarioID,
+            row.Nombre,
+            (string?)row.Apellido,
+            row.Correo,
+            (string?)row.Telefono,
+            row.Rol,
+            row.FechaRegistro,
+            (DateTime?)row.LastLogin,
+            estado
+        );
+    }
+
+    public async Task UpdateOwnProfileAsync(
+        int usuarioId,
+        string? nombre,
+        string? apellido,
+        string? correo,
+        string? telefono)
+    {
+        using var sql = new SqlConnection(_cn);
+        await sql.OpenAsync();
+        using var tx = sql.BeginTransaction();
+
+        if (!string.IsNullOrWhiteSpace(correo))
+        {
+            var exists = await sql.ExecuteScalarAsync<int>(@"
+                SELECT COUNT(1)
+                FROM dbo.Usuario
+                WHERE Correo = @correo AND UsuarioID <> @usuarioId
+            ", new { correo, usuarioId }, tx);
+
+            if (exists > 0)
+            {
+                tx.Rollback();
+                throw new ApplicationException("EMAIL_DUPLICATE");
+            }
+        }
+
+        await sql.ExecuteAsync(@"
+            UPDATE dbo.Usuario
+               SET Nombre   = COALESCE(@nombre, Nombre),
+                   Apellido = COALESCE(@apellido, Apellido),
+                   Correo   = COALESCE(@correo, Correo),
+                   Telefono = COALESCE(@telefono, Telefono),
+                   UpdatedAt = SYSUTCDATETIME()
+             WHERE UsuarioID = @usuarioId
+        ", new { usuarioId, nombre, apellido, correo, telefono }, tx);
+
+        tx.Commit();
+    }
+}

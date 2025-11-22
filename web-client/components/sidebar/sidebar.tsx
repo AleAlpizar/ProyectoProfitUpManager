@@ -29,7 +29,7 @@ const Sidebar: React.FC = () => {
   const isAdmin = normalizedRole === "ADMINISTRADOR";
   const isSeller =
     normalizedRole === "VENDEDOR" ||
-    normalizedRole === "EMPLEADO"; 
+    normalizedRole === "EMPLEADO";
 
   const isGuest = !isAuthenticated || (!isAdmin && !isSeller);
 
@@ -195,7 +195,7 @@ const Sidebar: React.FC = () => {
                 className="flex items-center gap-3 text-left"
                 onClick={() => {
                   if (isAuthenticated) {
-                    router.push("/settings");
+                    router.push("/Perfil/perfil");
                   }
                 }}
                 disabled={!isAuthenticated}

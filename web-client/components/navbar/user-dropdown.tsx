@@ -29,7 +29,7 @@ export const UserDropdown: React.FC = () => {
   const onAction = async (key: React.Key) => {
     switch (key) {
       case "profile":
-        router.push("/perfil");
+        router.push("/Perfil/perfil"); 
         break;
       case "logout":
         try {

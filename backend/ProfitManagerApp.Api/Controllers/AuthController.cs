@@ -1,15 +1,17 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using ProfitManagerApp.Api.Auth;
 using static AuthService;
 
 [ApiController]
 [Route("auth")]
-[Authorize] 
+[Authorize]
 public class AuthController : ControllerBase
 {
     private readonly AuthService _auth;
@@ -17,7 +19,8 @@ public class AuthController : ControllerBase
 
     public AuthController(AuthService auth, JwtTokenService jwt)
     {
-        _auth = auth; _jwt = jwt;
+        _auth = auth;
+        _jwt = jwt;
     }
 
     private int? GetUserId()
@@ -29,6 +32,7 @@ public class AuthController : ControllerBase
 
         return int.TryParse(v, out var id) ? id : (int?)null;
     }
+
     [HttpPost("register")]
     [Authorize(Roles = "Administrador")]
     public async Task<IActionResult> Register([FromBody] RegisterUserDto dto)
@@ -44,6 +48,7 @@ public class AuthController : ControllerBase
             return Conflict(new { message = "El correo ya está registrado." });
         }
     }
+
     [HttpPost("login")]
     [AllowAnonymous]
     public async Task<IActionResult> Login([FromBody] LoginDto dto)
@@ -77,7 +82,9 @@ public class AuthController : ControllerBase
 
         var (token, expireAt) = _jwt.CreateToken(u.Value.userId, u.Value.correo, u.Value.rol);
         await _auth.CreateSessionAsync(
-            u.Value.userId, token, expireAt,
+            u.Value.userId,
+            token,
+            expireAt,
             Request.Headers["User-Agent"].ToString(),
             HttpContext.Connection.RemoteIpAddress?.ToString()
         );
@@ -90,7 +97,8 @@ public class AuthController : ControllerBase
     {
         var bearer = Request.Headers["Authorization"].ToString();
         var token = bearer?.Split(' ').LastOrDefault();
-        if (string.IsNullOrWhiteSpace(token)) return BadRequest(new { message = "Token no presente" });
+        if (string.IsNullOrWhiteSpace(token))
+            return BadRequest(new { message = "Token no presente" });
 
         await _auth.InvalidateSessionAsync(token!);
         return Ok(new { message = "Sesión cerrada" });
@@ -127,8 +135,16 @@ public class AuthController : ControllerBase
         if (string.IsNullOrWhiteSpace(dto.CurrentPassword) || string.IsNullOrWhiteSpace(dto.NewPassword))
             return BadRequest(new { message = "Contraseña actual y nueva son obligatorias." });
 
-        if (dto.NewPassword.Length < 8 || !dto.NewPassword.Any(char.IsUpper) || !dto.NewPassword.Any(char.IsLower) || !dto.NewPassword.Any(char.IsDigit))
-            return BadRequest(new { message = "La nueva contraseña debe tener al menos 8 caracteres, mayúsculas, minúsculas y números." });
+        if (dto.NewPassword.Length < 8 ||
+            !dto.NewPassword.Any(char.IsUpper) ||
+            !dto.NewPassword.Any(char.IsLower) ||
+            !dto.NewPassword.Any(char.IsDigit))
+        {
+            return BadRequest(new
+            {
+                message = "La nueva contraseña debe tener al menos 8 caracteres, mayúsculas, minúsculas y números."
+            });
+        }
 
         var userId = GetUserId();
         if (userId is null) return Unauthorized();
@@ -160,7 +176,13 @@ public class AuthController : ControllerBase
         return Ok(data);
     }
 
-    public record UpdateUserDto(string? Nombre, string? Apellido, string? Correo, string? Telefono, string? Rol);
+    public record UpdateUserDto(
+        string? Nombre,
+        string? Apellido,
+        string? Correo,
+        string? Telefono,
+        string? Rol
+    );
 
     [HttpPatch("users/{usuarioId:int}/status/{estado}")]
     [Authorize(Roles = "Administrador")]
@@ -178,8 +200,51 @@ public class AuthController : ControllerBase
         try
         {
             var by = GetUserId();
-            await _auth.UpdateUserBasicAsync(usuarioId, dto.Nombre, dto.Apellido, dto.Correo, dto.Telefono, dto.Rol, by);
+            await _auth.UpdateUserBasicAsync(
+                usuarioId,
+                dto.Nombre,
+                dto.Apellido,
+                dto.Correo,
+                dto.Telefono,
+                dto.Rol,
+                by
+            );
             return Ok(new { usuarioId });
+        }
+        catch (ApplicationException ex) when (ex.Message == "EMAIL_DUPLICATE")
+        {
+            return Conflict(new { message = "El correo ya está registrado." });
+        }
+    }
+    [HttpGet("profile")]
+    public async Task<ActionResult<UserProfileDto>> Profile()
+    {
+        var userId = GetUserId();
+        if (userId is null) return Unauthorized();
+
+        var profile = await _auth.GetProfileAsync(userId.Value);
+        if (profile is null) return NotFound();
+
+        return Ok(profile);
+    }
+
+    [HttpPut("profile")]
+    public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileRequest dto)
+    {
+        var userId = GetUserId();
+        if (userId is null) return Unauthorized();
+
+        try
+        {
+            await _auth.UpdateOwnProfileAsync(
+                userId.Value,
+                dto.Nombre,
+                dto.Apellido,
+                dto.Correo,
+                dto.Telefono
+            );
+
+            return NoContent();
         }
         catch (ApplicationException ex) when (ex.Message == "EMAIL_DUPLICATE")
         {

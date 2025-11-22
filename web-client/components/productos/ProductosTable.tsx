@@ -71,7 +71,6 @@ export default function ProductosTable({ filtroId }: Props) {
         const list = await call<Unidad[]>(`/api/unidades`, { method: "GET" });
         setUnidades((list ?? []).filter((u) => u.activo));
       } catch {
-        // ignorar
       }
     })();
   }, [call]);
@@ -108,6 +107,11 @@ export default function ProductosTable({ filtroId }: Props) {
   const [updateError, setUpdateError] = React.useState<string | null>(null);
 
   const [confirmSaveOpen, setConfirmSaveOpen] = React.useState(false);
+
+  const [confirmEstado, setConfirmEstado] = React.useState<{
+    tipo: "inactivar" | "reactivar";
+    row: Row;
+  } | null>(null);
 
   const [detalleId, setDetalleId] = React.useState<number | null>(null);
   const [openEditarStock, setOpenEditarStock] = React.useState<{
@@ -218,7 +222,6 @@ export default function ProductosTable({ filtroId }: Props) {
   const requestSave = () => setConfirmSaveOpen(true);
 
   const doInactivar = async (row: Row) => {
-    if (!confirm(`¿Inactivar el producto "${row.nombre}"?`)) return;
     const { ok } = await inactivar(row.productoID);
     if (!ok) throw new Error();
     setRows((prev) =>
@@ -230,7 +233,6 @@ export default function ProductosTable({ filtroId }: Props) {
   };
 
   const doReactivar = async (row: Row) => {
-    if (!confirm(`¿Reactivar el producto "${row.nombre}"?`)) return;
     await call<void>(`/api/productos/${row.productoID}/activar`, {
       method: "POST",
     });
@@ -240,6 +242,28 @@ export default function ProductosTable({ filtroId }: Props) {
       )
     );
     setToast({ kind: "ok", msg: `Producto "${row.nombre}" reactivado.` });
+  };
+
+  const handleConfirmEstado = async () => {
+    if (!confirmEstado) return;
+    const { tipo, row } = confirmEstado;
+    try {
+      if (tipo === "inactivar") {
+        await doInactivar(row);
+      } else {
+        await doReactivar(row);
+      }
+    } catch {
+      setToast({
+        kind: "err",
+        msg:
+          tipo === "inactivar"
+            ? `No se pudo inactivar el producto "${row.nombre}".`
+            : `No se pudo reactivar el producto "${row.nombre}".`,
+      });
+    } finally {
+      setConfirmEstado(null);
+    }
   };
 
   const showDetalle = async (id: number) => {
@@ -381,7 +405,12 @@ export default function ProductosTable({ filtroId }: Props) {
 
                         {activo ? (
                           <button
-                            onClick={() => doInactivar(p)}
+                            onClick={() =>
+                              setConfirmEstado({
+                                tipo: "inactivar",
+                                row: p,
+                              })
+                            }
                             className="rounded-xl border px-3 py-1.5 text-xs font-semibold text-white transition"
                             style={{
                               backgroundColor: `${WINE}1A`,
@@ -398,7 +427,12 @@ export default function ProductosTable({ filtroId }: Props) {
                           </button>
                         ) : (
                           <button
-                            onClick={() => doReactivar(p)}
+                            onClick={() =>
+                              setConfirmEstado({
+                                tipo: "reactivar",
+                                row: p,
+                              })
+                            }
                             className="rounded-xl border px-3 py-1.5 text-xs font-semibold text-white transition"
                             style={{
                               backgroundColor: `${WINE}1A`,
@@ -602,7 +636,7 @@ export default function ProductosTable({ filtroId }: Props) {
 
       {editModal.open && (
         <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 p-4"
+          className="fixed inset-0 z-[9999] flex items-center justifycenter bg-black/60 p-4"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) closeEdit();
           }}
@@ -844,6 +878,50 @@ export default function ProductosTable({ filtroId }: Props) {
         </div>
       )}
 
+      {confirmEstado && (
+        <div
+          className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 px-4"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setConfirmEstado(null);
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-white/10 bg-[#121618] p-5 text-white shadow-2xl"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <h3 className="mb-2 text-lg font-semibold">
+              {confirmEstado.tipo === "inactivar"
+                ? "Inactivar producto"
+                : "Reactivar producto"}
+            </h3>
+            <p className="mb-5 text-sm text-white/80">
+              {confirmEstado.tipo === "inactivar"
+                ? `¿Seguro que deseas inactivar el producto "${confirmEstado.row.nombre}"?`
+                : `¿Seguro que deseas reactivar el producto "${confirmEstado.row.nombre}"?`}
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10"
+                onClick={() => setConfirmEstado(null)}
+              >
+                No, volver
+              </button>
+              <button
+                type="button"
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-white"
+                style={{ backgroundColor: WINE }}
+                onClick={handleConfirmEstado}
+              >
+                {confirmEstado.tipo === "inactivar"
+                  ? "Sí, inactivar"
+                  : "Sí, reactivar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {openEditarStock !== null && (
         <EditarCantidadModal
           open={openEditarStock !== null}
@@ -861,7 +939,6 @@ export default function ProductosTable({ filtroId }: Props) {
     </div>
   );
 }
-
 
 const Info: React.FC<{ label: string; value: any; full?: boolean }> = ({
   label,

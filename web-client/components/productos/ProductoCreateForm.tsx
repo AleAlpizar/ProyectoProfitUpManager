@@ -19,8 +19,10 @@ export default function ProductoCreateForm() {
     successId,
   } = useProductoCreate();
 
-  const { data: unidadesRaw, loading: loadingUnits, error: unidadesError } = useUnidades();
-  const { data: bodegasRaw, loading: loadingBodegas, error: bodegasError } = useBodegas();
+  const { data: unidadesRaw, loading: loadingUnits, error: unidadesError } =
+    useUnidades();
+  const { data: bodegasRaw, loading: loadingBodegas, error: bodegasError } =
+    useBodegas();
 
   const unidades = useMemo(() => unidadesRaw ?? [], [unidadesRaw]);
   const bodegas = useMemo(() => bodegasRaw ?? [], [bodegasRaw]);
@@ -120,7 +122,9 @@ export default function ProductoCreateForm() {
           <div className="inline-flex items-center gap-2 rounded-full bg-[#A30862]/10 px-2.5 py-1 text-[11px] text-[#E6E9EA]">
             Registro de producto
           </div>
-          <h2 className="mt-2 text-xl font-semibold text-white">Nuevo producto</h2>
+          <h2 className="mt-2 text-xl font-semibold text-white">
+            Nuevo producto
+          </h2>
           <p className="text-sm text-[#8B9AA0]">
             Completa los campos obligatorios marcados con *
           </p>
@@ -133,7 +137,9 @@ export default function ProductoCreateForm() {
               className="flex items-start justify-between gap-3 rounded-2xl border border-[#A30862]/40 bg-[#A30862]/10 px-4 py-3 text-sm text-[#F2C7DA]"
             >
               <span>
-                ✅ Producto <b className="text-white">#{successId}</b> se guardó correctamente.
+                 Producto{" "}
+                <b className="text-white">#{successId}</b> se guardó
+                correctamente.
               </span>
               <button
                 type="button"
@@ -199,28 +205,42 @@ export default function ProductoCreateForm() {
           />
 
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-[#8B9AA0]">Unidad de almacenamiento*</label>
-            <select
-              className="select-dark w-full"
-              value={values.unidadAlmacenamientoID ?? ""}
-              onChange={(e) =>
-                setField(
-                  "unidadAlmacenamientoID",
-                  e.target.value === "" ? null : Number(e.target.value)
-                )
-              }
-              disabled={loadingUnits}
-              aria-invalid={!!errors.unidadAlmacenamientoID}
-            >
-              <option value="">
-                {loadingUnits ? "Cargando..." : "Selecciona una unidad"}
-              </option>
-              {unidades.map((u) => (
-                <option key={u.unidadID} value={u.unidadID}>
-                  {u.nombre} {u.codigo ? `(${u.codigo})` : ""}
+            <label className="text-xs text-[#8B9AA0]">
+              Unidad de almacenamiento*
+            </label>
+            <div className="relative">
+              <select
+                className="select-dark w-full pr-8"
+                value={values.unidadAlmacenamientoID ?? ""}
+                onChange={(e) =>
+                  setField(
+                    "unidadAlmacenamientoID",
+                    e.target.value === "" ? null : Number(e.target.value)
+                  )
+                }
+                disabled={loadingUnits}
+                aria-invalid={!!errors.unidadAlmacenamientoID}
+              >
+                <option value="">
+                  {loadingUnits ? "Cargando..." : "Selecciona una unidad"}
                 </option>
-              ))}
-            </select>
+                {unidades.map((u) => (
+                  <option key={u.unidadID} value={u.unidadID}>
+                    {u.nombre} {u.codigo ? `(${u.codigo})` : ""}
+                  </option>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[#6B7280] text-xs">
+                <svg
+                  viewBox="0 0 20 20"
+                  aria-hidden
+                  className="h-4 w-4"
+                  fill="currentColor"
+                >
+                  <path d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.25a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08Z" />
+                </svg>
+              </span>
+            </div>
             {errors.unidadAlmacenamientoID ? (
               <span className="text-xs text-rose-300">
                 {errors.unidadAlmacenamientoID}
@@ -230,23 +250,35 @@ export default function ProductoCreateForm() {
 
           <div className="flex flex-col gap-1">
             <label className="text-xs text-[#8B9AA0]">Bodega (opcional)</label>
-            <select
-              className="select-dark w-full"
-              value={bodegaID}
-              onChange={(e) =>
-                setBodegaID(e.target.value === "" ? "" : Number(e.target.value))
-              }
-              disabled={loadingBodegas}
-            >
-              <option value="">
-                {loadingBodegas ? "Cargando..." : "Selecciona una bodega"}
-              </option>
-              {bodegas.map((b) => (
-                <option key={b.bodegaID} value={b.bodegaID}>
-                  {b.nombre} {b.codigo ? `(${b.codigo})` : ""}
+            <div className="relative">
+              <select
+                className="select-dark w-full pr-8"
+                value={bodegaID}
+                onChange={(e) =>
+                  setBodegaID(e.target.value === "" ? "" : Number(e.target.value))
+                }
+                disabled={loadingBodegas}
+              >
+                <option value="">
+                  {loadingBodegas ? "Cargando..." : "Selecciona una bodega"}
                 </option>
-              ))}
-            </select>
+                {bodegas.map((b) => (
+                  <option key={b.bodegaID} value={b.bodegaID}>
+                    {b.nombre} {b.codigo ? `(${b.codigo})` : ""}
+                  </option>
+                ))}
+              </select>
+              <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[#6B7280] text-xs">
+                <svg
+                  viewBox="0 0 20 20"
+                  aria-hidden
+                  className="h-4 w-4"
+                  fill="currentColor"
+                >
+                  <path d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 10.94l3.71-3.71a.75.75 0 1 1 1.06 1.06l-4.24 4.25a.75.75 0 0 1-1.06 0L5.21 8.29a.75.75 0 0 1 .02-1.08Z" />
+                </svg>
+              </span>
+            </div>
           </div>
 
           <LabeledInput
@@ -347,26 +379,35 @@ export default function ProductoCreateForm() {
         .select-dark {
           border-radius: 1rem;
           border: 1px solid rgba(255, 255, 255, 0.1);
-          background-color: #1c2224;
-          color: #e6e9ea;
+          background-color: #111827;
+          color: #e5e7eb;
           padding: 0.5rem 0.75rem;
           font-size: 0.875rem;
           outline: none;
           appearance: none;
-          color-scheme: dark;
           transition: box-shadow 0.2s, border-color 0.2s, background-color 0.2s;
         }
 
         .select-dark:focus {
-          border-color: rgba(163, 8, 98, 0.6);
-          box-shadow: 0 0 0 2px rgba(163, 8, 98, 0.4);
+          border-color: rgba(163, 8, 98, 0.8);
+          box-shadow: 0 0 0 2px rgba(163, 8, 98, 0.5);
+          background-color: #020617;
         }
 
-        /* 🔧 Arreglo: dejamos el fondo nativo y usamos texto oscuro
-           para que se vea sobre el menú blanco del sistema */
-        .select-dark option,
-        .select-dark optgroup {
-          color: #111827;
+        .select-dark:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        /* Opciones dentro del dropdown */
+        .select-dark option {
+          background-color: #020617;
+          color: #e5e7eb;
+        }
+
+        /* Placeholder (value="") un poco más tenue */
+        .select-dark option[value=""] {
+          color: #9ca3af;
         }
 
         .select-dark option:disabled {

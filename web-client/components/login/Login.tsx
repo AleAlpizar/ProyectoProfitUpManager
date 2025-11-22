@@ -4,17 +4,13 @@ import { useSession } from "../hooks/useSession";
 
 export default function Login() {
   const router = useRouter();
-  const { login, isAuthenticated } = useSession();
+  const { login, ready } = useSession();
 
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const [showPass, setShowPass] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (isAuthenticated) router.replace("/");
-  }, [isAuthenticated, router]);
 
   const isEmailValid = React.useMemo(() => /\S+@\S+\.\S+/.test(email), [email]);
   const isPassValid = password.length >= 6;
@@ -38,7 +34,6 @@ export default function Login() {
     try {
       setLoading(true);
       await login({ correo: email.trim(), password });
-      router.replace("/");
     } catch (err: any) {
       setError(err?.message || "Error iniciando sesión");
     } finally {
@@ -77,7 +72,7 @@ export default function Login() {
           </div>
         )}
 
-        <form onSubmit={onSubmit} className="space-y-4" aria-busy={loading}>
+        <form onSubmit={onSubmit} className="space-y-4" aria-busy={loading || !ready}>
           <div className="space-y-1.5">
             <label htmlFor="email" className="block text-xs font-medium text-white">
               Correo
@@ -155,7 +150,7 @@ export default function Login() {
 
           <button
             type="submit"
-            disabled={!canSubmit}
+            disabled={!canSubmit || !ready}
             className={[
               "inline-flex w-full items-center justify-center rounded-lg px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition",
               vino.bg,

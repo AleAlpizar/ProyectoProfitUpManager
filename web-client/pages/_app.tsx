@@ -4,7 +4,7 @@ import { useRouter } from "next/router";
 
 import "../styles/globals.css";
 import { Layout } from "../components/layout/layout";
-import { useSession } from "../components/hooks/useSession";
+import { useSession, SessionProvider } from "../components/hooks/useSession";
 import { ConfirmProvider } from "../components/modals/ConfirmProvider";
 
 function SessionGate({ children }: { children: React.ReactNode }) {
@@ -17,8 +17,16 @@ function SessionGate({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (!ready) return;
 
-    if (!isAuthenticated && !isAuthRoute) {
+    const currentPath = router.pathname;
+
+    if (!isAuthenticated && !isAuthRoute && currentPath !== "/login") {
       router.replace("/login");
+      return;
+    }
+
+    if (isAuthenticated && isAuthRoute && currentPath !== "/") {
+      router.replace("/");
+      return;
     }
   }, [ready, isAuthenticated, isAuthRoute, router]);
 
@@ -27,6 +35,10 @@ function SessionGate({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated && !isAuthRoute) {
+    return <div style={{ minHeight: "100vh", background: "#0B0F0E" }} />;
+  }
+
+  if (isAuthenticated && isAuthRoute) {
     return <div style={{ minHeight: "100vh", background: "#0B0F0E" }} />;
   }
 
@@ -39,12 +51,14 @@ export default function App({ Component, pageProps }: AppProps) {
   const noChrome = (Component as WithNoChrome).noChrome === true;
 
   return (
-    <SessionGate>
-      <ConfirmProvider>
-        <Layout noChrome={noChrome}>
-          <Component {...pageProps} />
-        </Layout>
-      </ConfirmProvider>
-    </SessionGate>
+    <SessionProvider>
+      <SessionGate>
+        <ConfirmProvider>
+          <Layout noChrome={noChrome}>
+            <Component {...pageProps} />
+          </Layout>
+        </ConfirmProvider>
+      </SessionGate>
+    </SessionProvider>
   );
 }

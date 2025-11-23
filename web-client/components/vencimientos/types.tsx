@@ -16,6 +16,7 @@ export type VencimientoDetalleDto = {
   titulo: string;
   descripcion?: string | null;
   tipoDocumentoVencimientoID: number;
+  tipoNombre: string;
   referencia?: string | null;
   fechaEmision?: string | null;      
   fechaVencimiento: string;         

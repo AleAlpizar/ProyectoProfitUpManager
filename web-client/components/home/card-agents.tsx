@@ -16,10 +16,14 @@ export const CardAgents: React.FC<{
   subtitle?: string;
   total?: number;
   onPrimary?: () => void;
-}> = ({ title = "Agents", subtitle = "Conoce a tus agentes y sus rankings para obtener mejores resultados", total = 12, onPrimary }) => {
+}> = ({
+  title = "Agents",
+  subtitle = "Conoce a tus agentes y sus rankings para obtener mejores resultados",
+  total = 12,
+  onPrimary,
+}) => {
   return (
     <Card
-      isBlurred
       variant="flat"
       css={{
         mw: "400px",
@@ -28,10 +32,16 @@ export const CardAgents: React.FC<{
         bg: "#121618",
         border: "1px solid rgba(255,255,255,0.08)",
         borderRadius: "$xl",
-        shadow: "0 20px 60px rgba(0,0,0,.45)",
+        boxShadow: "0 20px 60px rgba(0,0,0,.45)",
       }}
     >
-      <Card.Body css={{ py: "$10", gap: "$6" }}>
+      <Card.Body
+        css={{
+          paddingTop: "40px",
+          paddingBottom: "40px",
+          gap: 24,
+        }}
+      >
         <Flex justify={"center"}>
           <Flex
             align={"center"}
@@ -49,7 +59,14 @@ export const CardAgents: React.FC<{
             <Text css={{ color: "#A30862" }}>⭐</Text>
             <Box>
               <Flex direction={"column"}>
-                <Text h3 css={{ m: 0, color: "#E6E9EA", letterSpacing: "0.2px" }}>
+                <Text
+                  h3
+                  css={{
+                    m: 0,
+                    color: "#E6E9EA",
+                    letterSpacing: "0.2px",
+                  }}
+                >
                   {title}
                 </Text>
                 <Text span size={"$xs"} css={{ color: "#8B9AA0", mt: "$1" }}>

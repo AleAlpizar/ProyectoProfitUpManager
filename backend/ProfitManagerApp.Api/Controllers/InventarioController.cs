@@ -7,7 +7,7 @@ using ProfitManagerApp.Domain.Inventory.Dto;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Administrador,Vendedor")] 
+[Authorize(Roles = "Administrador,Vendedor")]
 public class InventarioController : ControllerBase
 {
     private readonly IInventarioRepository _repo;
@@ -94,6 +94,41 @@ public class InventarioController : ControllerBase
         return NoContent();
     }
 
+    [HttpPost("ajuste/salida-manual")]
+    public async Task<IActionResult> AjusteSalidaManual([FromBody] AjusteInventarioDto dto)
+    {
+        if (dto is null) return BadRequest(new { code = "BODY_REQUIRED" });
+        if (dto.ProductoID <= 0 || dto.BodegaID <= 0) return BadRequest(new { code = "INVALID_IDS" });
+        if (dto.Cantidad <= 0) return Problem(title: "INVALID_QTY", statusCode: 400);
+        if (string.IsNullOrWhiteSpace(dto.Motivo))
+            return Problem(title: "MOTIVO_REQUIRED", detail: "Debe indicar un motivo para el ajuste de salida.", statusCode: 400);
+
+        dto.TipoMovimiento = "AjusteSalidaManual";
+
+        if (!await _repo.ExisteProductoAsync(dto.ProductoID))
+            return NotFound(new { code = "PRODUCTO_NOT_FOUND_OR_INACTIVE" });
+        if (!await _repo.ExisteBodegaAsync(dto.BodegaID))
+            return NotFound(new { code = "BODEGA_NOT_FOUND_OR_INACTIVE" });
+
+        var asignado = await _repo.ExisteAsignacionAsync(dto.ProductoID, dto.BodegaID);
+        if (!asignado)
+            return Conflict(new { code = "ASIGNACION_REQUERIDA", msg = "El producto debe estar asignado previamente a la bodega." });
+
+        int? userId = null;
+        var idClaim = User?.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (int.TryParse(idClaim, out var idVal)) userId = idVal;
+
+        try
+        {
+            await _repo.AjusteAsync(dto, userId);
+            return NoContent();
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("STOCK_INSUFICIENTE", StringComparison.OrdinalIgnoreCase))
+        {
+            return Problem(title: "STOCK_INSUFICIENTE", detail: "No hay stock suficiente para realizar el ajuste.", statusCode: 409);
+        }
+    }
+
     [HttpGet("disponibilidad-por-productos")]
     public async Task<IActionResult> DisponibilidadPorProductos(
       [FromQuery] DisponibilidadRequestDto dto,
@@ -113,5 +148,40 @@ public class InventarioController : ControllerBase
             .ToList();
 
         return Ok(payload);
+    }
+
+    [HttpGet("historial")]
+    public async Task<IActionResult> Historial(
+        [FromQuery] int? productoId,
+        [FromQuery] int? bodegaId,
+        [FromQuery] string? tipoMovimiento,
+        [FromQuery] int? usuarioId,
+        [FromQuery] DateTime? desde,
+        [FromQuery] DateTime? hasta,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken ct = default)
+    {
+        var query = new InventarioHistorialQueryDto
+        {
+            ProductoID = productoId,
+            BodegaID = bodegaId,
+            TipoMovimiento = string.IsNullOrWhiteSpace(tipoMovimiento) ? null : tipoMovimiento,
+            UsuarioID = usuarioId,
+            Desde = desde,
+            Hasta = hasta,
+            Page = page,
+            PageSize = pageSize
+        };
+
+        var (items, total) = await _repo.GetHistorialAsync(query, ct);
+
+        return Ok(new
+        {
+            items,
+            total,
+            page = query.Page,
+            pageSize = query.PageSize
+        });
     }
 }

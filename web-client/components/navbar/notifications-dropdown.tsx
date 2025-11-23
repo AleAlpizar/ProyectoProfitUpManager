@@ -1,12 +1,12 @@
 import React from "react";
-import { Dropdown, Navbar, Text, Badge } from "@nextui-org/react";
+import { Dropdown, Navbar, Text, Badge, Button } from "@nextui-org/react";
 import { NotificationIcon } from "../icons/navbar/notificationicon";
 
 type NotificationItem = {
   id: string | number;
   title: string;
   description?: string;
-  time?: string;   // e.g. "hace 2 h"
+  time?: string; 
   unread?: boolean;
 };
 
@@ -48,110 +48,135 @@ export const NotificationsDropdown: React.FC<Props> = ({
 }) => {
   const unreadCount = items.filter((i) => i.unread).length;
 
-  return (
-    <Dropdown placement="bottom-right">
-      <Dropdown.Trigger>
-        <Navbar.Item aria-label="Notificaciones" title="Notificaciones">
-          <div className="relative">
-            <NotificationIcon />
-            {unreadCount > 0 ? (
-              <span
-                aria-hidden
-                className="absolute -right-0.5 -top-0.5 inline-block h-2.5 w-2.5 rounded-full"
-                style={{ background: MAGENTA, boxShadow: `0 0 0 2px ${SURFACE}` }}
-              />
-            ) : null}
-          </div>
-        </Navbar.Item>
-      </Dropdown.Trigger>
+  const renderMenuItems = (): React.ReactElement[] => {
+    const elements: React.ReactElement[] = [];
 
-      <Dropdown.Menu
-        aria-label="Notificaciones"
-        css={{
-          "$$dropdownMenuWidth": "360px",
-          "$$dropdownItemHeight": "auto",
-          bg: SURFACE,
-          border: `1px solid ${BORDER}`,
-          boxShadow: "0 20px 60px rgba(0,0,0,.45)",
-          color: TEXT,
-          "& .nextui-dropdown-item": {
-            py: "$5",
-            alignItems: "flex-start",
-            "&:hover": { bg: "rgba(255,255,255,0.04)" },
-            "& .nextui-dropdown-item-content": { w: "100%", gap: "$2" },
-          },
-        }}
-      >
-        {/* Título SOLO string en v1 */}
-        <Dropdown.Section title="Notificaciones">
-          {/* Cabecera/acción como Item */}
-          <Dropdown.Item key="header" css={{ py: "$2" }}>
-            <div className="flex w-full items-center justify-between">
-              <Text size={"$xs"} css={{ color: MUTED }}>
-                {unreadCount > 0 ? `${unreadCount} sin leer` : "Estás al día"}
-              </Text>
-              <button
-                type="button"
-                onClick={onMarkAllRead}
-                className="text-xs underline underline-offset-2 hover:opacity-90"
-                style={{ color: unreadCount > 0 ? MAGENTA : MUTED }}
-              >
-                {unreadCount > 0 ? "Marcar todo como leído" : "Refrescar"}
-              </button>
-            </div>
-          </Dropdown.Item>
+    elements.push(
+      <Dropdown.Item key="header" css={{ py: "$2" }}>
+        <div className="flex w-full items-center justify-between">
+          <Text size={"$xs"} css={{ color: MUTED }}>
+            {unreadCount > 0 ? `${unreadCount} sin leer` : "Estás al día"}
+          </Text>
+          <button
+            type="button"
+            onClick={() => onMarkAllRead?.()}
+            className="text-xs underline underline-offset-2 hover:opacity-90"
+            style={{ color: unreadCount > 0 ? MAGENTA : MUTED }}
+          >
+            {unreadCount > 0 ? "Marcar todo como leído" : "Refrescar"}
+          </button>
+        </div>
+      </Dropdown.Item>
+    );
 
-          {items.length === 0 ? (
-            <Dropdown.Item key="empty" css={{ py: "$8" }}>
-              <Text css={{ color: MUTED, textAlign: "center", w: "100%" }}>
-                No tienes notificaciones.
-              </Text>
-            </Dropdown.Item>
-          ) : null}
-
-          {items.map((n) => (
-            <Dropdown.Item key={n.id} showFullDescription>
-              <div className="flex w-full items-start gap-3">
-                <span
-                  className="mt-1 inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
-                  style={{ background: n.unread ? MAGENTA : BORDER }}
-                  aria-hidden
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <Text style={{ fontWeight: 600, color: TEXT }}>{n.title}</Text>
-                    {n.unread ? (
-                      <Badge
-                        size="sm"
-                        variant="flat"
-                        css={{
-                          bg: "rgba(149,182,79,.12)", // LIMA/12
-                          color: LIMA,
-                          border: "1px solid rgba(149,182,79,.3)",
-                        }}
-                      >
-                        Nuevo
-                      </Badge>
-                    ) : null}
-                  </div>
-
-                  {n.description ? (
-                    <Text size={"$xs"} css={{ color: MUTED, mt: "$1", lineHeight: 1.4 }}>
-                      {n.description}
-                    </Text>
-                  ) : null}
-
-                  {n.time ? (
-                    <Text size={"$xs"} css={{ color: MUTED, mt: "$2" }}>
-                      {n.time}
-                    </Text>
-                  ) : null}
-                </div>
+    if (items.length === 0) {
+      elements.push(
+        <Dropdown.Item key="empty" css={{ py: "$8" }}>
+          <Text css={{ color: MUTED, textAlign: "center", w: "100%" }}>
+            No tienes notificaciones.
+          </Text>
+        </Dropdown.Item>
+      );
+      return elements;
+    }
+    elements.push(
+      ...items.map((n) => (
+        <Dropdown.Item key={n.id} showFullDescription>
+          <div className="flex w-full items-start gap-3">
+            <span
+              className="mt-1 inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
+              style={{ background: n.unread ? MAGENTA : BORDER }}
+              aria-hidden
+            />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <Text style={{ fontWeight: 600, color: TEXT }}>{n.title}</Text>
+                {n.unread ? (
+                  <Badge
+                    size="sm"
+                    variant="flat"
+                    css={{
+                      bg: "rgba(149,182,79,.12)",
+                      color: LIMA,
+                      border: "1px solid rgba(149,182,79,.3)",
+                    }}
+                  >
+                    Nuevo
+                  </Badge>
+                ) : null}
               </div>
-            </Dropdown.Item>
-          ))}
-        </Dropdown.Section>
-      </Dropdown.Menu>
-    </Dropdown>
+
+              {n.description ? (
+                <Text
+                  size={"$xs"}
+                  css={{ color: MUTED, mt: "$1", lineHeight: 1.4 }}
+                >
+                  {n.description}
+                </Text>
+              ) : null}
+
+              {n.time ? (
+                <Text size={"$xs"} css={{ color: MUTED, mt: "$2" }}>
+                  {n.time}
+                </Text>
+              ) : null}
+            </div>
+          </div>
+        </Dropdown.Item>
+      ))
+    );
+
+    return elements;
+  };
+
+  return (
+    <Navbar.Item aria-label="Notificaciones" title="Notificaciones">
+      <Dropdown placement="bottom-right">
+        <Dropdown.Trigger>
+          <Button
+            auto
+            light
+            css={{ p: 0, minWidth: "auto" }}
+            aria-label="Abrir notificaciones"
+          >
+            <div className="relative">
+              <NotificationIcon />
+              {unreadCount > 0 ? (
+                <span
+                  aria-hidden
+                  className="absolute -right-0.5 -top-0.5 inline-block h-2.5 w-2.5 rounded-full"
+                  style={{
+                    background: MAGENTA,
+                    boxShadow: `0 0 0 2px ${SURFACE}`,
+                  }}
+                />
+              ) : null}
+            </div>
+          </Button>
+        </Dropdown.Trigger>
+
+        <Dropdown.Menu
+          aria-label="Notificaciones"
+          css={{
+            "$$dropdownMenuWidth": "360px",
+            "$$dropdownItemHeight": "auto",
+            bg: SURFACE,
+            border: `1px solid ${BORDER}`,
+            boxShadow: "0 20px 60px rgba(0,0,0,.45)",
+            color: TEXT,
+            "& .nextui-dropdown-item": {
+              py: "$5",
+              alignItems: "flex-start",
+              "&:hover": { bg: "rgba(255,255,255,0.04)" },
+              "& .nextui-dropdown-item-content": { w: "100%", gap: "$2" },
+            },
+          }}
+        >
+          <Dropdown.Section title="Notificaciones">
+            {renderMenuItems()}
+          </Dropdown.Section>
+        </Dropdown.Menu>
+      </Dropdown>
+    </Navbar.Item>
   );
 };

@@ -30,5 +30,8 @@ namespace ProfitManagerApp.Api.Data.Abstractions
 
         Task<IReadOnlyList<StockRowDto>> GetStockAsync(StockQueryDto query, CancellationToken ct = default);
 
+        Task<(IReadOnlyList<InventarioMovimientoRowDto> Items, int Total)> GetHistorialAsync(
+            InventarioHistorialQueryDto query,
+            CancellationToken ct = default);
     }
 }

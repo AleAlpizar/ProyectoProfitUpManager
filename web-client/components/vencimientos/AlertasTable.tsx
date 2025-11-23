@@ -733,10 +733,7 @@ export default function AlertasTable({ onEdit }: Props) {
                         Tipo
                       </div>
                       <div className="text-sm">
-                        {
-                          preview.item
-                            .tipoDocumentoVencimientoID
-                        }
+                        {preview.item.tipoNombre}
                       </div>
                     </div>
                     <div>

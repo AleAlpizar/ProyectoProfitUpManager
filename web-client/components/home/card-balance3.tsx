@@ -5,14 +5,14 @@ import { Box } from "../styles/box";
 import { Flex } from "../styles/flex";
 
 type Props = {
-  title?: string;           
-  subtitle?: string;       
-  amount?: string;           
-  delta?: string;            
-  deltaPositive?: boolean;  
-  downLabel?: string;        
-  upLabel?: string;          
-  vipLabel?: string;        
+  title?: string;
+  subtitle?: string;
+  amount?: string;
+  delta?: string;
+  deltaPositive?: boolean;
+  downLabel?: string;
+  upLabel?: string;
+  vipLabel?: string;
 };
 
 export const CardBalance3: React.FC<Props> = ({
@@ -34,7 +34,6 @@ export const CardBalance3: React.FC<Props> = ({
 
   return (
     <Card
-      isBlurred
       variant="flat"
       css={{
         mw: "400px",
@@ -42,10 +41,16 @@ export const CardBalance3: React.FC<Props> = ({
         borderRadius: "$xl",
         bg: BG,
         border: "1px solid rgba(255,255,255,0.08)",
-        shadow: "0 20px 60px rgba(0,0,0,.45)",
+        boxShadow: "0 20px 60px rgba(0,0,0,.45)",
       }}
     >
-      <Card.Body css={{ py: "$10", gap: "$6" }}>
+      <Card.Body
+        css={{
+          paddingTop: "40px",
+          paddingBottom: "40px",
+          gap: 24,
+        }}
+      >
         <Flex css={{ gap: "$5" }}>
           <Community color={MAGENTA} />
           <Flex direction={"column"}>
@@ -58,7 +63,10 @@ export const CardBalance3: React.FC<Props> = ({
           </Flex>
         </Flex>
 
-        <Flex css={{ gap: "$6", py: "$4" }} align={"center"}>
+        <Flex
+          css={{ gap: "$6", paddingTop: "16px", paddingBottom: "16px" }}
+          align={"center"}
+        >
           <Text span size={"$xl"} css={{ color: TEXT }} weight={"semibold"}>
             {amount}
           </Text>
@@ -71,6 +79,7 @@ export const CardBalance3: React.FC<Props> = ({
             {delta}
           </Text>
         </Flex>
+
         <Flex css={{ gap: "$12" }} align={"center"}>
           <Box>
             <Text span size={"$xs"} css={{ color: LIMA }} weight={"semibold"}>

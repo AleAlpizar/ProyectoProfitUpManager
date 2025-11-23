@@ -24,7 +24,7 @@
         public DateTime FechaVencimiento { get; set; }
         public int NotificarDiasAntes { get; set; }
         public int DaysToDue { get; set; }
-        public string Estado { get; set; } = "VIGENTE"; 
+        public string Estado { get; set; } = "VIGENTE";
     }
 
     public sealed class VencimientoDetalleDto
@@ -33,6 +33,7 @@
         public string Titulo { get; set; } = "";
         public string? Descripcion { get; set; }
         public int TipoDocumentoVencimientoID { get; set; }
+        public string TipoNombre { get; set; } = "";
         public string? Referencia { get; set; }
         public DateTime? FechaEmision { get; set; }
         public DateTime FechaVencimiento { get; set; }

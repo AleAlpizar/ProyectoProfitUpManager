@@ -69,17 +69,20 @@ SELECT CAST(SCOPE_IDENTITY() AS int);";
         {
             const string sql = @"
 SELECT
-  DocumentoVencimientoID,
-  Titulo,
-  Descripcion,
-  TipoDocumentoVencimientoID,
-  Referencia,
-  FechaEmision,
-  FechaVencimiento,
-  NotificarDiasAntes,
-  IsActive
-FROM dbo.DocumentoVencimiento
-WHERE DocumentoVencimientoID = @id;";
+  dv.DocumentoVencimientoID,
+  dv.Titulo,
+  dv.Descripcion,
+  dv.TipoDocumentoVencimientoID,
+  tdv.Nombre AS TipoNombre,
+  dv.Referencia,
+  dv.FechaEmision,
+  dv.FechaVencimiento,
+  dv.NotificarDiasAntes,
+  dv.IsActive
+FROM dbo.DocumentoVencimiento dv
+JOIN dbo.TipoDocumentoVencimiento tdv
+  ON tdv.TipoDocumentoVencimientoID = dv.TipoDocumentoVencimientoID
+WHERE dv.DocumentoVencimientoID = @id;";
 
             await using var cn = new SqlConnection(_cs);
             return await cn.QueryFirstOrDefaultAsync<VencimientoDetalleDto>(sql, new { id });

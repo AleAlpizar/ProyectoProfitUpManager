@@ -1,14 +1,14 @@
 import React from "react";
-import { Avatar, Dropdown, Navbar, Text } from "@nextui-org/react";
+import { Avatar, Button, Dropdown, Navbar, Text } from "@nextui-org/react";
 import { useRouter } from "next/router";
 import { useSession } from "../hooks/useSession";
 
-const SURFACE  = "#121618";
+const SURFACE = "#121618";
 const SURFACE2 = "#1A2022";
-const BORDER   = "rgba(255,255,255,0.10)";
-const TEXT     = "#E6E9EA";
-const MUTED    = "#8B9AA0";
-const MAGENTA  = "#A30862";
+const BORDER = "rgba(255,255,255,0.10)";
+const TEXT = "#E6E9EA";
+const MUTED = "#8B9AA0";
+const MAGENTA = "#A30862";
 
 export const UserDropdown: React.FC = () => {
   const router = useRouter();
@@ -29,7 +29,7 @@ export const UserDropdown: React.FC = () => {
   const onAction = async (key: React.Key) => {
     switch (key) {
       case "profile":
-        router.push("/Perfil/perfil"); 
+        router.push("/Perfil/perfil");
         break;
       case "logout":
         try {
@@ -44,84 +44,95 @@ export const UserDropdown: React.FC = () => {
   };
 
   return (
-    <Dropdown placement="bottom-right">
-      <Navbar.Item aria-label="Menú de usuario" title="Menú de usuario">
+    <Navbar.Item aria-label="Menú de usuario" title="Menú de usuario">
+      <Dropdown placement="bottom-right">
         <Dropdown.Trigger>
-          <Avatar
-            as="button"
-            bordered
-            color="secondary"
-            size="md"
-            src={avatarSrc}
-            text={!avatarSrc ? initials : undefined}
-          />
-        </Dropdown.Trigger>
-      </Navbar.Item>
-
-      <Dropdown.Menu
-        aria-label="Acciones de usuario"
-        onAction={onAction}
-        css={{
-          "$$dropdownMenuWidth": "280px",
-          "$$dropdownItemHeight": "auto",
-          bg: SURFACE,
-          border: `1px solid ${BORDER}`,
-          boxShadow: "0 20px 60px rgba(0,0,0,.45)",
-          color: TEXT,
-          overflow: "hidden",
-          "& .nextui-dropdown-section-title": { color: MUTED },
-          "& .nextui-dropdown-item": {
-            py: "$4",
-            bg: "transparent",
-            "& .nextui-dropdown-item-content": {
-              color: TEXT,
-              backgroundColor: "transparent",
-            },
-            "&:hover, &:focus, &:active": {
-              bg: SURFACE2,
-            },
-          },
-          "& .nextui-dropdown-item--with-divider": {
-            borderTop: `1px solid ${BORDER}`,
-          },
-        }}
-      >
-        <Dropdown.Item key="header" css={{ py: "$6" }}>
-          <div className="flex w-full items-center gap-3">
+          {/* Button de NextUI consume onPress/onPressStart */}
+          <Button
+            auto
+            light
+            css={{
+              p: 0,
+              minWidth: "auto",
+              bg: "transparent",
+            }}
+            aria-label="Abrir menú de usuario"
+          >
             <Avatar
-              size="sm"
+              bordered
+              color="secondary"
+              size="md"
               src={avatarSrc}
               text={!avatarSrc ? initials : undefined}
-              bordered
             />
-            <div className="min-w-0">
-              <Text size={"$xs"} css={{ color: MUTED }}>
-                {isAuthenticated ? "Conectado como" : "Invitado"}
-              </Text>
-              <Text
-                style={{
-                  fontWeight: 600,
-                  color: TEXT,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-                title={displayName}
-              >
-                {displayName}
-              </Text>
+          </Button>
+        </Dropdown.Trigger>
+
+        <Dropdown.Menu
+          aria-label="Acciones de usuario"
+          onAction={onAction}
+          css={{
+            "$$dropdownMenuWidth": "280px",
+            "$$dropdownItemHeight": "auto",
+            bg: SURFACE,
+            border: `1px solid ${BORDER}`,
+            boxShadow: "0 20px 60px rgba(0,0,0,.45)",
+            color: TEXT,
+            overflow: "hidden",
+            "& .nextui-dropdown-section-title": { color: MUTED },
+            "& .nextui-dropdown-item": {
+              py: "$4",
+              bg: "transparent",
+              "& .nextui-dropdown-item-content": {
+                color: TEXT,
+                backgroundColor: "transparent",
+              },
+              "&:hover, &:focus, &:active": {
+                bg: SURFACE2,
+              },
+            },
+            "& .nextui-dropdown-item--with-divider": {
+              borderTop: `1px solid ${BORDER}`,
+            },
+          }}
+        >
+          <Dropdown.Item key="header" css={{ py: "$6" }}>
+            <div className="flex w-full items-center gap-3">
+              <Avatar
+                size="sm"
+                src={avatarSrc}
+                text={!avatarSrc ? initials : undefined}
+                bordered
+              />
+              <div className="min-w-0">
+                <Text size={"$xs"} css={{ color: MUTED }}>
+                  {isAuthenticated ? "Conectado como" : "Invitado"}
+                </Text>
+                <Text
+                  style={{
+                    fontWeight: 600,
+                    color: TEXT,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
+                  title={displayName}
+                >
+                  {displayName}
+                </Text>
+              </div>
             </div>
-          </div>
-        </Dropdown.Item>
+          </Dropdown.Item>
 
-        <Dropdown.Item key="profile" withDivider>
-          Mi perfil
-        </Dropdown.Item>
+          <Dropdown.Item key="profile" withDivider>
+            Mi perfil
+          </Dropdown.Item>
 
-        <Dropdown.Item key="logout" withDivider>
-          <span style={{ color: MAGENTA, fontWeight: 600 }}>Cerrar sesión</span>
-        </Dropdown.Item>
-      </Dropdown.Menu>
-    </Dropdown>
+          <Dropdown.Item key="logout" withDivider>
+            <span style={{ color: MAGENTA, fontWeight: 600 }}>Cerrar sesión</span>
+          </Dropdown.Item>
+        </Dropdown.Menu>
+      </Dropdown>
+    </Navbar.Item>
   );
 };

@@ -51,6 +51,13 @@ type StockRow = {
 };
 
 type EstadoFiltro = "activos" | "inactivos" | "todos";
+type TipoMovimiento = "entrada" | "salida" | "ajuste";
+
+const tipoMovimientoOptions: { value: TipoMovimiento; label: string }[] = [
+  { value: "entrada", label: "Entrada a bodega" },
+  { value: "salida", label: "Salida de bodega" },
+  { value: "ajuste", label: "Ajuste directo de existencia" },
+];
 
 function ProductSelect({
   value,
@@ -75,7 +82,9 @@ function ProductSelect({
       setLoading(true);
       setError(null);
       try {
-        const rows = await call<ProductoMini[]>("/api/productos/mini?estado=activos", { method: "GET" });
+        const rows = await call<ProductoMini[]>("/api/productos/mini?estado=activos", {
+          method: "GET",
+        });
         setItems((rows ?? []).filter((p) => p.isActive ?? true));
       } catch {
         setError("No se pudieron cargar los productos.");
@@ -145,7 +154,7 @@ function ProductSelect({
 }
 
 export default function BodegasPage() {
-  const { call, post } = useApi(); 
+  const { call, post } = useApi();
   const { inactivate, loading: inactLoading, error: inactError } = useBodegaDelete();
   const { activate, loading: actLoading, error: actError } = useBodegaActivate();
 
@@ -243,27 +252,52 @@ export default function BodegasPage() {
     rows: StockRow[];
   }>({ open: false, bodega: null, loading: false, error: null, rows: [] });
 
-  const [productosActivos, setProductosActivos] = useState<ProductoMini[]>([]);
-  const [agregar, setAgregar] = useState<{
+  const [mov, setMov] = useState<{
     productoID: number | "";
+    tipo: "" | TipoMovimiento;
     cantidad: number;
+    nuevaExistencia: number;
     motivo: string;
     saving: boolean;
     error: string | null;
   }>({
     productoID: "",
+    tipo: "",
     cantidad: 0,
+    nuevaExistencia: 0,
     motivo: "",
     saving: false,
     error: null,
   });
 
+  const [confirmMovOpen, setConfirmMovOpen] = useState(false);
+
+  const selectedProduct = useMemo(
+    () => stockModal.rows.find((r) => r.productoID === mov.productoID),
+    [stockModal.rows, mov.productoID]
+  );
+
+  const resetMovimiento = () => {
+    setMov({
+      productoID: "",
+      tipo: "",
+      cantidad: 0,
+      nuevaExistencia: 0,
+      motivo: "",
+      saving: false,
+      error: null,
+    });
+    setConfirmMovOpen(false);
+  };
+
   const openStockFor = async (b: BodegaDto) => {
     setStockModal({ open: true, bodega: b, loading: true, error: null, rows: [] });
-    setAgregar({ productoID: "", cantidad: 0, motivo: "", saving: false, error: null });
+    resetMovimiento();
 
     try {
-      const minis = await call<ProductoMini[]>(`/api/productos/mini?estado=activos`, { method: "GET" });
+      const minis = await call<ProductoMini[]>(`/api/productos/mini?estado=activos`, {
+        method: "GET",
+      });
       const ids = (minis ?? []).map((p) => p.productoID);
 
       const query = new URLSearchParams();
@@ -287,7 +321,6 @@ export default function BodegasPage() {
         disponible: byBodega.get(p.productoID) ?? 0,
       }));
 
-      setProductosActivos(minis ?? []);
       setStockModal((mod) => ({ ...mod, loading: false, rows: rowsMap }));
     } catch (e: any) {
       setStockModal((mod) => ({
@@ -300,16 +333,42 @@ export default function BodegasPage() {
 
   const closeStock = () => {
     setStockModal({ open: false, bodega: null, loading: false, error: null, rows: [] });
-    setAgregar({ productoID: "", cantidad: 0, motivo: "", saving: false, error: null });
+    resetMovimiento();
   };
 
-  const onSubmitAgregar = async () => {
+  const canConfirmMovimiento = useMemo(() => {
+    if (!mov.productoID || !mov.tipo) return false;
+    if (mov.tipo === "ajuste") {
+      return mov.nuevaExistencia >= 0;
+    }
+    return mov.cantidad > 0;
+  }, [mov]);
+
+  const confirmMovimientoLabel = useMemo(() => {
+    if (mov.tipo === "entrada") return "Confirmar entrada";
+    if (mov.tipo === "salida") return "Confirmar salida";
+    if (mov.tipo === "ajuste") return "Confirmar ajuste";
+    return "Confirmar movimiento";
+  }, [mov.tipo]);
+
+  const onSubmitMovimiento = async () => {
     if (!stockModal.open || !stockModal.bodega) return;
-    setAgregar((s) => ({ ...s, saving: true, error: null }));
+    setMov((s) => ({ ...s, saving: true, error: null }));
+
     try {
-      const productoID = Number(agregar.productoID || 0);
+      const productoID = Number(mov.productoID || 0);
       if (!productoID) throw new Error("Selecciona un producto.");
-      if (agregar.cantidad <= 0) throw new Error("La cantidad debe ser mayor a 0.");
+      if (!mov.tipo) throw new Error("Selecciona el tipo de movimiento.");
+
+      if (mov.tipo === "ajuste") {
+        if (mov.nuevaExistencia < 0) {
+          throw new Error("La nueva existencia no puede ser negativa.");
+        }
+      } else {
+        if (mov.cantidad <= 0) {
+          throw new Error("La cantidad a mover debe ser mayor a 0.");
+        }
+      }
 
       const cur = await call<{ cantidad: number }>(
         `/api/inventario/cantidad?productoID=${productoID}&bodegaID=${stockModal.bodega.bodegaID}`,
@@ -317,23 +376,36 @@ export default function BodegasPage() {
       );
       const actual = cur?.cantidad ?? 0;
 
+      let nuevaCantidad: number;
+      if (mov.tipo === "entrada") {
+        nuevaCantidad = actual + mov.cantidad;
+      } else if (mov.tipo === "salida") {
+        if (mov.cantidad > actual) {
+          throw new Error("No hay suficiente stock para realizar la salida.");
+        }
+        nuevaCantidad = actual - mov.cantidad;
+      } else {
+        nuevaCantidad = mov.nuevaExistencia;
+      }
+
       await post<void>(`/api/inventario/cantidad/set`, {
         productoID,
         bodegaID: stockModal.bodega.bodegaID,
-        nuevaCantidad: actual + agregar.cantidad,
-        motivo: agregar.motivo?.trim() || null,
+        nuevaCantidad,
+        motivo: mov.motivo?.trim() || null,
       });
 
       await openStockFor(stockModal.bodega);
-      setToast({ kind: "ok", msg: "Stock agregado correctamente." });
-      setAgregar({ productoID: "", cantidad: 0, motivo: "", saving: false, error: null });
+      setToast({ kind: "ok", msg: "Movimiento de inventario registrado correctamente." });
+      resetMovimiento();
     } catch (e: any) {
-      const msg = e?.message ?? "No se pudo agregar stock.";
-      setAgregar((s) => ({ ...s, saving: false, error: msg }));
+      const msg = e?.message ?? "No se pudo registrar el movimiento.";
+      setMov((s) => ({ ...s, saving: false, error: msg }));
       setToast({ kind: "err", msg });
       return;
     }
-    setAgregar((s) => ({ ...s, saving: false }));
+
+    setMov((s) => ({ ...s, saving: false }));
   };
 
   return (
@@ -370,7 +442,9 @@ export default function BodegasPage() {
             <option value="inactivos">Inactivas</option>
             <option value="todos">Todas</option>
           </select>
-          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/60">▾</span>
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/60">
+            ▾
+          </span>
         </div>
 
         <button
@@ -467,8 +541,8 @@ export default function BodegasPage() {
               {confirm.kind === "inactivate" ? "Inactivar bodega" : "Reactivar bodega"}
             </h4>
             <p className="mt-2 text-sm text-white/80">
-              ¿Confirma que desea {confirm.kind === "inactivate" ? "inactivar" : "reactivar"} la bodega{" "}
-              <span className="font-semibold">“{confirm.nombre}”</span>?
+              ¿Confirma que desea {confirm.kind === "inactivate" ? "inactivar" : "reactivar"} la
+              bodega <span className="font-semibold">“{confirm.nombre}”</span>?
             </p>
             <div className="mt-5 flex justify-end gap-2">
               <button
@@ -491,22 +565,27 @@ export default function BodegasPage() {
 
       {stockModal.open && stockModal.bodega && (
         <div
-          className="fixed inset-0 z-[80] grid place-items-center bg-black/60 p-4"
+          className="fixed inset-0 z-40 bg-black/60 flex justify-center px-4"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) closeStock();
           }}
         >
-          <div className="w-full max-w-5xl overflow-hidden rounded-2xl border border-white/10 bg-[#121618] text-white shadow-2xl">
+          <div className="mt-24 mb-8 w-full max-w-5xl rounded-2xl border border-white/10 bg-[#121618] text-white shadow-2xl flex flex-col max-h-[calc(100vh-7rem)] overflow-hidden">
             <div
               className="flex items-center justify-between px-5 py-3"
               style={{
-                background: "linear-gradient(90deg, rgba(163,8,98,0.25) 0%, rgba(163,8,98,0.08) 100%)",
+                background:
+                  "linear-gradient(90deg, rgba(163,8,98,0.25) 0%, rgba(163,8,98,0.08) 100%)",
                 borderBottom: "1px solid rgba(255,255,255,0.08)",
               }}
             >
               <div>
-                <h3 className="text-base font-semibold">Existencias — {stockModal.bodega.nombre}</h3>
-                <p className="text-xs text-white/70">Código: {stockModal.bodega.codigo ?? "—"}</p>
+                <h3 className="text-base font-semibold">
+                  Existencias — {stockModal.bodega.nombre}
+                </h3>
+                <p className="text-xs text-white/70">
+                  Código: {stockModal.bodega.codigo ?? "—"}
+                </p>
               </div>
               <button
                 onClick={closeStock}
@@ -517,7 +596,7 @@ export default function BodegasPage() {
               </button>
             </div>
 
-            <div className="p-5">
+            <div className="flex-1 overflow-y-auto p-5 md:p-6">
               {stockModal.loading ? (
                 <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-sm text-white/80">
                   Cargando existencias…
@@ -528,7 +607,7 @@ export default function BodegasPage() {
                 </div>
               ) : (
                 <>
-                  <div className="overflow-x-auto rounded-xl border border-white/10">
+                  <div className="rounded-xl border border-white/10 max-h-[320px] overflow-auto">
                     <table className="min-w-full border-separate border-spacing-0">
                       <thead>
                         <tr className="bg-[#1C2224] text-left text-xs uppercase tracking-wide text-white/70">
@@ -547,11 +626,18 @@ export default function BodegasPage() {
                           </tr>
                         ) : (
                           stockModal.rows.map((r, i) => (
-                            <tr key={`${r.productoID}-${i}`} className={i % 2 === 0 ? "bg-white/[.02]" : "bg-transparent"}>
+                            <tr
+                              key={`${r.productoID}-${i}`}
+                              className={i % 2 === 0 ? "bg-white/[.02]" : "bg-transparent"}
+                            >
                               <td className="px-4 py-2.5 text-sm text-white">{r.producto}</td>
                               <td className="px-4 py-2.5 text-sm text-white/80">{r.sku ?? "—"}</td>
-                              <td className="px-4 py-2.5 text-sm">{Number(r.existencia).toLocaleString()}</td>
-                              <td className="px-4 py-2.5 text-sm">{Number(r.disponible).toLocaleString()}</td>
+                              <td className="px-4 py-2.5 text-sm">
+                                {Number(r.existencia).toLocaleString()}
+                              </td>
+                              <td className="px-4 py-2.5 text-sm">
+                                {Number(r.disponible).toLocaleString()}
+                              </td>
                             </tr>
                           ))
                         )}
@@ -559,58 +645,109 @@ export default function BodegasPage() {
                     </table>
                   </div>
 
-                  <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <h4 className="mb-3 text-sm font-semibold">Agregar stock a esta bodega</h4>
+                  <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5">
+                    <h4 className="text-sm font-semibold">
+                      Agregar o ajustar stock en esta bodega
+                    </h4>
 
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                      <ProductSelect
-                        value={agregar.productoID}
-                        onChange={(v) => setAgregar((s) => ({ ...s, productoID: v }))}
-                        label="Producto"
-                        required
-                        disabled={agregar.saving}
-                      />
+                    <div className="mt-4 grid gap-3 md:grid-cols-3">
+                      <div className="md:col-span-1">
+                        <ProductSelect
+                          value={mov.productoID}
+                          onChange={(v) => setMov((s) => ({ ...s, productoID: v }))}
+                          label="Producto *"
+                          required
+                          disabled={mov.saving}
+                        />
+                      </div>
 
                       <div>
-                        <label className="mb-1 block text-xs text-white/70">Cantidad a ingresar</label>
+                        <label className="mb-1 block text-xs text-white/70">
+                          Tipo de movimiento <span className="text-rose-300">*</span>
+                        </label>
+                        <div className="relative">
+                          <select
+                            value={mov.tipo}
+                            onChange={(e) =>
+                              setMov((s) => ({
+                                ...s,
+                                tipo: e.target.value as TipoMovimiento,
+                                cantidad: 0,
+                                nuevaExistencia: 0,
+                                error: null,
+                              }))
+                            }
+                            disabled={mov.saving}
+                            className="dark-native-select w-full appearance-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40 disabled:opacity-60"
+                          >
+                            <option value="">— Seleccionar —</option>
+                            {tipoMovimientoOptions.map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                          <svg
+                            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <path d="M6 9l6 6 6-6" />
+                          </svg>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs text-white/70">
+                          {mov.tipo === "ajuste" ? "Nueva existencia *" : "Cantidad a mover *"}
+                        </label>
                         <input
                           type="number"
                           min={0}
                           step="0.01"
-                          value={agregar.cantidad}
-                          onChange={(e) => setAgregar((s) => ({ ...s, cantidad: Number(e.target.value) }))}
+                          value={mov.tipo === "ajuste" ? mov.nuevaExistencia : mov.cantidad}
+                          onChange={(e) => {
+                            const val = Number(e.target.value);
+                            setMov((s) =>
+                              s.tipo === "ajuste"
+                                ? { ...s, nuevaExistencia: val }
+                                : { ...s, cantidad: val }
+                            );
+                          }}
                           className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40"
                           placeholder="0"
-                          disabled={agregar.saving}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="mb-1 block text-xs text-white/70">Motivo (opcional)</label>
-                        <input
-                          value={agregar.motivo}
-                          onChange={(e) => setAgregar((s) => ({ ...s, motivo: e.target.value }))}
-                          className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40"
-                          placeholder="Reposición, conteo, etc."
-                          disabled={agregar.saving}
+                          disabled={mov.saving}
                         />
                       </div>
                     </div>
 
-                    {agregar.error && (
+                    <div className="mt-4">
+                      <label className="mb-1 block text-xs text-white/70">Motivo</label>
+                      <input
+                        value={mov.motivo}
+                        onChange={(e) => setMov((s) => ({ ...s, motivo: e.target.value }))}
+                        className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40"
+                        placeholder="Conteo físico, merma, etc."
+                        disabled={mov.saving}
+                      />
+                    </div>
+
+                    {mov.error && (
                       <div className="mt-3 rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-200">
-                        {agregar.error}
+                        {mov.error}
                       </div>
                     )}
 
                     <div className="mt-4 flex justify-end">
                       <button
-                        onClick={onSubmitAgregar}
-                        disabled={agregar.saving}
-                        className="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+                        onClick={() => setConfirmMovOpen(true)}
+                        disabled={mov.saving || !canConfirmMovimiento}
+                        className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
                         style={{ backgroundColor: WINE }}
                       >
-                        {agregar.saving ? "Agregando…" : "Agregar stock"}
+                        {mov.saving ? "Guardando…" : confirmMovimientoLabel}
                       </button>
                     </div>
                   </div>
@@ -618,6 +755,55 @@ export default function BodegasPage() {
               )}
             </div>
           </div>
+
+          {confirmMovOpen && (
+            <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 px-4">
+              <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#121618] p-5 text-white shadow-2xl">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-lg font-semibold">Guardar cambios</h4>
+                  <button
+                    className="rounded-full px-2 text-white/80 hover:bg-white/10"
+                    aria-label="Cerrar"
+                    onClick={() => setConfirmMovOpen(false)}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <p className="mt-4 text-sm text-white/80">
+                  ¿Deseas guardar los cambios del movimiento
+                  {selectedProduct ? (
+                    <>
+                      {" "}
+                      del producto{" "}
+                      <span className="font-semibold">{selectedProduct.producto}</span>?
+                    </>
+                  ) : (
+                    "?"
+                  )}
+                </p>
+
+                <div className="mt-6 flex justify-end gap-2">
+                  <button
+                    onClick={() => setConfirmMovOpen(false)}
+                    className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setConfirmMovOpen(false);
+                      await onSubmitMovimiento();
+                    }}
+                    className="rounded-xl px-4 py-2 text-sm font-semibold text-white"
+                    style={{ backgroundColor: WINE }}
+                  >
+                    Sí, guardar
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -95,10 +95,12 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Inventario WHERE ProductoID=@p AND BodegaID=@b)
                     ensure.Parameters.AddWithValue("@b", dto.BodegaID);
                     await ensure.ExecuteNonQueryAsync();
                 }
+                var isPositive =
+                    dto.TipoMovimiento?.Equals("Entrada", StringComparison.OrdinalIgnoreCase) == true ||
+                    dto.TipoMovimiento?.Equals("AjustePositivo", StringComparison.OrdinalIgnoreCase) == true ||
+                    dto.TipoMovimiento?.Equals("AjusteManualEntrada", StringComparison.OrdinalIgnoreCase) == true;
 
-                var sign = (dto.TipoMovimiento?.Equals("Entrada", StringComparison.OrdinalIgnoreCase) == true
-                           || dto.TipoMovimiento?.Equals("AjustePositivo", StringComparison.OrdinalIgnoreCase) == true)
-                           ? +1 : -1;
+                var sign = isPositive ? +1 : -1;
 
                 if (sign < 0)
                 {
@@ -149,6 +151,7 @@ VALUES(@p,@b,@t,@c,NULL,@m,SYSUTCDATETIME(),@u);";
                 throw;
             }
         }
+
 
         public async Task<ProductoDetalleDto?> GetProductoDetalleAsync(int productoId)
         {
@@ -316,7 +319,8 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Inventario WHERE ProductoID=@p AND BodegaID=@b)
             var delta = dto.NuevaCantidad - actual;
             if (delta == 0m) return;
 
-            var tipo = delta > 0 ? "Entrada" : "Salida";
+            var tipo = delta > 0 ? "AjusteManualEntrada" : "AjusteManualSalida";
+
             await AjusteAsync(new AjusteInventarioDto
             {
                 ProductoID = dto.ProductoID,
@@ -326,6 +330,7 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Inventario WHERE ProductoID=@p AND BodegaID=@b)
                 Motivo = dto.Motivo
             }, userId);
         }
+
 
         public async Task InactivarProductoYRetirarStockAsync(int productoId, int? userId)
         {
@@ -513,6 +518,187 @@ ORDER BY Nombre;";
 
             return list;
         }
+
+        public async Task<(IReadOnlyList<InventarioMovimientoRowDto> Items, int Total)> GetHistorialAsync(
+    InventarioHistorialQueryDto query,
+    CancellationToken ct = default)
+        {
+            var items = new List<InventarioMovimientoRowDto>();
+
+            await using var cn = new SqlConnection(_cs);
+            await cn.OpenAsync(ct);
+
+            var page = query.Page <= 0 ? 1 : query.Page;
+            var pageSize = query.PageSize <= 0 ? 50 : query.PageSize;
+            if (pageSize > 200) pageSize = 200;
+            var offset = (page - 1) * pageSize;
+
+            var filters = new List<string>();
+
+            if (query.ProductoID.HasValue) filters.Add("m.ProductoID = @ProductoID");
+            if (query.BodegaID.HasValue) filters.Add("m.BodegaID = @BodegaID");
+            if (query.UsuarioID.HasValue) filters.Add("m.UsuarioID = @UsuarioID");
+            if (query.Desde.HasValue) filters.Add("m.FechaMovimiento >= @Desde");
+            if (query.Hasta.HasValue) filters.Add("m.FechaMovimiento <= @Hasta");
+
+            bool useTipoParam = false;
+            if (!string.IsNullOrWhiteSpace(query.TipoMovimiento))
+            {
+                var t = query.TipoMovimiento;
+
+                if (t.Equals("Entrada", StringComparison.OrdinalIgnoreCase))
+                {
+                    filters.Add("m.TipoMovimiento IN ('Entrada','AjustePositivo','AjusteManualEntrada')");
+                }
+                else if (t.Equals("Salida", StringComparison.OrdinalIgnoreCase))
+                {
+                    filters.Add("m.TipoMovimiento IN ('Salida','RetiroPorInactivacion','AjusteSalidaManual','AjusteManualSalida')");
+                }
+                else if (t.Equals("AjusteSalidaManual", StringComparison.OrdinalIgnoreCase))
+                {
+                    filters.Add("m.TipoMovimiento IN ('AjusteSalidaManual','AjusteManualEntrada','AjusteManualSalida')");
+                }
+                else
+                {
+                    filters.Add("m.TipoMovimiento = @TipoMovimiento");
+                    useTipoParam = true;
+                }
+            }
+
+            var whereSql = filters.Count > 0 ? "WHERE " + string.Join(" AND ", filters) : string.Empty;
+
+            static void AddParameters(SqlCommand cmd, InventarioHistorialQueryDto q, bool useTipoParam, int? offsetParam = null, int? pageSizeParam = null)
+            {
+                if (q.ProductoID.HasValue) cmd.Parameters.AddWithValue("@ProductoID", q.ProductoID.Value);
+                if (q.BodegaID.HasValue) cmd.Parameters.AddWithValue("@BodegaID", q.BodegaID.Value);
+                if (useTipoParam && !string.IsNullOrWhiteSpace(q.TipoMovimiento))
+                    cmd.Parameters.AddWithValue("@TipoMovimiento", q.TipoMovimiento);
+                if (q.UsuarioID.HasValue) cmd.Parameters.AddWithValue("@UsuarioID", q.UsuarioID.Value);
+                if (q.Desde.HasValue) cmd.Parameters.AddWithValue("@Desde", q.Desde.Value);
+                if (q.Hasta.HasValue) cmd.Parameters.AddWithValue("@Hasta", q.Hasta.Value);
+                if (offsetParam.HasValue) cmd.Parameters.AddWithValue("@Offset", offsetParam.Value);
+                if (pageSizeParam.HasValue) cmd.Parameters.AddWithValue("@PageSize", pageSizeParam.Value);
+            }
+
+            var countSql = $@"
+SELECT COUNT(*)
+FROM dbo.MovimientoInventario m
+{whereSql};";
+
+            int total = 0;
+            await using (var countCmd = new SqlCommand(countSql, cn))
+            {
+                AddParameters(countCmd, query, useTipoParam);
+                var totalObj = await countCmd.ExecuteScalarAsync(ct);
+                if (totalObj != null && totalObj != DBNull.Value)
+                    total = Convert.ToInt32(totalObj);
+            }
+
+            var dataSql = $@"
+WITH MovimientosFiltrados AS (
+    SELECT
+        m.MovimientoID,
+        m.FechaMovimiento,
+        m.ProductoID,
+        p.Nombre AS ProductoNombre,
+        p.SKU,
+        m.BodegaID,
+        b.Nombre AS BodegaNombre,
+        m.TipoMovimiento,
+        m.Cantidad,
+        m.Motivo,
+        m.ReferenciaTipo,
+        m.UsuarioID,
+        u.Nombre AS UsuarioNombre,
+        CASE 
+            WHEN m.TipoMovimiento IN ('Entrada','AjustePositivo','AjusteManualEntrada') 
+                THEN m.Cantidad
+            WHEN m.TipoMovimiento IN ('Salida','AjusteSalidaManual','AjusteManualSalida','RetiroPorInactivacion') 
+                THEN -m.Cantidad
+            ELSE 0
+        END AS CantidadFirmada
+    FROM dbo.MovimientoInventario m
+    JOIN dbo.Producto p ON p.ProductoID = m.ProductoID
+    JOIN dbo.Bodega b ON b.BodegaID = m.BodegaID
+    LEFT JOIN dbo.Usuario u ON u.UsuarioID = m.UsuarioID
+    {whereSql}
+),
+MovimientosConSaldo AS (
+    SELECT
+        MovimientoID,
+        FechaMovimiento,
+        ProductoID,
+        ProductoNombre,
+        SKU,
+        BodegaID,
+        BodegaNombre,
+        TipoMovimiento,
+        Cantidad,
+        Motivo,
+        ReferenciaTipo,
+        UsuarioID,
+        UsuarioNombre,
+        CantidadFirmada,
+        SUM(CantidadFirmada) OVER (
+            PARTITION BY ProductoID, BodegaID
+            ORDER BY FechaMovimiento, MovimientoID
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS SaldoNuevo
+    FROM MovimientosFiltrados
+)
+SELECT
+    MovimientoID,
+    FechaMovimiento,
+    ProductoID,
+    ProductoNombre,
+    SKU,
+    BodegaID,
+    BodegaNombre,
+    TipoMovimiento,
+    Cantidad,
+    CASE WHEN CantidadFirmada = 0 THEN NULL ELSE SaldoNuevo - CantidadFirmada END AS SaldoAnterior,
+    SaldoNuevo,
+    Motivo,
+    ReferenciaTipo,
+    UsuarioID,
+    UsuarioNombre
+FROM MovimientosConSaldo
+ORDER BY FechaMovimiento DESC, MovimientoID DESC
+OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;";
+
+            await using (var cmd = new SqlCommand(dataSql, cn))
+            {
+                AddParameters(cmd, query, useTipoParam, offset, pageSize);
+
+                await using var rd = await cmd.ExecuteReaderAsync(ct);
+                while (await rd.ReadAsync(ct))
+                {
+                    var row = new InventarioMovimientoRowDto
+                    {
+                        MovimientoID = rd.GetInt64(rd.GetOrdinal("MovimientoID")),
+                        FechaMovimiento = rd.GetDateTime(rd.GetOrdinal("FechaMovimiento")),
+                        ProductoID = rd.GetInt32(rd.GetOrdinal("ProductoID")),
+                        ProductoNombre = rd["ProductoNombre"] as string ?? "",
+                        SKU = rd["SKU"] as string,
+                        BodegaID = rd.GetInt32(rd.GetOrdinal("BodegaID")),
+                        BodegaNombre = rd["BodegaNombre"] as string ?? "",
+                        TipoMovimiento = rd["TipoMovimiento"] as string ?? "",
+                        Cantidad = rd.GetDecimal(rd.GetOrdinal("Cantidad")),
+                        SaldoAnterior = rd["SaldoAnterior"] is DBNull ? null : rd.GetDecimal(rd.GetOrdinal("SaldoAnterior")),
+                        SaldoNuevo = rd["SaldoNuevo"] is DBNull ? null : rd.GetDecimal(rd.GetOrdinal("SaldoNuevo")),
+                        Motivo = rd["Motivo"] as string,
+                        ReferenciaTipo = rd["ReferenciaTipo"] as string,
+                        UsuarioID = rd["UsuarioID"] is DBNull ? null : rd.GetInt32(rd.GetOrdinal("UsuarioID")),
+                        UsuarioNombre = rd["UsuarioNombre"] as string
+                    };
+                    items.Add(row);
+                }
+            }
+
+            return (items, total);
+        }
+
+
     }
 
     internal sealed class SqlExceptionBuilder : Exception

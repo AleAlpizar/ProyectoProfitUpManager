@@ -176,7 +176,10 @@ export default function HistorialInventarioPage() {
   }, [loadHistorial]);
 
   const selectedBodega = useMemo(
-    () => bodegas.find((b) => filtros.bodegaID && b.bodegaID === filtros.bodegaID),
+    () =>
+      bodegas.find(
+        (b) => filtros.bodegaID && b.bodegaID === filtros.bodegaID
+      ),
     [bodegas, filtros.bodegaID]
   );
 
@@ -441,12 +444,10 @@ export default function HistorialInventarioPage() {
                   const lenMotivo = m.motivo?.length ?? 0;
                   const isLongMotivo = lenMotivo > motivoMaxLen;
                   const expanded = !!expandedMotivos[m.movimientoID];
-
-                  const motivoText = !m.motivo
-                    ? ""
-                    : expanded || !isLongMotivo
-                    ? m.motivo
-                    : m.motivo.slice(0, motivoMaxLen) + "…";
+                  const motivoPreview =
+                    !m.motivo || !isLongMotivo
+                      ? m.motivo ?? ""
+                      : m.motivo.slice(0, motivoMaxLen) + "…";
 
                   return (
                     <tr
@@ -486,10 +487,13 @@ export default function HistorialInventarioPage() {
                         {saldoTexto}
                       </td>
 
-                      <td className="px-4 py-2.5 align-top text-xs md:text-sm text-white/80 max-w-xs">
+                      <td className="relative px-4 py-2.5 align-top text-xs md:text-sm text-white/80">
                         {m.motivo && (
-                          <div className="text-white/80">
-                            {motivoText}
+                          <div className="flex w-[260px] items-start gap-1">
+                            <span className="truncate text-white/80">
+                              {motivoPreview}
+                            </span>
+
                             {isLongMotivo && (
                               <button
                                 type="button"
@@ -499,16 +503,42 @@ export default function HistorialInventarioPage() {
                                     [m.movimientoID]: !expanded,
                                   }))
                                 }
-                                className="ml-1 text-[11px] text-[#A30862] hover:underline"
+                                className="shrink-0 text-[11px] text-[#A30862] hover:underline"
                               >
-                                {expanded ? "Ver menos" : "Ver más"}
+                                {expanded ? "Cerrar" : "Ver más"}
                               </button>
                             )}
                           </div>
                         )}
+
                         {m.referenciaTipo && (
-                          <div className="text-[11px] text-white/60">
+                          <div className="mt-0.5 text-[11px] text-white/60">
                             Ref: {m.referenciaTipo}
+                          </div>
+                        )}
+
+                        {expanded && m.motivo && (
+                          <div className="absolute left-4 top-full z-20 mt-2 w-80 max-w-xs rounded-xl border border-white/20 bg-[#111827] p-3 text-[13px] text-white shadow-xl">
+                            <div className="mb-1 text-[11px] font-semibold uppercase text-white/60">
+                              Motivo completo
+                            </div>
+                            <p className="whitespace-pre-wrap break-words">
+                              {m.motivo}
+                            </p>
+                            <div className="mt-2 text-right">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandedMotivos((prev) => ({
+                                    ...prev,
+                                    [m.movimientoID]: false,
+                                  }))
+                                }
+                                className="text-[11px] text-[#A30862] hover:underline"
+                              >
+                                Cerrar
+                              </button>
+                            </div>
                           </div>
                         )}
                       </td>

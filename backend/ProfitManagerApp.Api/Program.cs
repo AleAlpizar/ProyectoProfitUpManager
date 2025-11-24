@@ -11,8 +11,8 @@ using ProfitManagerApp.Api.Mapping;
 using ProfitManagerApp.Api.Models.Rows;
 using ProfitManagerApp.Api.Service.Reporting;
 using ProfitManagerApp.Application.Clientes;
-
-
+using ProfitManagerApp.Api.Background;
+using ProfitManagerApp.Api.Services;
 using ProfitManagerApp.Data;
 using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Data.Infrastructure;
@@ -44,8 +44,6 @@ builder.Services.AddDbContext<ApiDbContext>(opt =>
     opt.UseSqlServer(cs);
 });
 
-builder.Services.AddScoped<ProfitManagerApp.Api.Data.Abstractions.IVencimientosRepository, ProfitManagerApp.Data.VencimientosRepository>();
-
 builder.Services.AddProfitManagerData(builder.Configuration);
 builder.Services.AddSingleton<SqlConnectionFactory>();
 
@@ -62,12 +60,17 @@ builder.Services.AddSingleton<IMailSender, SmtpMailSender>();
 builder.Services.AddScoped<PasswordResetService>();
 
 builder.Services.AddScoped<IVencimientosRepository, VencimientosRepository>();
+builder.Services.AddScoped<IVencimientosNotificationService, VencimientosNotificationService>();
+
+builder.Services.Configure<VencimientosNotificationOptions>(
+    builder.Configuration.GetSection("VencimientosNotifications"));
+
+builder.Services.AddHostedService<VencimientosNotificationBackgroundService>();
 
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IReportSessionStore, ReportSessionStore>();
 builder.Services.AddSingleton<IReportExportService, ReportExportService>();
 builder.Services.AddScoped<InventarioReportService>();
-
 
 builder.Services.AddScoped<ClientesReportService>();
 builder.Services.AddScoped<VentasReportService>();

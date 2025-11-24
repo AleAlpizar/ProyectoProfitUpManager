@@ -2,8 +2,8 @@ import React from "react";
 import { Link, Navbar } from "@nextui-org/react";
 import { Box } from "../styles/box";
 import { BurguerButton } from "./burguer-button";
-import { NotificationsDropdown } from "./notifications-dropdown";
 import { UserDropdown } from "./user-dropdown";
+import VencimientosNotificationsBell from "./VencimientosNotificationsBell";
 
 interface Props {
   children: React.ReactNode;
@@ -52,7 +52,6 @@ export const NavbarWrapper: React.FC<Props> = ({ children }) => {
           borderBottom: `1px solid ${BORDER}`,
           justifyContent: "space-between",
           width: "100%",
-
           "& .nextui-navbar-container": {
             background: "transparent",
             backdropFilter: "none",
@@ -80,9 +79,8 @@ export const NavbarWrapper: React.FC<Props> = ({ children }) => {
 
         <Navbar.Content>
           <Navbar.Content>
-            <NotificationsDropdown />
+            <VencimientosNotificationsBell />
           </Navbar.Content>
-
 
           <Navbar.Content>
             <UserDropdown />

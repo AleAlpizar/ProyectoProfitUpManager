@@ -12,6 +12,8 @@ namespace ProfitManagerApp.Api.Data.Abstractions
         Task<IReadOnlyList<AlertRowDto>> ListAlertasPendientesAsync(int umbralDefault = 7);
         Task<IReadOnlyList<TipoDocumentoVtoDto>> ListTiposActivosAsync();
 
+        Task<IReadOnlyList<VencimientoEmailAlertDto>> ListAlertasPendientesConUsuarioAsync(int umbralDefault = 7);
+
         Task DeleteAsync(int id);
     }
 }

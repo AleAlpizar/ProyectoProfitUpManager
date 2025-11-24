@@ -267,5 +267,43 @@ UPDATE dbo.DocumentoVencimiento
             if (rows == 0)
                 throw new KeyNotFoundException("Documento no encontrado o ya inactivo.");
         }
+
+        public async Task<IReadOnlyList<VencimientoEmailAlertDto>> ListAlertasPendientesConUsuarioAsync(int umbralDefault = 7)
+        {
+            const string sql = @"
+DECLARE @Hoy DATE = CAST(GETUTCDATE() AS DATE);
+
+SELECT
+  dv.DocumentoVencimientoID,
+  dv.Titulo,
+  tdv.Nombre AS TipoNombre,
+  dv.Referencia,
+  dv.FechaVencimiento,
+  dv.NotificarDiasAntes,
+  DATEDIFF(DAY, @Hoy, CAST(dv.FechaVencimiento AS DATE)) AS DaysToDue,
+  CASE
+    WHEN DATEDIFF(DAY, @Hoy, CAST(dv.FechaVencimiento AS DATE)) < 0 THEN 'VENCIDO'
+    WHEN DATEDIFF(DAY, @Hoy, CAST(dv.FechaVencimiento AS DATE)) BETWEEN 0 AND ISNULL(dv.NotificarDiasAntes, @UmbralDefault) THEN 'PROXIMO'
+    ELSE 'VIGENTE'
+  END AS Estado,
+  dv.CreatedBy         AS UsuarioID,
+  u.Nombre             AS UsuarioNombre,
+  u.Correo             AS UsuarioCorreo
+FROM dbo.DocumentoVencimiento dv
+JOIN dbo.TipoDocumentoVencimiento tdv 
+  ON tdv.TipoDocumentoVencimientoID = dv.TipoDocumentoVencimientoID
+LEFT JOIN dbo.Usuario u 
+  ON u.UsuarioID = dv.CreatedBy AND u.IsActive = 1
+WHERE dv.IsActive = 1
+  AND (
+    DATEDIFF(DAY, @Hoy, CAST(dv.FechaVencimiento AS DATE)) < 0
+    OR DATEDIFF(DAY, @Hoy, CAST(dv.FechaVencimiento AS DATE)) BETWEEN 0 AND ISNULL(dv.NotificarDiasAntes, @UmbralDefault)
+  )
+ORDER BY dv.FechaVencimiento ASC, dv.Titulo ASC;";
+
+            await using var cn = new SqlConnection(_cs);
+            var rows = await cn.QueryAsync<VencimientoEmailAlertDto>(sql, new { UmbralDefault = umbralDefault });
+            return rows.ToList();
+        }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ProfitManagerApp.Api.Data.Abstractions;
 using ProfitManagerApp.Api.Dtos;
+using ProfitManagerApp.Api.Services;
 
 namespace ProfitManagerApp.Api.Controllers
 {
@@ -9,7 +10,15 @@ namespace ProfitManagerApp.Api.Controllers
     public class VencimientosController : ControllerBase
     {
         private readonly IVencimientosRepository _repo;
-        public VencimientosController(IVencimientosRepository repo) => _repo = repo;
+        private readonly IVencimientosNotificationService _notificationService;
+
+        public VencimientosController(
+            IVencimientosRepository repo,
+            IVencimientosNotificationService notificationService)
+        {
+            _repo = repo;
+            _notificationService = notificationService;
+        }
 
         [HttpGet("calendario")]
         public async Task<IActionResult> Calendario(
@@ -28,7 +37,13 @@ namespace ProfitManagerApp.Api.Controllers
             return Ok(rows);
         }
 
-       
+        [HttpPost("procesar-alertas")]
+        public async Task<IActionResult> ProcesarAlertas([FromQuery] int umbralDefault = 7, CancellationToken ct = default)
+        {
+            var enviados = await _notificationService.ProcesarAlertasYEnviarCorreosAsync(umbralDefault, ct);
+            return Ok(new { enviados });
+        }
+
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {

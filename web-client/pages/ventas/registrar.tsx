@@ -71,8 +71,8 @@ export default function RegistrarVentaPage() {
     );
   };
 
-  const handleProductChange = (lineId: string) => {
-    return (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleProductChange =
+    (lineId: string) => (e: React.ChangeEvent<HTMLSelectElement>) => {
       const sku = e.target.value;
       const product = products.find((p) => p.sku === sku);
       if (!product) return;
@@ -95,7 +95,6 @@ export default function RegistrarVentaPage() {
           : undefined,
       });
     };
-  };
 
   const handleCantidadChange = (line: Line, newQty: number) => {
     const precioBatch = newQty * (line.producto?.precioVenta ?? 0);
@@ -114,8 +113,8 @@ export default function RegistrarVentaPage() {
     });
   };
 
-  const handleBodegaChange = (lineId: string) => {
-    return (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleBodegaChange =
+    (lineId: string) => (e: React.ChangeEvent<HTMLSelectElement>) => {
       const id = e.target.value;
       const line = lines.find((l) => l.lineId === lineId);
       const bodegas = line?.producto?.bodegas ?? [];
@@ -125,7 +124,6 @@ export default function RegistrarVentaPage() {
         Bodega: { id: String(b.id), nombre: b.nombre, cantidad: b.cantidad },
       });
     };
-  };
 
   function validateBeforePost() {
     if (!clientSelected?.codigoCliente) return "Selecciona un cliente.";
@@ -139,20 +137,25 @@ export default function RegistrarVentaPage() {
   }
 
   const realizarVenta = async () => {
-    console.log(clientSelected);
+    const validationMsg = validateBeforePost();
+    if (validationMsg) {
+      setErrorMsg(validationMsg);
+      setShowConfirm(false);
+      return;
+    }
+
     const payload = {
-      clienteCodigo: clientSelected!.codigoCliente,
+      clienteCodigo: clientSelected!.codigoCliente!,
       fecha: new Date(),
       observaciones: notes || undefined,
       lineas: lines.map((l) => ({
-        sku: l.producto!.sku,
+        sku: l.producto!.sku!,
         cantidad: l.cantidad ?? 1,
         descuento: l.descuento ?? 0,
         bodega: { id: String(l.Bodega!.id) },
       })),
     };
 
-    console.log(payload);
     try {
       const res = await call<{ ventaID: string }>("/api/ventas", {
         method: "POST",
@@ -160,7 +163,6 @@ export default function RegistrarVentaPage() {
       });
       setLines([]);
       setNotes("");
-      console.log(res);
       router.replace(`/ventas/${res.ventaID}`);
     } catch (e: any) {
       setErrorMsg(e?.message ?? "No se pudo registrar la venta.");
@@ -193,7 +195,7 @@ export default function RegistrarVentaPage() {
               fill="currentColor"
               aria-hidden
             >
-              <path d="M5 4h14a1 1 0 0 1 1 1v3H4V5a1 1 0 0 1 1-1Zm-1 6h16v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z" />
+              <path d="M5 4h14a1 1 0 0 1 1 1v3H4V5a1 1 0 0 1-1-1Zm-1 6h16v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1Z" />
             </svg>
             <span>Ventas</span>
           </div>
@@ -227,8 +229,8 @@ export default function RegistrarVentaPage() {
               {clients &&
                 clients.map((client) => (
                   <option
-                    key={client.codigoCliente}
-                    value={client.codigoCliente}
+                    key={client.codigoCliente ?? String(client.clienteID)}
+                    value={client.codigoCliente ?? ""}
                     className="text-black"
                   >
                     {client.nombre} - {client.codigoCliente}
@@ -299,16 +301,15 @@ export default function RegistrarVentaPage() {
                         <option value="" disabled className="text-black">
                           Selecciona producto
                         </option>
-                        {clients &&
-                          products.map((product) => (
-                            <option
-                              key={product.sku}
-                              value={product.sku || ""}
-                              className="text-black"
-                            >
-                              {product.nombre} - {product.sku}
-                            </option>
-                          ))}
+                        {products.map((product) => (
+                          <option
+                            key={product.sku ?? String(product.productoID)}
+                            value={product.sku ?? ""}
+                            className="text-black"
+                          >
+                            {product.nombre} - {product.sku}
+                          </option>
+                        ))}
                       </select>
                     </Td>
                     <Td>
@@ -399,7 +400,7 @@ export default function RegistrarVentaPage() {
               <div className="text-xs text-white/60">Subtotal</div>
               <div className="font-semibold text-white/90">
                 {formatMoney(
-                  lines.map((l) => l.subtotal ?? 0).reduce((x, y) => x + y)
+                  lines.map((l) => l.subtotal ?? 0).reduce((x, y) => x + y, 0)
                 )}
               </div>
             </div>
@@ -407,7 +408,7 @@ export default function RegistrarVentaPage() {
               <div className="text-xs text-white/60">Impuestos</div>
               <div className="font-semibold text-white/90">
                 {formatMoney(
-                  lines.map((l) => l.subtotal ?? 0).reduce((x, y) => x + y) *
+                  lines.map((l) => l.subtotal ?? 0).reduce((x, y) => x + y, 0) *
                     0.13
                 )}
               </div>
@@ -416,7 +417,7 @@ export default function RegistrarVentaPage() {
               <div className="text-xs text-white/60">Total</div>
               <div className="text-lg font-bold text-white">
                 {formatMoney(
-                  lines.map((l) => l.subtotal ?? 0).reduce((x, y) => x + y) *
+                  lines.map((l) => l.subtotal ?? 0).reduce((x, y) => x + y, 0) *
                     1.13
                 )}
               </div>
@@ -436,6 +437,12 @@ export default function RegistrarVentaPage() {
           </Button>
         </div>
       </section>
+
+      {errorMsg && (
+        <div className="mt-3 rounded-2xl border border-rose-400/40 bg-rose-400/10 p-3 text-xs text-rose-100">
+          {errorMsg}
+        </div>
+      )}
 
       <ConfirmDialog
         open={showCancel}
@@ -474,36 +481,16 @@ const Th: React.FC<React.PropsWithChildren<{ className?: string }>> = ({
   className = "",
   children,
 }) => (
-  <th className={["px-3 py-2 font-semibold", className].join(" ")}>
-    {children}
-  </th>
+  <th className={["px-3 py-2 font-semibold", className].join(" ")}>{children}</th>
 );
 
-const Td: React.FC<React.PropsWithChildren<{ className?: string }>> = ({
-  className = "",
-  children,
-}) => (
-  <td className={["px-3 py-2 text-white/80", className].join(" ")}>
+const Td: React.FC<
+  React.PropsWithChildren<{ className?: string; colSpan?: number }>
+> = ({ className = "", children, colSpan }) => (
+  <td
+    className={["px-3 py-2 text-white/80", className].join(" ")}
+    colSpan={colSpan}
+  >
     {children}
   </td>
 );
-
-const Badge: React.FC<
-  React.PropsWithChildren<{ tone?: "success" | "warn" | "danger" }>
-> = ({ tone = "success", children }) => {
-  const map: Record<string, string> = {
-    success: "bg-emerald-400/15 text-emerald-300 ring-1 ring-emerald-400/25",
-    warn: "bg-yellow-400/15  text-yellow-300  ring-1 ring-yellow-400/25",
-    danger: "bg-red-400/15     text-red-300     ring-1 ring-red-400/25",
-  };
-  return (
-    <span
-      className={[
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold",
-        map[tone],
-      ].join(" ")}
-    >
-      {children}
-    </span>
-  );
-};

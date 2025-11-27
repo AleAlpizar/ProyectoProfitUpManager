@@ -120,12 +120,13 @@ const Sidebar: React.FC = () => {
                 />
 
                 <SidebarItem
-                  title="Registrar venta"
+                  title="Ventas"
                   icon={<PaymentsIcon />}
-                  isActive={router.pathname === "/ventas/registrar"}
-                  href="/ventas/registrar"
+                  isActive={router.pathname.startsWith("/ventas")}
+                  href="/ventas"
                   onClickItem={setCollapsed}
                 />
+
 
                 <SidebarItem
                   title="Inventario"

@@ -40,9 +40,39 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
 
   const onChange =
     (k: keyof RegisterInput) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-      setForm((f) => ({ ...f, [k]: e.target.value }));
+    (e: any) => {
+      let value: string = e.target.value;
+
+      if (k === "nombre" || k === "apellido") {
+        value = value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÜüÑñ\s]/g, "");
+      }
+
+      if (k === "telefono") {
+        value = value.replace(/\D/g, "");
+      }
+
+      setForm((f) => ({ ...f, [k]: value }));
     };
+
+  const handleLettersKeyDown = (e: any) => {
+    const key: string = e.key;
+    if (key.length > 1) return; 
+
+    const regex = /^[A-Za-zÁÉÍÓÚáéíóúÜüÑñ\s]$/;
+    if (!regex.test(key)) {
+      e.preventDefault();
+    }
+  };
+
+  const handleNumbersKeyDown = (e: any) => {
+    const key: string = e.key;
+    if (key.length > 1) return;
+
+    const regex = /^[0-9]$/;
+    if (!regex.test(key)) {
+      e.preventDefault();
+    }
+  };
 
   const onSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
@@ -55,7 +85,11 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
 
     const ok = await confirm({
       title: "Crear usuario",
-      message: <>¿Deseas crear al usuario <b>{form.nombre}</b> con rol {form.rol}?</>,
+      message: (
+        <>
+          ¿Deseas crear al usuario <b>{form.nombre}</b> con rol {form.rol}?
+        </>
+      ),
       tone: "brand",
       confirmText: "Sí, crear",
       cancelText: "Cancelar",
@@ -100,7 +134,9 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
                 <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-2.5 py-1 text-[11px] text-[#8B9AA0]">
                   Usuarios
                 </div>
-                <h2 className="mt-2 text-xl font-semibold tracking-wide">Crear usuario</h2>
+                <h2 className="mt-2 text-xl font-semibold tracking-wide">
+                  Crear usuario
+                </h2>
                 <p className="mt-1 text-sm text-[#8B9AA0]">
                   Completa los datos para registrar un nuevo usuario.
                 </p>
@@ -126,10 +162,31 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
             )}
 
             <div className="grid grid-cols-1 gap-4 px-6 pb-2 md:grid-cols-2">
-              <Field label="Primer nombre" value={form.nombre} onChange={onChange("nombre")} autoFocus />
-              <Field label="Apellidos" value={form.apellido ?? ""} onChange={onChange("apellido")} />
-              <Field label="Email" type="email" value={form.correo} onChange={onChange("correo")} />
-              <Field label="Teléfono" value={form.telefono ?? ""} onChange={onChange("telefono")} />
+              <Field
+                label="Primer nombre"
+                value={form.nombre}
+                onChange={onChange("nombre")}
+                onKeyDown={handleLettersKeyDown}
+                autoFocus
+              />
+              <Field
+                label="Apellidos"
+                value={form.apellido ?? ""}
+                onChange={onChange("apellido")}
+                onKeyDown={handleLettersKeyDown}
+              />
+              <Field
+                label="Email"
+                type="email"
+                value={form.correo}
+                onChange={onChange("correo")}
+              />
+              <Field
+                label="Teléfono"
+                value={form.telefono ?? ""}
+                onChange={onChange("telefono")}
+                onKeyDown={handleNumbersKeyDown}
+              />
               <Field
                 label="Contraseña"
                 type="password"
@@ -183,7 +240,8 @@ const Field: React.FC<{
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   helper?: string;
   autoFocus?: boolean;
-}> = ({ label, type = "text", value, onChange, helper, autoFocus }) => (
+  onKeyDown?: (e: any) => void;
+}> = ({ label, type = "text", value, onChange, helper, autoFocus, onKeyDown }) => (
   <label className="space-y-1">
     <span className="text-xs text-[#8B9AA0]">{label}</span>
     <input
@@ -191,9 +249,12 @@ const Field: React.FC<{
       type={type}
       value={value}
       onChange={onChange}
+      onKeyDown={onKeyDown}
       className="w-full rounded-2xl border border-white/10 bg-[#0F1315] px-3 py-2.5 text-sm outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] placeholder:text-[#8B9AA0] transition focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
     />
-    {helper && <span className="block text-[11px] text-[#8B9AA0]">{helper}</span>}
+    {helper && (
+      <span className="block text-[11px] text-[#8B9AA0]">{helper}</span>
+    )}
   </label>
 );
 

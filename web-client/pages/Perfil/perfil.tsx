@@ -106,8 +106,40 @@ const PerfilPage: React.FC = () => {
   const handleChange =
     (field: keyof typeof form) =>
     (e: any) => {
-      setForm((prev) => ({ ...prev, [field]: e.target.value }));
+      let value: string = e.target.value;
+
+      if (field === "nombre" || field === "apellido") {
+        value = value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÜüÑñ\s]/g, "");
+      }
+
+      if (field === "telefono") {
+        value = value.replace(/\D/g, "");
+      }
+
+      setForm((prev) => ({ ...prev, [field]: value }));
     };
+
+  const handleLettersKeyDown = (e: any) => {
+    const key: string = e.key;
+
+    if (key.length > 1) return;
+
+    const regex = /^[A-Za-zÁÉÍÓÚáéíóúÜüÑñ\s]$/;
+    if (!regex.test(key)) {
+      e.preventDefault();
+    }
+  };
+
+  const handleNumbersKeyDown = (e: any) => {
+    const key: string = e.key;
+
+    if (key.length > 1) return;
+
+    const regex = /^[0-9]$/;
+    if (!regex.test(key)) {
+      e.preventDefault();
+    }
+  };
 
   const doSaveProfile = async () => {
     if (!token) return;
@@ -361,6 +393,7 @@ const PerfilPage: React.FC = () => {
               label="Nombre"
               value={form.nombre}
               onChange={handleChange("nombre")}
+              onKeyDown={handleLettersKeyDown}
               fullWidth
               bordered
               css={editableInputCss}
@@ -370,6 +403,7 @@ const PerfilPage: React.FC = () => {
               label="Apellido"
               value={form.apellido}
               onChange={handleChange("apellido")}
+              onKeyDown={handleLettersKeyDown}
               fullWidth
               bordered
               css={editableInputCss}
@@ -393,6 +427,7 @@ const PerfilPage: React.FC = () => {
               label="Teléfono"
               value={form.telefono}
               onChange={handleChange("telefono")}
+              onKeyDown={handleNumbersKeyDown}
               fullWidth
               bordered
               css={editableInputCss}

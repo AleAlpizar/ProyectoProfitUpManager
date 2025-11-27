@@ -27,8 +27,12 @@ const ClienteForm = ({
   const [email, setEmail] = useState(initial?.correo ?? "");
   const [estado, setEstado] = useState<Estado>(initial?.isActive ? "Activo" : "Inactivo");
   const [error, setError] = useState<string | null>(null);
-  const [descuentoPorcentaje, setDescuentoPorcentaje] = useState<number>(initial?.descuentoPorcentaje ?? 0);
-  const [descuentoDescripcion, setDescuentoDescripcion] = useState<string>(initial?.descuentoDescripcion ?? "");
+  const [descuentoPorcentaje, setDescuentoPorcentaje] = useState<number>(
+    initial?.descuentoPorcentaje ?? 0
+  );
+  const [descuentoDescripcion, setDescuentoDescripcion] = useState<string>(
+    initial?.descuentoDescripcion ?? ""
+  );
   const [saving, setSaving] = useState(false);
 
   const setDescuentoPorcentajeSafe = (raw: number | string) => {
@@ -48,7 +52,8 @@ const ClienteForm = ({
       title: initial ? "Guardar cambios" : "Crear cliente",
       message: (
         <>
-          ¿Deseas {initial ? "guardar los cambios de" : "crear a"} <b>{nombre || "cliente"}</b>?
+          ¿Deseas {initial ? "guardar los cambios de" : "crear a"}{" "}
+          <b>{nombre || "cliente"}</b>?
         </>
       ),
       tone: "brand",
@@ -147,7 +152,7 @@ const ClienteForm = ({
           label="Teléfono"
           placeholder="8765 4123"
           value={telefono}
-          onChange={(e) => setTelefono(e.target.value)}
+          onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ""))} 
           className="rounded-2xl border border-white/10 bg-[#1C2224] focus:ring-2 focus:ring-[#A30862]/40"
         />
 

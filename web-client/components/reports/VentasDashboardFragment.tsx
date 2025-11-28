@@ -1,4 +1,3 @@
-
 // @ts-nocheck
 "use client";
 
@@ -13,7 +12,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-
 
 type VentasDia = {
   fecha: string;
@@ -94,7 +92,6 @@ type VentasDashboardDto = {
   anulacionesDetalle: AnulacionDetalle[];
 };
 
-
 const formatCurrency = (n: number | null | undefined) =>
   Number(n ?? 0).toLocaleString("es-CR", {
     style: "currency",
@@ -122,7 +119,6 @@ const pillClass = (active: boolean) =>
 const dateInputClass =
   "rounded-full border border-white/10 bg-black/30 px-3 py-1 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-[#B01268]";
 
-
 const apiBase =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5151";
 
@@ -141,7 +137,6 @@ const fetcher = async (relativeUrl: string): Promise<VentasDashboardDto> => {
 
   return res.json();
 };
-
 
 export const VentasDashboardFragment: React.FC = () => {
   const [range, setRange] = React.useState<
@@ -224,7 +219,6 @@ export const VentasDashboardFragment: React.FC = () => {
     return list.slice(0, 20);
   }, [data, topSort]);
 
-
   if (error) {
     return (
       <div className="rounded-2xl border border-red-500/40 bg-red-950/40 p-4 text-sm text-red-200">
@@ -245,9 +239,6 @@ export const VentasDashboardFragment: React.FC = () => {
   const ventasPorBodega = data.ventasPorBodega ?? [];
   const rotacionInventario = data.rotacionInventario ?? [];
   const posiblesProblemasStock = data.posiblesProblemasStock ?? [];
-  const anulacionesPorUsuario = data.anulacionesPorUsuario ?? [];
-  const anulacionesDetalle = data.anulacionesDetalle ?? [];
-
 
   return (
     <div className="space-y-6">
@@ -630,93 +621,16 @@ export const VentasDashboardFragment: React.FC = () => {
                     </span>
                   </p>
                   <p className="mt-0.5 text-[11px] text-slate-300">
-                    {s.bodegaID === 0 ? "Stock global" : `Bodega ${s.bodegaID}`} · Vendido:{" "}
+                    {s.bodegaID === 0
+                      ? "Stock global"
+                      : `Bodega ${s.bodegaID}`}{" "}
+                    · Vendido:{" "}
                     <span className="font-semibold">
                       {formatNumber(s.cantidadVendidaPeriodo)}
                     </span>{" "}
                     · Stock actual:{" "}
                     <span className="font-semibold">
                       {formatNumber(s.stockActual)}
-                    </span>
-                  </p>
-
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-[#120010] p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-100">
-            Historial de anulaciones por usuario
-          </h2>
-          <div className="max-h-72 overflow-y-auto pr-1 text-xs space-y-2">
-            {anulacionesPorUsuario.length === 0 ? (
-              <p className="text-slate-400">
-                No se registraron anulaciones en el periodo.
-              </p>
-            ) : (
-              anulacionesPorUsuario.map((u) => (
-                <div
-                  key={u.usuarioID}
-                  className="flex items-center justify-between rounded-lg bg-white/5 px-3 py-2"
-                >
-                  <div>
-                    <p className="text-xs font-medium text-slate-100">
-                      Usuario #{u.usuarioID}
-                    </p>
-                    <p className="text-[11px] text-slate-400">
-                      Anulaciones:{" "}
-                      <span className="font-semibold text-slate-100">
-                        {u.cantidadAnulaciones}
-                      </span>
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[11px] text-slate-400">Monto anulado</p>
-                    <p className="text-xs font-semibold text-[#F9A8D4]">
-                      {formatCurrency(u.montoTotalAnulado)}
-                    </p>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-[#120010] p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-100">
-            Detalle de anulaciones
-          </h2>
-          <div className="max-h-72 overflow-y-auto pr-1 text-xs space-y-2">
-            {anulacionesDetalle.length === 0 ? (
-              <p className="text-slate-400">
-                No se encontraron anulaciones en el periodo.
-              </p>
-            ) : (
-              anulacionesDetalle.map((a) => (
-                <div
-                  key={a.anulacionID}
-                  className="rounded-lg bg-white/5 px-3 py-2"
-                >
-                  <p className="text-xs font-semibold text-slate-100">
-                    Venta #{a.ventaID} · Anulación #{a.anulacionID}
-                  </p>
-                  <p className="text-[11px] text-slate-400">
-                    Fecha: {formatShortDate(a.fechaAnulacion)} · Usuario:{" "}
-                    {a.usuarioID ?? "—"}
-                  </p>
-                  {a.motivo && (
-                    <p className="mt-0.5 text-[11px] text-slate-300">
-                      Motivo: {a.motivo}
-                    </p>
-                  )}
-                  <p className="mt-0.5 text-[11px] text-[#F9A8D4]">
-                    Total venta:{" "}
-                    <span className="font-semibold">
-                      {formatCurrency(a.totalVenta)}
                     </span>
                   </p>
                 </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { createPortal } from "react-dom";
 import EditarCantidadModal from "@/components/inventario/EditarCantidadModal";
 
 import { useProductoDetalle } from "../hooks/useProductoDetalle";
@@ -70,8 +71,7 @@ export default function ProductosTable({ filtroId }: Props) {
       try {
         const list = await call<Unidad[]>(`/api/unidades`, { method: "GET" });
         setUnidades((list ?? []).filter((u) => u.activo));
-      } catch {
-      }
+      } catch {}
     })();
   }, [call]);
 
@@ -279,6 +279,380 @@ export default function ProductosTable({ filtroId }: Props) {
       bodegaID: null,
     });
 
+  const editOverlay =
+    typeof document !== "undefined" && editModal.open
+      ? createPortal(
+          <div
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) closeEdit();
+            }}
+          >
+            <div
+              className="w-full max-w-6xl rounded-2xl border border-white/10 bg-[#121618] p-5 text-white shadow-2xl"
+              onMouseDown={(e) => e.stopPropagation()}
+              style={{ maxHeight: "86vh" }}
+            >
+              <div className="mb-4 flex items-center justify-between gap-2">
+                <h2 className="text-lg font-semibold">Editar producto</h2>
+                <button
+                  type="button"
+                  className="rounded-xl bg-[#A30862] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-95"
+                  onClick={closeEdit}
+                >
+                  Cerrar
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                <Field label="Nombre*">
+                  <Input
+                    value={editModal.nombre}
+                    onChange={(e) =>
+                      setEditModal((v) => ({ ...v, nombre: e.target.value }))
+                    }
+                  />
+                </Field>
+
+                <Field label="Descuento (%)">
+                  <Input
+                    type="number"
+                    min={0}
+                    max={100}
+                    step="0.01"
+                    value={editModal.descuento ?? 0}
+                    onChange={(e) =>
+                      setEditModal((v) => ({
+                        ...v,
+                        descuento: Number(e.target.value),
+                      }))
+                    }
+                  />
+                </Field>
+
+                <Field label="Precio venta*">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editModal.precioVenta ?? 0}
+                    onChange={(e) =>
+                      setEditModal((v) => ({
+                        ...v,
+                        precioVenta: Number(e.target.value),
+                      }))
+                    }
+                  />
+                </Field>
+
+                <Field label="Precio costo">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editModal.precioCosto ?? 0}
+                    onChange={(e) =>
+                      setEditModal((v) => ({
+                        ...v,
+                        precioCosto: Number(e.target.value),
+                      }))
+                    }
+                  />
+                </Field>
+
+                <Field label="SKU">
+                  <Input
+                    value={editModal.sku ?? ""}
+                    onChange={(e) =>
+                      setEditModal((v) => ({ ...v, sku: e.target.value }))
+                    }
+                  />
+                </Field>
+
+                <Field label="Código interno">
+                  <Input
+                    value={editModal.codigoInterno ?? ""}
+                    onChange={(e) =>
+                      setEditModal((v) => ({
+                        ...v,
+                        codigoInterno: e.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+
+                <Field label="Unidad de almacenamiento">
+                  <select
+                    value={editModal.unidadAlmacenamientoID ?? ""}
+                    onChange={(e) =>
+                      setEditModal((v) => ({
+                        ...v,
+                        unidadAlmacenamientoID: e.target.value
+                          ? Number(e.target.value)
+                          : null,
+                      }))
+                    }
+                    className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40"
+                  >
+                    <option value="">— Seleccionar unidad —</option>
+                    {unidades.map((u) => (
+                      <option key={u.unidadID} value={u.unidadID}>
+                        {u.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+
+                <Field label="Peso (kg)">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editModal.peso ?? 0}
+                    onChange={(e) =>
+                      setEditModal((v) => ({
+                        ...v,
+                        peso: Number(e.target.value),
+                      }))
+                    }
+                  />
+                </Field>
+
+                <Field label="Largo (cm)">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editModal.largo ?? 0}
+                    onChange={(e) =>
+                      setEditModal((v) => ({
+                        ...v,
+                        largo: Number(e.target.value),
+                      }))
+                    }
+                  />
+                </Field>
+
+                <Field label="Alto (cm)">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editModal.alto ?? 0}
+                    onChange={(e) =>
+                      setEditModal((v) => ({
+                        ...v,
+                        alto: Number(e.target.value),
+                      }))
+                    }
+                  />
+                </Field>
+
+                <Field label="Ancho (cm)">
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={editModal.ancho ?? 0}
+                    onChange={(e) =>
+                      setEditModal((v) => ({
+                        ...v,
+                        ancho: Number(e.target.value),
+                      }))
+                    }
+                  />
+                </Field>
+
+                <Field label="Descripción" full>
+                  <Textarea
+                    value={editModal.descripcion}
+                    onChange={(e) =>
+                      setEditModal((v) => ({
+                        ...v,
+                        descripcion: e.target.value,
+                      }))
+                    }
+                    className="min-h-[92px]"
+                  />
+                </Field>
+              </div>
+
+              <div className="mt-5 flex items-center justify-end gap-2">
+                <button
+                  type="button"
+                  className="inline-flex items-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white hover:bg-white/10"
+                  onClick={closeEdit}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center rounded-xl bg-[#A30862] px-4 py-2 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-60"
+                  onClick={requestSave}
+                >
+                  Guardar cambios
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
+
+  const detalleOverlay =
+    typeof document !== "undefined" && detalleId !== null
+      ? createPortal(
+          <div
+            className="fixed inset-0 z-[9500] flex items-start justify-center bg-black/60 backdrop-blur-sm px-4 sm:px-10 pt-24 pb-8"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) closeDetalle();
+            }}
+          >
+            <div className="relative w-full max-w-4xl mx-auto overflow-hidden rounded-2xl border border-white/10 bg-[#0B0E10] shadow-2xl">
+              <div
+                className="flex items-center justify-between px-6 py-4"
+                style={{
+                  background:
+                    "linear-gradient(90deg, rgba(163,8,98,0.25) 0%, rgba(163,8,98,0.08) 100%)",
+                  borderBottom: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                {(() => {
+                  const currentRow = rows.find((r) => r.productoID === detalleId);
+                  const d = (detalle as any) ?? {};
+                  const merged = {
+                    nombre: currentRow?.nombre ?? d.nombre,
+                    sku: currentRow?.sku ?? d.sku,
+                    descripcion: currentRow?.descripcion ?? d.descripcion,
+                    descuento: currentRow?.descuento ?? d.descuento ?? 0,
+                    precioVenta: d.precioVenta ?? currentRow?.precioVenta,
+                    codigoInterno: d.codigoInterno,
+                    precioCosto: d.precioCosto,
+                    peso: d.peso,
+                    largo: d.largo,
+                    alto: d.alto,
+                    ancho: d.ancho,
+                    unidadAlmacenamientoID:
+                      (d.unidadAlmacenamientoID as number | undefined),
+                    activo: currentRow?.isActive ?? true,
+                  };
+
+                  const unidadNombreDetalle =
+                    unidadNombre(merged.unidadAlmacenamientoID) ?? "—";
+
+                  return (
+                    <>
+                      <div>
+                        <h3 className="text-xl font-semibold text-white">
+                          {merged.nombre ?? "Detalle del producto"}
+                        </h3>
+                        <p className="text-sm text-white/70">
+                          SKU: {merged.sku ?? "—"} · Unidad:{" "}
+                          {unidadNombreDetalle}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        {merged.precioVenta != null && (
+                          <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-sm text-white">
+                            Precio: ₡
+                            {Number(merged.precioVenta).toLocaleString()}
+                          </span>
+                        )}
+                        <span
+                          className={
+                            "rounded-full px-3 py-1 text-sm font-medium " +
+                            (merged.activo
+                              ? "border border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
+                              : "border border-rose-400/30 bg-rose-400/10 text-rose-200")
+                          }
+                        >
+                          {merged.activo ? "Activo" : "Inactivo"}
+                        </span>
+
+                        <button
+                          onClick={closeDetalle}
+                          className="rounded-full px-2 text-white/80 hover:bg-white/10"
+                          aria-label="Cerrar"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+
+              <div className="grid gap-4 p-5 md:grid-cols-2">
+                <div className="rounded-2xl border border-white/10 bg-[#0f1214] p-5">
+                  <h4 className="mb-3 text-sm font-semibold text-white">
+                    Información básica
+                  </h4>
+                  {(() => {
+                    const currentRow = rows.find((r) => r.productoID === detalleId);
+                    const d = (detalle as any) ?? {};
+                    const merged = {
+                      descripcion: currentRow?.descripcion ?? d.descripcion,
+                      codigoInterno: d.codigoInterno,
+                    };
+                    return (
+                      <>
+                        <Info label="Código interno" value={merged.codigoInterno} />
+                        <Info
+                          label="Descripción"
+                          value={merged.descripcion ?? "—"}
+                          full
+                        />
+                      </>
+                    );
+                  })()}
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-[#0f1214] p-5">
+                  <h4 className="mb-3 text-sm font-semibold text-white">
+                    Precios
+                  </h4>
+                  {(() => {
+                    const currentRow = rows.find((r) => r.productoID === detalleId);
+                    const d = (detalle as any) ?? {};
+                    const merged = {
+                      precioCosto: d.precioCosto,
+                      precioVenta: d.precioVenta ?? currentRow?.precioVenta,
+                      descuento: currentRow?.descuento ?? d.descuento ?? 0,
+                    };
+                    return (
+                      <>
+                        <Info label="Precio costo" value={merged.precioCosto} />
+                        <Info label="Precio venta" value={merged.precioVenta} />
+                        <Info label="Descuento (%)" value={merged.descuento} />
+                      </>
+                    );
+                  })()}
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-[#0f1214] p-5">
+                  <h4 className="mb-3 text-sm font-semibold text-white">
+                    Dimensiones &amp; peso
+                  </h4>
+                  <Info label="Peso (kg)" value={(detalle as any)?.peso} />
+                  <Info label="Largo (cm)" value={(detalle as any)?.largo} />
+                  <Info label="Alto (cm)" value={(detalle as any)?.alto} />
+                  <Info label="Ancho (cm)" value={(detalle as any)?.ancho} />
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-[#0f1214] p-5">
+                  <h4 className="mb-3 text-sm font-semibold text-white">
+                    Almacenamiento
+                  </h4>
+                  {(() => {
+                    const d = (detalle as any) ?? {};
+                    const name = unidadNombre(d.unidadAlmacenamientoID) ?? "—";
+                    return <Info label="Unidad" value={name} />;
+                  })()}
+                </div>
+
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
+
+
   return (
     <div className="mt-1">
       <div className="mb-1 flex flex-wrap items-center gap-2">
@@ -482,368 +856,6 @@ export default function ProductosTable({ filtroId }: Props) {
         </table>
       </div>
 
-      {detalleId !== null && (
-        <div
-          className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 px-4 sm:px-10 pt-24 pb-8"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) closeDetalle();
-          }}
-        >
-          <div className="relative w-full max-w-4xl mx-auto overflow-hidden rounded-2xl border border-white/10 bg-[#0B0E10] shadow-2xl">
-            <div
-              className="flex items-center justify-between px-6 py-4"
-              style={{
-                background:
-                  "linear-gradient(90deg, rgba(163,8,98,0.25) 0%, rgba(163,8,98,0.08) 100%)",
-                borderBottom: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              {(() => {
-                const currentRow = rows.find((r) => r.productoID === detalleId);
-                const d = (detalle as any) ?? {};
-                const merged = {
-                  nombre: currentRow?.nombre ?? d.nombre,
-                  sku: currentRow?.sku ?? d.sku,
-                  descripcion: currentRow?.descripcion ?? d.descripcion,
-                  descuento: currentRow?.descuento ?? d.descuento ?? 0,
-                  precioVenta: d.precioVenta ?? currentRow?.precioVenta,
-                  codigoInterno: d.codigoInterno,
-                  precioCosto: d.precioCosto,
-                  peso: d.peso,
-                  largo: d.largo,
-                  alto: d.alto,
-                  ancho: d.ancho,
-                  unidadAlmacenamientoID:
-                    (d.unidadAlmacenamientoID as number | undefined),
-                  activo: currentRow?.isActive ?? true,
-                };
-
-                const unidadNombreDetalle =
-                  unidadNombre(merged.unidadAlmacenamientoID) ?? "—";
-
-                return (
-                  <>
-                    <div>
-                      <h3 className="text-xl font-semibold text-white">
-                        {merged.nombre ?? "Detalle del producto"}
-                      </h3>
-                      <p className="text-sm text-white/70">
-                        SKU: {merged.sku ?? "—"} · Unidad:{" "}
-                        {unidadNombreDetalle}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      {merged.precioVenta != null && (
-                        <span className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-sm text-white">
-                          Precio: ₡
-                          {Number(merged.precioVenta).toLocaleString()}
-                        </span>
-                      )}
-                      <span
-                        className={
-                          "rounded-full px-3 py-1 text-sm font-medium " +
-                          (merged.activo
-                            ? "border border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
-                            : "border border-rose-400/30 bg-rose-400/10 text-rose-200")
-                        }
-                      >
-                        {merged.activo ? "Activo" : "Inactivo"}
-                      </span>
-
-                      <button
-                        onClick={closeDetalle}
-                        className="rounded-full px-2 text-white/80 hover:bg-white/10"
-                        aria-label="Cerrar"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-
-            <div className="grid gap-4 p-5 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-[#0f1214] p-5">
-                <h4 className="mb-3 text-sm font-semibold text-white">
-                  Información básica
-                </h4>
-                {(() => {
-                  const currentRow = rows.find((r) => r.productoID === detalleId);
-                  const d = (detalle as any) ?? {};
-                  const merged = {
-                    descripcion: currentRow?.descripcion ?? d.descripcion,
-                    codigoInterno: d.codigoInterno,
-                  };
-                  return (
-                    <>
-                      <Info label="Código interno" value={merged.codigoInterno} />
-                      <Info
-                        label="Descripción"
-                        value={merged.descripcion ?? "—"}
-                        full
-                      />
-                    </>
-                  );
-                })()}
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-[#0f1214] p-5">
-                <h4 className="mb-3 text-sm font-semibold text-white">Precios</h4>
-                {(() => {
-                  const currentRow = rows.find((r) => r.productoID === detalleId);
-                  const d = (detalle as any) ?? {};
-                  const merged = {
-                    precioCosto: d.precioCosto,
-                    precioVenta: d.precioVenta ?? currentRow?.precioVenta,
-                    descuento: currentRow?.descuento ?? d.descuento ?? 0,
-                  };
-                  return (
-                    <>
-                      <Info label="Precio costo" value={merged.precioCosto} />
-                      <Info label="Precio venta" value={merged.precioVenta} />
-                      <Info label="Descuento (%)" value={merged.descuento} />
-                    </>
-                  );
-                })()}
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-[#0f1214] p-5">
-                <h4 className="mb-3 text-sm font-semibold text-white">
-                  Dimensiones &amp; peso
-                </h4>
-                <Info label="Peso (kg)" value={(detalle as any)?.peso} />
-                <Info label="Largo (cm)" value={(detalle as any)?.largo} />
-                <Info label="Alto (cm)" value={(detalle as any)?.alto} />
-                <Info label="Ancho (cm)" value={(detalle as any)?.ancho} />
-              </div>
-
-              <div className="rounded-2xl border border-white/10 bg-[#0f1214] p-5">
-                <h4 className="mb-3 text-sm font-semibold text-white">
-                  Almacenamiento
-                </h4>
-                {(() => {
-                  const d = (detalle as any) ?? {};
-                  const name = unidadNombre(d.unidadAlmacenamientoID) ?? "—";
-                  return <Info label="Unidad" value={name} />;
-                })()}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {editModal.open && (
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justifycenter bg-black/60 p-4"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) closeEdit();
-          }}
-        >
-          <div
-            className="w-full max-w-6xl rounded-2xl border border-white/10 bg-[#121618] p-5 text-white shadow-2xl"
-            onMouseDown={(e) => e.stopPropagation()}
-            style={{ maxHeight: "86vh" }}
-          >
-            <div className="mb-4 flex items-center justify-between gap-2">
-              <h2 className="text-lg font-semibold">Editar producto</h2>
-              <button
-                type="button"
-                className="rounded-xl bg-[#A30862] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-95"
-                onClick={closeEdit}
-              >
-                Cerrar
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              <Field label="Nombre*">
-                <Input
-                  value={editModal.nombre}
-                  onChange={(e) =>
-                    setEditModal((v) => ({ ...v, nombre: e.target.value }))
-                  }
-                />
-              </Field>
-
-              <Field label="Descuento (%)">
-                <Input
-                  type="number"
-                  min={0}
-                  max={100}
-                  step="0.01"
-                  value={editModal.descuento ?? 0}
-                  onChange={(e) =>
-                    setEditModal((v) => ({
-                      ...v,
-                      descuento: Number(e.target.value),
-                    }))
-                  }
-                />
-              </Field>
-
-              <Field label="Precio venta*">
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={editModal.precioVenta ?? 0}
-                  onChange={(e) =>
-                    setEditModal((v) => ({
-                      ...v,
-                      precioVenta: Number(e.target.value),
-                    }))
-                  }
-                />
-              </Field>
-
-              <Field label="Precio costo">
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={editModal.precioCosto ?? 0}
-                  onChange={(e) =>
-                    setEditModal((v) => ({
-                      ...v,
-                      precioCosto: Number(e.target.value),
-                    }))
-                  }
-                />
-              </Field>
-
-              <Field label="SKU">
-                <Input
-                  value={editModal.sku ?? ""}
-                  onChange={(e) =>
-                    setEditModal((v) => ({ ...v, sku: e.target.value }))
-                  }
-                />
-              </Field>
-
-              <Field label="Código interno">
-                <Input
-                  value={editModal.codigoInterno ?? ""}
-                  onChange={(e) =>
-                    setEditModal((v) => ({
-                      ...v,
-                      codigoInterno: e.target.value,
-                    }))
-                  }
-                />
-              </Field>
-
-              <Field label="Unidad de almacenamiento">
-                <select
-                  value={editModal.unidadAlmacenamientoID ?? ""}
-                  onChange={(e) =>
-                    setEditModal((v) => ({
-                      ...v,
-                      unidadAlmacenamientoID: e.target.value
-                        ? Number(e.target.value)
-                        : null,
-                    }))
-                  }
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40"
-                >
-                  <option value="">— Seleccionar unidad —</option>
-                  {unidades.map((u) => (
-                    <option key={u.unidadID} value={u.unidadID}>
-                      {u.nombre}
-                    </option>
-                  ))}
-                </select>
-              </Field>
-
-              <Field label="Peso (kg)">
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={editModal.peso ?? 0}
-                  onChange={(e) =>
-                    setEditModal((v) => ({
-                      ...v,
-                      peso: Number(e.target.value),
-                    }))
-                  }
-                />
-              </Field>
-
-              <Field label="Largo (cm)">
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={editModal.largo ?? 0}
-                  onChange={(e) =>
-                    setEditModal((v) => ({
-                      ...v,
-                      largo: Number(e.target.value),
-                    }))
-                  }
-                />
-              </Field>
-
-              <Field label="Alto (cm)">
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={editModal.alto ?? 0}
-                  onChange={(e) =>
-                    setEditModal((v) => ({
-                      ...v,
-                      alto: Number(e.target.value),
-                    }))
-                  }
-                />
-              </Field>
-
-              <Field label="Ancho (cm)">
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={editModal.ancho ?? 0}
-                  onChange={(e) =>
-                    setEditModal((v) => ({
-                      ...v,
-                      ancho: Number(e.target.value),
-                    }))
-                  }
-                />
-              </Field>
-
-              <Field label="Descripción" full>
-                <Textarea
-                  value={editModal.descripcion}
-                  onChange={(e) =>
-                    setEditModal((v) => ({
-                      ...v,
-                      descripcion: e.target.value,
-                    }))
-                  }
-                  className="min-h-[92px]"
-                />
-              </Field>
-            </div>
-
-            <div className="mt-5 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                className="inline-flex items-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-medium text-white hover:bg-white/10"
-                onClick={closeEdit}
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className="inline-flex items-center rounded-xl bg-[#A30862] px-4 py-2 text-sm font-semibold text-white hover:opacity-95 disabled:opacity-60"
-                onClick={requestSave}
-              >
-                Guardar cambios
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {confirmSaveOpen && (
         <div
           className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 px-4"
@@ -936,6 +948,9 @@ export default function ProductosTable({ filtroId }: Props) {
           }}
         />
       )}
+
+      {editOverlay}
+      {detalleOverlay}
     </div>
   );
 }

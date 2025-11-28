@@ -1,5 +1,6 @@
 "use client";
 import React, { useMemo, useState, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 import { useBodegaDelete } from "@/hooks/useBodegaDelete";
 import { useBodegaActivate } from "@/hooks/useBodegaActivate";
@@ -408,6 +409,257 @@ export default function BodegasPage() {
     setMov((s) => ({ ...s, saving: false }));
   };
 
+  const stockOverlay =
+    typeof document !== "undefined" && stockModal.open && stockModal.bodega
+      ? createPortal(
+          <div
+            className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center px-4 py-8"
+            onMouseDown={(e) => {
+              if (e.target === e.currentTarget) closeStock();
+            }}
+          >
+            <div className="w-full max-w-5xl rounded-2xl border border-white/10 bg-[#121618] text-white shadow-2xl flex flex-col max-h-[calc(100vh-4rem)] overflow-hidden">
+              <div
+                className="flex items-center justify-between px-5 py-3"
+                style={{
+                  background:
+                    "linear-gradient(90deg, rgba(163,8,98,0.25) 0%, rgba(163,8,98,0.08) 100%)",
+                  borderBottom: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <div>
+                  <h3 className="text-base font-semibold">
+                    Existencias — {stockModal.bodega.nombre}
+                  </h3>
+                  <p className="text-xs text-white/70">
+                    Código: {stockModal.bodega.codigo ?? "—"}
+                  </p>
+                </div>
+                <button
+                  onClick={closeStock}
+                  className="rounded-full px-2 text-white/80 hover:bg-white/10"
+                  aria-label="Cerrar"
+                >
+                  ×
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto p-5 md:p-6">
+                {stockModal.loading ? (
+                  <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-sm text-white/80">
+                    Cargando existencias…
+                  </div>
+                ) : stockModal.error ? (
+                  <div className="rounded-xl border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-200">
+                    {stockModal.error}
+                  </div>
+                ) : (
+                  <>
+                    <div className="rounded-xl border border-white/10 max-h-[320px] overflow-auto">
+                      <table className="min-w-full border-separate border-spacing-0">
+                        <thead>
+                          <tr className="bg-[#1C2224] text-left text-xs uppercase tracking-wide text-white/70">
+                            <th className="px-4 py-2.5">Producto</th>
+                            <th className="px-4 py-2.5">SKU</th>
+                            <th className="px-4 py-2.5">Existencia</th>
+                            <th className="px-4 py-2.5">Disponible</th>
+                          </tr>
+                        </thead>
+                        <tbody className="[&>tr:not(:last-child)]:border-b [&>tr]:border-white/10">
+                          {stockModal.rows.length === 0 ? (
+                            <tr>
+                              <td className="px-4 py-3 text-sm text-white/70" colSpan={4}>
+                                No hay productos registrados.
+                              </td>
+                            </tr>
+                          ) : (
+                            stockModal.rows.map((r, i) => (
+                              <tr
+                                key={`${r.productoID}-${i}`}
+                                className={i % 2 === 0 ? "bg-white/[.02]" : "bg-transparent"}
+                              >
+                                <td className="px-4 py-2.5 text-sm text-white">{r.producto}</td>
+                                <td className="px-4 py-2.5 text-sm text-white/80">
+                                  {r.sku ?? "—"}
+                                </td>
+                                <td className="px-4 py-2.5 text-sm">
+                                  {Number(r.existencia).toLocaleString()}
+                                </td>
+                                <td className="px-4 py-2.5 text-sm">
+                                  {Number(r.disponible).toLocaleString()}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5">
+                      <h4 className="text-sm font-semibold">
+                        Agregar o ajustar stock en esta bodega
+                      </h4>
+
+                      <div className="mt-4 grid gap-3 md:grid-cols-3">
+                        <div className="md:col-span-1">
+                          <ProductSelect
+                            value={mov.productoID}
+                            onChange={(v) => setMov((s) => ({ ...s, productoID: v }))}
+                            label="Producto *"
+                            required
+                            disabled={mov.saving}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-xs text-white/70">
+                            Tipo de movimiento <span className="text-rose-300">*</span>
+                          </label>
+                          <div className="relative">
+                            <select
+                              value={mov.tipo}
+                              onChange={(e) =>
+                                setMov((s) => ({
+                                  ...s,
+                                  tipo: e.target.value as TipoMovimiento,
+                                  cantidad: 0,
+                                  nuevaExistencia: 0,
+                                  error: null,
+                                }))
+                              }
+                              disabled={mov.saving}
+                              className="dark-native-select w-full appearance-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40 disabled:opacity-60"
+                            >
+                              <option value="">— Seleccionar —</option>
+                              {tipoMovimientoOptions.map((opt) => (
+                                <option key={opt.value} value={opt.value}>
+                                  {opt.label}
+                                </option>
+                              ))}
+                            </select>
+                            <svg
+                              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M6 9l6 6 6-6" />
+                            </svg>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="mb-1 block text-xs text-white/70">
+                            {mov.tipo === "ajuste" ? "Nueva existencia *" : "Cantidad a mover *"}
+                          </label>
+                          <input
+                            type="number"
+                            min={0}
+                            step="0.01"
+                            value={mov.tipo === "ajuste" ? mov.nuevaExistencia : mov.cantidad}
+                            onChange={(e) => {
+                              const val = Number(e.target.value);
+                              setMov((s) =>
+                                s.tipo === "ajuste"
+                                  ? { ...s, nuevaExistencia: val }
+                                  : { ...s, cantidad: val }
+                              );
+                            }}
+                            className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40"
+                            placeholder="0"
+                            disabled={mov.saving}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <label className="mb-1 block text-xs text-white/70">Motivo</label>
+                        <input
+                          value={mov.motivo}
+                          onChange={(e) => setMov((s) => ({ ...s, motivo: e.target.value }))}
+                          className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40"
+                          placeholder="Conteo físico, merma, etc."
+                          disabled={mov.saving}
+                        />
+                      </div>
+
+                      {mov.error && (
+                        <div className="mt-3 rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-200">
+                          {mov.error}
+                        </div>
+                      )}
+
+                      <div className="mt-4 flex justify-end">
+                        <button
+                          onClick={() => setConfirmMovOpen(true)}
+                          disabled={mov.saving || !canConfirmMovimiento}
+                          className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                          style={{ backgroundColor: WINE }}
+                        >
+                          {mov.saving ? "Guardando…" : confirmMovimientoLabel}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {confirmMovOpen && (
+              <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+                <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#121618] p-5 text-white shadow-2xl">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-lg font-semibold">Guardar cambios</h4>
+                    <button
+                      className="rounded-full px-2 text-white/80 hover:bg-white/10"
+                      aria-label="Cerrar"
+                      onClick={() => setConfirmMovOpen(false)}
+                    >
+                      ×
+                    </button>
+                  </div>
+
+                  <p className="mt-4 text-sm text-white/80">
+                    ¿Deseas guardar los cambios del movimiento
+                    {selectedProduct ? (
+                      <>
+                        {" "}
+                        del producto{" "}
+                        <span className="font-semibold">{selectedProduct.producto}</span>?
+                      </>
+                    ) : (
+                      "?"
+                    )}
+                  </p>
+
+                  <div className="mt-6 flex justify-end gap-2">
+                    <button
+                      onClick={() => setConfirmMovOpen(false)}
+                      className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={async () => {
+                        setConfirmMovOpen(false);
+                        await onSubmitMovimiento();
+                      }}
+                      className="rounded-xl px-4 py-2 text-sm font-semibold text-white"
+                      style={{ backgroundColor: WINE }}
+                    >
+                      Sí, guardar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>,
+          document.body
+        )
+      : null;
+
+
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-6">
       <SectionHeader title="Bodegas" subtitle={`Total: ${rows.length}`} />
@@ -509,7 +761,7 @@ export default function BodegasPage() {
 
       {editing && (
         <div
-          className="fixed inset-0 z-[60] grid place-items-center bg-black/60 p-4"
+          className="fixed inset-0 z-[60] grid place-items-center bg-black/60 backdrop-blur-sm p-4"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) setEditing(null);
           }}
@@ -535,7 +787,7 @@ export default function BodegasPage() {
       )}
 
       {confirm.open && (
-        <div className="fixed inset-0 z-[70] grid place-items-center bg-black/60 p-4">
+        <div className="fixed inset-0 z-[70] grid place-items-center bg-black/60 backdrop-blur-sm p-4">
           <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#121618] p-5 text-white shadow-2xl">
             <h4 className="text-lg font-semibold">
               {confirm.kind === "inactivate" ? "Inactivar bodega" : "Reactivar bodega"}
@@ -563,249 +815,7 @@ export default function BodegasPage() {
         </div>
       )}
 
-      {stockModal.open && stockModal.bodega && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 flex justify-center px-4"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) closeStock();
-          }}
-        >
-          <div className="mt-24 mb-8 w-full max-w-5xl rounded-2xl border border-white/10 bg-[#121618] text-white shadow-2xl flex flex-col max-h-[calc(100vh-7rem)] overflow-hidden">
-            <div
-              className="flex items-center justify-between px-5 py-3"
-              style={{
-                background:
-                  "linear-gradient(90deg, rgba(163,8,98,0.25) 0%, rgba(163,8,98,0.08) 100%)",
-                borderBottom: "1px solid rgba(255,255,255,0.08)",
-              }}
-            >
-              <div>
-                <h3 className="text-base font-semibold">
-                  Existencias — {stockModal.bodega.nombre}
-                </h3>
-                <p className="text-xs text-white/70">
-                  Código: {stockModal.bodega.codigo ?? "—"}
-                </p>
-              </div>
-              <button
-                onClick={closeStock}
-                className="rounded-full px-2 text-white/80 hover:bg-white/10"
-                aria-label="Cerrar"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-5 md:p-6">
-              {stockModal.loading ? (
-                <div className="rounded-xl border border-white/10 bg-white/5 p-6 text-sm text-white/80">
-                  Cargando existencias…
-                </div>
-              ) : stockModal.error ? (
-                <div className="rounded-xl border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-200">
-                  {stockModal.error}
-                </div>
-              ) : (
-                <>
-                  <div className="rounded-xl border border-white/10 max-h-[320px] overflow-auto">
-                    <table className="min-w-full border-separate border-spacing-0">
-                      <thead>
-                        <tr className="bg-[#1C2224] text-left text-xs uppercase tracking-wide text-white/70">
-                          <th className="px-4 py-2.5">Producto</th>
-                          <th className="px-4 py-2.5">SKU</th>
-                          <th className="px-4 py-2.5">Existencia</th>
-                          <th className="px-4 py-2.5">Disponible</th>
-                        </tr>
-                      </thead>
-                      <tbody className="[&>tr:not(:last-child)]:border-b [&>tr]:border-white/10">
-                        {stockModal.rows.length === 0 ? (
-                          <tr>
-                            <td className="px-4 py-3 text-sm text-white/70" colSpan={4}>
-                              No hay productos registrados.
-                            </td>
-                          </tr>
-                        ) : (
-                          stockModal.rows.map((r, i) => (
-                            <tr
-                              key={`${r.productoID}-${i}`}
-                              className={i % 2 === 0 ? "bg-white/[.02]" : "bg-transparent"}
-                            >
-                              <td className="px-4 py-2.5 text-sm text-white">{r.producto}</td>
-                              <td className="px-4 py-2.5 text-sm text-white/80">{r.sku ?? "—"}</td>
-                              <td className="px-4 py-2.5 text-sm">
-                                {Number(r.existencia).toLocaleString()}
-                              </td>
-                              <td className="px-4 py-2.5 text-sm">
-                                {Number(r.disponible).toLocaleString()}
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5">
-                    <h4 className="text-sm font-semibold">
-                      Agregar o ajustar stock en esta bodega
-                    </h4>
-
-                    <div className="mt-4 grid gap-3 md:grid-cols-3">
-                      <div className="md:col-span-1">
-                        <ProductSelect
-                          value={mov.productoID}
-                          onChange={(v) => setMov((s) => ({ ...s, productoID: v }))}
-                          label="Producto *"
-                          required
-                          disabled={mov.saving}
-                        />
-                      </div>
-
-                      <div>
-                        <label className="mb-1 block text-xs text-white/70">
-                          Tipo de movimiento <span className="text-rose-300">*</span>
-                        </label>
-                        <div className="relative">
-                          <select
-                            value={mov.tipo}
-                            onChange={(e) =>
-                              setMov((s) => ({
-                                ...s,
-                                tipo: e.target.value as TipoMovimiento,
-                                cantidad: 0,
-                                nuevaExistencia: 0,
-                                error: null,
-                              }))
-                            }
-                            disabled={mov.saving}
-                            className="dark-native-select w-full appearance-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40 disabled:opacity-60"
-                          >
-                            <option value="">— Seleccionar —</option>
-                            {tipoMovimientoOptions.map((opt) => (
-                              <option key={opt.value} value={opt.value}>
-                                {opt.label}
-                              </option>
-                            ))}
-                          </select>
-                          <svg
-                            className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/60"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                          >
-                            <path d="M6 9l6 6 6-6" />
-                          </svg>
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="mb-1 block text-xs text-white/70">
-                          {mov.tipo === "ajuste" ? "Nueva existencia *" : "Cantidad a mover *"}
-                        </label>
-                        <input
-                          type="number"
-                          min={0}
-                          step="0.01"
-                          value={mov.tipo === "ajuste" ? mov.nuevaExistencia : mov.cantidad}
-                          onChange={(e) => {
-                            const val = Number(e.target.value);
-                            setMov((s) =>
-                              s.tipo === "ajuste"
-                                ? { ...s, nuevaExistencia: val }
-                                : { ...s, cantidad: val }
-                            );
-                          }}
-                          className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40"
-                          placeholder="0"
-                          disabled={mov.saving}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      <label className="mb-1 block text-xs text-white/70">Motivo</label>
-                      <input
-                        value={mov.motivo}
-                        onChange={(e) => setMov((s) => ({ ...s, motivo: e.target.value }))}
-                        className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40"
-                        placeholder="Conteo físico, merma, etc."
-                        disabled={mov.saving}
-                      />
-                    </div>
-
-                    {mov.error && (
-                      <div className="mt-3 rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-200">
-                        {mov.error}
-                      </div>
-                    )}
-
-                    <div className="mt-4 flex justify-end">
-                      <button
-                        onClick={() => setConfirmMovOpen(true)}
-                        disabled={mov.saving || !canConfirmMovimiento}
-                        className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
-                        style={{ backgroundColor: WINE }}
-                      >
-                        {mov.saving ? "Guardando…" : confirmMovimientoLabel}
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {confirmMovOpen && (
-            <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/60 px-4">
-              <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#121618] p-5 text-white shadow-2xl">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-lg font-semibold">Guardar cambios</h4>
-                  <button
-                    className="rounded-full px-2 text-white/80 hover:bg-white/10"
-                    aria-label="Cerrar"
-                    onClick={() => setConfirmMovOpen(false)}
-                  >
-                    ×
-                  </button>
-                </div>
-
-                <p className="mt-4 text-sm text-white/80">
-                  ¿Deseas guardar los cambios del movimiento
-                  {selectedProduct ? (
-                    <>
-                      {" "}
-                      del producto{" "}
-                      <span className="font-semibold">{selectedProduct.producto}</span>?
-                    </>
-                  ) : (
-                    "?"
-                  )}
-                </p>
-
-                <div className="mt-6 flex justify-end gap-2">
-                  <button
-                    onClick={() => setConfirmMovOpen(false)}
-                    className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={async () => {
-                      setConfirmMovOpen(false);
-                      await onSubmitMovimiento();
-                    }}
-                    className="rounded-xl px-4 py-2 text-sm font-semibold text-white"
-                    style={{ backgroundColor: WINE }}
-                  >
-                    Sí, guardar
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {stockOverlay}
     </div>
   );
 }

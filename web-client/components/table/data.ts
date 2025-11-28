@@ -17,7 +17,7 @@ export const users = [
    },
    {
       id: 2,
-      name: 'Alexandra Alpizar',
+      name: 'Alexandraaaaa Alpizar',
       role: 'Technical Lead',
       team: 'Development',
       status: 'paused',

@@ -1,199 +1,254 @@
 import React from "react";
-import { Text, Link } from "@nextui-org/react";
-import NextLink from "next/link";
+import { Text } from "@nextui-org/react";
 
 import { Box } from "../styles/box";
 import { Flex } from "../styles/flex";
-import { TableWrapper } from "../table/table";
-
-import { CardBalance1 } from "./card-balance1";
-import { CardBalance2 } from "./card-balance2";
-import { CardBalance3 } from "./card-balance3";
-import { CardAgents } from "./card-agents";
-import { CardTransactions } from "./card-transactions";
 
 const BG_ROOT = "#0B0F0E";
-const SURFACE = "#121618";
-const TEXT = "#E6E9EA";
-const MUTED = "#8B9AA0";
-const MAGENTA = "#A30862";
+const SURFACE = "#121018";
+const SURFACE_SOFT = "#191320";
+const TEXT = "#F5F3F7";
+const MUTED = "#A69BB5";
+const BORDER = "rgba(255,255,255,0.09)";
+const ACCENT = "#A30862";
 
-export const Content: React.FC = () => (
-  <Box css={{ overflow: "hidden", height: "100%", background: BG_ROOT }}>
-    <Flex
+const modules = [
+  {
+    label: "Administración",
+    description:
+      "Usuarios, roles, permisos y seguridad del acceso a ProfitUp Manager.",
+  },
+  {
+    label: "Clientes",
+    description:
+      "Ficha de clientes, datos de contacto y base para el programa de fidelidad.",
+  },
+  {
+    label: "Operaciones / Compras",
+    description:
+      "Órdenes de compra a proveedores y control del abastecimiento de la bodega.",
+  },
+  {
+    label: "Ventas",
+    description:
+      "Registro de ventas, consulta de historial y detalle de cada operación.",
+  },
+  {
+    label: "Inventario",
+    description:
+      "Existencias por bodega, movimientos y ajustes de inventario de cada referencia.",
+  },
+  {
+    label: "Vencimientos",
+    description:
+      "Documentos y compromisos con fecha de vencimiento, recordatorios y seguimiento.",
+  },
+  {
+    label: "Reportes",
+    description:
+      "Reportes de ventas, clientes e inventario para análisis de resultados.",
+  },
+  {
+    label: "Perfil",
+    description:
+      "Datos del usuario, sesión activa y preferencias personales dentro del sistema.",
+  },
+];
+
+export const Content: React.FC = () => {
+  return (
+    <Box
       css={{
-        gap: "$8",
-        pt: "$5",
-        height: "fit-content",
-        flexWrap: "wrap",
-        "@lg": { flexWrap: "nowrap" },
-        "@sm": { pt: "$10" },
+        overflow: "hidden",
+        minHeight: "100%",
+        background: BG_ROOT,
       }}
-      justify={"center"}
     >
-      <Flex
+      <Box
         css={{
           px: "$12",
-          mt: "$8",
+          pt: "$10",
+          pb: "$6",
           "@xsMax": { px: "$10" },
-          gap: "$12",
         }}
-        direction={"column"}
       >
-        <Box>
+        <Box
+          css={{
+            width: "100%",
+          }}
+        >
           <Text
-            h3
+            span
             css={{
-              color: TEXT,
-              textAlign: "center",
-              letterSpacing: "0.2px",
-              "@sm": { textAlign: "inherit" },
+              color: MUTED,
+              letterSpacing: "0.16em",
+              textTransform: "uppercase",
+              fontSize: "0.72rem",
             }}
           >
-            Available Balance
+            ProfitUp · Panel operativo
           </Text>
-          <Flex
-            css={{
-              gap: "$10",
-              flexWrap: "wrap",
-              justifyContent: "center",
-              "@sm": { flexWrap: "nowrap" },
-            }}
-            direction={"row"}
-          >
-            <CardBalance1 />
-            <CardBalance2 />
-            <CardBalance3 />
-          </Flex>
-        </Box>
 
-        <Box>
           <Text
-            h3
+            h1
             css={{
               color: TEXT,
-              textAlign: "center",
-              letterSpacing: "0.2px",
-              "@lg": { textAlign: "inherit" },
+              lineHeight: 1.1,
+              fontSize: "2.6rem",
+              mt: "$4",
+              mb: "$3",
             }}
           >
-            Statistics
+            ProfitUp Manager
           </Text>
-          <Box
+
+          <Text
+            span
             css={{
-              width: "100%",
-              backgroundColor: SURFACE,
-              border: "1px solid rgba(255,255,255,0.08)",
-              boxShadow: "0 20px 60px rgba(0,0,0,.45)",
-              borderRadius: "$2xl",
-              px: "$10",
-              py: "$10",
+              color: MUTED,
+              fontSize: "0.95rem",
+              lineHeight: 1.7,
+              display: "block",
             }}
           >
-            <Text
-              css={{
-                color: MUTED,
-                fontSize: "0.875rem",
-                textAlign: "center",
-              }}
-            >
-              Aquí se mostrará el gráfico de estadísticas.
-            </Text>
-          </Box>
+            Sistema administrativo para la operación diaria de una empresa que
+            vende vinos. Desde este panel tienes una vista clara de las áreas
+            principales: administración, clientes, operaciones de compra, ventas,
+            inventario, vencimientos y reportes.
+          </Text>
         </Box>
-      </Flex>
+      </Box>
 
       <Box
         css={{
           px: "$12",
-          mt: "$8",
-          height: "fit-content",
+          pb: "$12",
           "@xsMax": { px: "$10" },
-          gap: "$6",
-          overflow: "hidden",
         }}
       >
-        <Text
-          h3
-          css={{
-            color: TEXT,
-            textAlign: "center",
-            letterSpacing: "0.2px",
-            "@lg": { textAlign: "inherit" },
-          }}
-        >
-          Section
-        </Text>
         <Flex
           direction={"column"}
-          justify={"center"}
           css={{
             gap: "$8",
-            flexDirection: "row",
-            flexWrap: "wrap",
-            "@sm": { flexWrap: "nowrap" },
-            "@lg": { flexWrap: "nowrap", flexDirection: "column" },
+            width: "100%",
           }}
         >
-          <CardAgents />
-          <CardTransactions />
+          <Box>
+            <Text
+              h3
+              css={{
+                color: TEXT,
+                mb: "$3",
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                fontSize: "0.8rem",
+              }}
+            >
+              Áreas del sistema ProfitUp Manager
+            </Text>
+
+            <Box
+              css={{
+                background: SURFACE,
+                borderRadius: "$2xl",
+                border: `1px solid ${BORDER}`,
+                px: "$8",
+                py: "$8",
+              }}
+            >
+              <Box
+                css={{
+                  display: "grid",
+                  gap: "$4",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                  width: "100%",
+                }}
+              >
+                {modules.map((mod) => (
+                  <Box
+                    key={mod.label}
+                    css={{
+                      borderRadius: "$lg",
+                      background: SURFACE_SOFT,
+                      border: `1px solid rgba(255,255,255,0.04)`,
+                      px: "$5",
+                      py: "$4",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "$1",
+                    }}
+                  >
+                    <Text
+                      span
+                      css={{
+                        color: TEXT,
+                        fontWeight: "600",
+                        fontSize: "0.95rem",
+                      }}
+                    >
+                      {mod.label}
+                    </Text>
+                    <Text
+                      span
+                      css={{
+                        color: MUTED,
+                        fontSize: "0.82rem",
+                      }}
+                    >
+                      {mod.description}
+                    </Text>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          </Box>
+
+          <Box>
+            <Text
+              h3
+              css={{
+                color: TEXT,
+                mb: "$3",
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                fontSize: "0.8rem",
+              }}
+            >
+              Cómo usar ProfitUp Manager en el día a día
+            </Text>
+
+            <Box
+              css={{
+                background: SURFACE,
+                borderRadius: "$2xl",
+                border: `1px solid ${BORDER}`,
+                px: "$8",
+                py: "$7",
+              }}
+            >
+              <Text
+                span
+                css={{
+                  color: MUTED,
+                  fontSize: "0.85rem",
+                  lineHeight: 1.7,
+                }}
+              >
+                Comienza revisando el estado de inventario por bodega y los
+                vencimientos próximos. Registra las ventas desde el módulo de
+                Ventas para que el stock se mantenga alineado con la realidad.
+                Utiliza Operaciones para controlar las compras a proveedores y
+                mantener abastecida la bodega. Finalmente, apóyate en los
+                Reportes para analizar resultados y en Administración para
+                gestionar los usuarios y permisos de tu equipo dentro de
+                ProfitUp Manager.
+              </Text>
+            </Box>
+          </Box>
         </Flex>
       </Box>
-    </Flex>
-
-    <Flex
-      direction={"column"}
-      justify={"center"}
-      css={{
-        width: "100%",
-        py: "$10",
-        px: "$10",
-        mt: "$8",
-        "@sm": { px: "$20" },
-      }}
-    >
-      <Flex justify={"between"} wrap={"wrap"} css={{ alignItems: "center" }}>
-        <Text
-          h3
-          css={{
-            color: TEXT,
-            textAlign: "center",
-            letterSpacing: "0.2px",
-            "@lg": { textAlign: "inherit" },
-          }}
-        >
-          Latest Users
-        </Text>
-
-        <NextLink href="/accounts" passHref legacyBehavior>
-          <Link
-            block
-            css={{
-              color: MAGENTA,
-              textUnderlineOffset: "4px",
-              "&:hover": { opacity: 0.9 },
-              textAlign: "center",
-              "@lg": { textAlign: "inherit" },
-            }}
-          >
-            View All
-          </Link>
-        </NextLink>
-      </Flex>
-
-      <Box
-        css={{
-          mt: "$6",
-          backgroundColor: SURFACE,
-          border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: "$2xl",
-          boxShadow: "0 20px 60px rgba(0,0,0,.35)",
-        }}
-      >
-        <TableWrapper />
-      </Box>
-    </Flex>
-  </Box>
-);
+    </Box>
+  );
+};
 
 export default Content;

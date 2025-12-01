@@ -3,7 +3,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import SectionHeader from "../../components/SectionHeader";
 import ConfirmDialog from "../../components/ConfirmDialog";
-import { CardTable, Th, Td, PageBtn, PillBadge } from "../../components/ui/table";
+import {
+  CardTable,
+  Th,
+  Td,
+  PageBtn,
+  PillBadge,
+} from "../../components/ui/table";
 import { useApi } from "@/components/hooks/useApi";
 import { formatMoney } from "@/helpers/ui-helpers";
 import { useRouter } from "next/router";
@@ -27,9 +33,19 @@ type OrdenCompraHistorialPageDto = {
   items: OrdenCompraRow[];
 };
 
+function toInputDate(d: Date) {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 export default function OrdenesComprasHistorialPage() {
   const router = useRouter();
   const { call } = useApi();
+
+  const hoy = new Date();
+  const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
 
   const [rows, setRows] = useState<OrdenCompraRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -38,6 +54,11 @@ export default function OrdenesComprasHistorialPage() {
   const [q, setQ] = useState("");
   const [estadoFilter, setEstadoFilter] =
     useState<"Todos" | OrdenEstado>("Todos");
+
+  const [fechaDesde, setFechaDesde] = useState<string>(
+    toInputDate(primerDiaMes)
+  );
+  const [fechaHasta, setFechaHasta] = useState<string>(toInputDate(hoy));
 
   const pageSize = 10;
   const [page, setPage] = useState(1);
@@ -83,8 +104,30 @@ export default function OrdenesComprasHistorialPage() {
 
   const filtered = useMemo(() => {
     const term = q.trim().toLowerCase();
+
+    let desdeTs: number | null = null;
+    let hastaTs: number | null = null;
+
+    if (fechaDesde) {
+      const d = new Date(fechaDesde);
+      d.setHours(0, 0, 0, 0);
+      desdeTs = d.getTime();
+    }
+
+    if (fechaHasta) {
+      const d = new Date(fechaHasta);
+      d.setHours(23, 59, 59, 999);
+      hastaTs = d.getTime();
+    }
+
     return rows.filter((r) => {
       if (estadoFilter !== "Todos" && r.estado !== estadoFilter) return false;
+
+      const fechaRow = new Date(r.fechaSolicitud);
+      const fechaTs = fechaRow.getTime();
+
+      if (desdeTs !== null && fechaTs < desdeTs) return false;
+      if (hastaTs !== null && fechaTs > hastaTs) return false;
 
       if (!term) return true;
 
@@ -97,9 +140,12 @@ export default function OrdenesComprasHistorialPage() {
         r.estado.toLowerCase().includes(term)
       );
     });
-  }, [rows, q, estadoFilter]);
+  }, [rows, q, estadoFilter, fechaDesde, fechaHasta]);
 
-  useEffect(() => setPage(1), [q, estadoFilter]);
+  useEffect(
+    () => setPage(1),
+    [q, estadoFilter, fechaDesde, fechaHasta]
+  );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pageRows = useMemo(() => {
@@ -109,8 +155,11 @@ export default function OrdenesComprasHistorialPage() {
 
   const prettyId = (id: number) => `OC-${String(id).padStart(4, "0")}`;
 
-  const solicitarCambioEstado = (row: OrdenCompraRow, nuevoEstado: OrdenEstado) => {
-    if (row.estado !== "Pendiente") return; 
+  const solicitarCambioEstado = (
+    row: OrdenCompraRow,
+    nuevoEstado: OrdenEstado
+  ) => {
+    if (row.estado !== "Pendiente") return;
     if (row.estado === nuevoEstado) return;
 
     setPendingChange({ id: row.ordenCompraID, nuevoEstado });
@@ -179,7 +228,7 @@ export default function OrdenesComprasHistorialPage() {
   };
 
   return (
-    <div className="mx-auto max-w-6xl p-4 md:p-6">
+    <div className="mx-auto w-full max-w-7xl px-4 md:px-6 py-4 md:py-6">
       <SectionHeader
         title="Órdenes de compra"
         subtitle="Consulta, registra y gestiona el estado de las órdenes de compra a proveedores"
@@ -230,6 +279,31 @@ export default function OrdenesComprasHistorialPage() {
           >
             + Nueva orden
           </button>
+        </div>
+      </div>
+
+      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:max-w-xl">
+        <div className="flex flex-col gap-1">
+          <label className="mb-1 block text-xs font-medium text-white/70">
+            Fecha desde
+          </label>
+          <input
+            type="date"
+            value={fechaDesde}
+            onChange={(e) => setFechaDesde(e.target.value)}
+            className="w-full rounded-xl border border-white/10 bg-[#121618] px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="mb-1 block text-xs font-medium text-white/70">
+            Fecha hasta
+          </label>
+          <input
+            type="date"
+            value={fechaHasta}
+            onChange={(e) => setFechaHasta(e.target.value)}
+            className="w-full rounded-xl border border-white/10 bg-[#121618] px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+          />
         </div>
       </div>
 
@@ -304,8 +378,7 @@ export default function OrdenesComprasHistorialPage() {
             <span>
               Mostrando{" "}
               <b className="text-white">
-                {pageRows.length === 0 ? 0 : (page - 1) * pageSize + 1}
-                -
+                {pageRows.length === 0 ? 0 : (page - 1) * pageSize + 1}-
                 {(page - 1) * pageSize + pageRows.length}
               </b>{" "}
               de <b className="text-white">{filtered.length}</b>

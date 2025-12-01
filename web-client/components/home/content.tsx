@@ -1,61 +1,125 @@
 import React from "react";
 import { Text } from "@nextui-org/react";
+import { useRouter } from "next/router";
 
 import { Box } from "../styles/box";
 import { Flex } from "../styles/flex";
+import { useSession } from "../hooks/useSession";
 
-const BG_ROOT = "#0B0F0E";
-const SURFACE = "#121018";
-const SURFACE_SOFT = "#191320";
+const BG_ROOT = "#050608";
+const SURFACE = "#0B0C11";
+const SURFACE_SOFT = "#151721";
 const TEXT = "#F5F3F7";
 const MUTED = "#A69BB5";
 const BORDER = "rgba(255,255,255,0.09)";
 const ACCENT = "#A30862";
 
-const modules = [
+type Role = "admin" | "seller";
+
+type ModuleCard = {
+  label: string;
+  description: string;
+  href: string;
+  sellerHref?: string;          
+  roles?: Role[];               
+};
+
+const modules: ModuleCard[] = [
   {
     label: "Administración",
     description:
       "Usuarios, roles, permisos y seguridad del acceso a ProfitUp Manager.",
+    href: "/accounts",
+    roles: ["admin"],
   },
   {
     label: "Clientes",
     description:
       "Ficha de clientes, datos de contacto y base para el programa de fidelidad.",
+    href: "/customers",
+    roles: ["admin", "seller"],
   },
   {
     label: "Operaciones / Compras",
     description:
       "Órdenes de compra a proveedores y control del abastecimiento de la bodega.",
+    href: "/compras",
+    roles: ["admin"],
   },
   {
     label: "Ventas",
     description:
       "Registro de ventas, consulta de historial y detalle de cada operación.",
+    href: "/ventas",
+    sellerHref: "/ventas/registrar",
+    roles: ["admin", "seller"],
   },
   {
     label: "Inventario",
     description:
       "Existencias por bodega, movimientos y ajustes de inventario de cada referencia.",
+    href: "/inventario/inventario",
+    roles: ["admin", "seller"],
   },
   {
     label: "Vencimientos",
     description:
       "Documentos y compromisos con fecha de vencimiento, recordatorios y seguimiento.",
+    href: "/vencimientos/gestionar",
+    roles: ["admin"],
   },
   {
     label: "Reportes",
     description:
       "Reportes de ventas, clientes e inventario para análisis de resultados.",
+    href: "/reportes",
+    roles: ["admin"],
   },
   {
     label: "Perfil",
     description:
       "Datos del usuario, sesión activa y preferencias personales dentro del sistema.",
+    href: "/Perfil/perfil",
+    roles: ["admin", "seller"],
   },
 ];
 
 export const Content: React.FC = () => {
+  const router = useRouter();
+  const { me, isAuthenticated } = useSession();
+
+  const rawRole: string =
+    (me as any)?.rolNombre ||
+    (me as any)?.rol?.nombre ||
+    (me as any)?.rol ||
+    "";
+
+  const normalizedRole = rawRole.toUpperCase();
+
+  const isAdmin = normalizedRole === "ADMINISTRADOR";
+  const isSeller =
+    normalizedRole === "VENDEDOR" || normalizedRole === "EMPLEADO";
+
+  const isGuest = !isAuthenticated || (!isAdmin && !isSeller);
+
+  const filteredModules = modules.filter((mod) => {
+    if (isGuest) return false;
+
+    const allowedRoles = mod.roles ?? ["admin", "seller"];
+    if (isAdmin) return allowedRoles.includes("admin");
+    if (isSeller) return allowedRoles.includes("seller");
+    return false;
+  });
+
+  const handleModuleClick = (mod: ModuleCard) => {
+    if (isGuest) return;
+
+    const targetHref =
+      isSeller && !isAdmin && mod.sellerHref ? mod.sellerHref : mod.href;
+
+    router.push(targetHref);
+  };
+
   return (
     <Box
       css={{
@@ -94,7 +158,7 @@ export const Content: React.FC = () => {
             css={{
               color: TEXT,
               lineHeight: 1.1,
-              fontSize: "2.6rem",
+              fontSize: "2.4rem",
               mt: "$4",
               mb: "$3",
             }}
@@ -109,12 +173,11 @@ export const Content: React.FC = () => {
               fontSize: "0.95rem",
               lineHeight: 1.7,
               display: "block",
+              maxWidth: "40rem",
             }}
           >
             Sistema administrativo para la operación diaria de una empresa que
-            vende vinos. Desde este panel tienes una vista clara de las áreas
-            principales: administración, clientes, operaciones de compra, ventas,
-            inventario, vencimientos y reportes.
+            vende vinos. Desde aquí accedes a los módulos clave de tu operación.
           </Text>
         </Box>
       </Box>
@@ -134,18 +197,35 @@ export const Content: React.FC = () => {
           }}
         >
           <Box>
-            <Text
-              h3
-              css={{
-                color: TEXT,
-                mb: "$3",
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                fontSize: "0.8rem",
-              }}
+            <Flex
+              justify={"between"}
+              align={"center"}
+              css={{ mb: "$3", gap: "$4", flexWrap: "wrap" }}
             >
-              Áreas del sistema ProfitUp Manager
-            </Text>
+              <Text
+                h3
+                css={{
+                  color: TEXT,
+                  letterSpacing: "0.12em",
+                  textTransform: "uppercase",
+                  fontSize: "0.8rem",
+                }}
+              >
+                Módulos disponibles
+              </Text>
+
+              {!isGuest && (
+                <Text
+                  span
+                  css={{
+                    color: MUTED,
+                    fontSize: "0.8rem",
+                  }}
+                >
+                  Selecciona un módulo para continuar.
+                </Text>
+              )}
+            </Flex>
 
             <Box
               css={{
@@ -156,50 +236,83 @@ export const Content: React.FC = () => {
                 py: "$8",
               }}
             >
-              <Box
-                css={{
-                  display: "grid",
-                  gap: "$4",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                  width: "100%",
-                }}
-              >
-                {modules.map((mod) => (
-                  <Box
-                    key={mod.label}
-                    css={{
-                      borderRadius: "$lg",
-                      background: SURFACE_SOFT,
-                      border: `1px solid rgba(255,255,255,0.04)`,
-                      px: "$5",
-                      py: "$4",
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: "$1",
-                    }}
-                  >
-                    <Text
-                      span
+              {isGuest ? (
+                <Text
+                  span
+                  css={{
+                    color: MUTED,
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  Debes iniciar sesión para ver y acceder a los módulos de
+                  ProfitUp Manager.
+                </Text>
+              ) : (
+                <Box
+                  css={{
+                    display: "grid",
+                    gap: "$4",
+                    gridTemplateColumns:
+                      "repeat(auto-fit, minmax(230px, 1fr))",
+                    width: "100%",
+                  }}
+                >
+                  {filteredModules.map((mod) => (
+                    <Box
+                      key={mod.label}
+                      as="button"
+                      onClick={() => handleModuleClick(mod)}
                       css={{
-                        color: TEXT,
-                        fontWeight: "600",
-                        fontSize: "0.95rem",
+                        all: "unset",
+                        borderRadius: "$lg",
+                        background: SURFACE_SOFT,
+                        border: `1px solid rgba(255,255,255,0.06)`,
+                        px: "$5",
+                        py: "$4",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "$2",
+                        cursor: "pointer",
+                        transition:
+                          "transform 0.15s ease-out, border-color 0.15s ease-out, background 0.15s ease-out, box-shadow 0.15s ease-out",
+                        boxShadow: "0 12px 30px rgba(0,0,0,0.5)",
+                        "&:hover": {
+                          transform: "translateY(-2px)",
+                          borderColor: ACCENT,
+                          background: "#181A24",
+                          boxShadow: "0 16px 40px rgba(0,0,0,0.7)",
+                        },
+                        "&:focus-visible": {
+                          outline: `2px solid ${ACCENT}`,
+                          outlineOffset: "2px",
+                        },
                       }}
                     >
-                      {mod.label}
-                    </Text>
-                    <Text
-                      span
-                      css={{
-                        color: MUTED,
-                        fontSize: "0.82rem",
-                      }}
-                    >
-                      {mod.description}
-                    </Text>
-                  </Box>
-                ))}
-              </Box>
+                      <Text
+                        span
+                        css={{
+                          color: TEXT,
+                          fontWeight: "600",
+                          fontSize: "0.95rem",
+                        }}
+                      >
+                        {mod.label}
+                      </Text>
+
+                      <Text
+                        span
+                        css={{
+                          color: MUTED,
+                          fontSize: "0.84rem",
+                          lineHeight: 1.6,
+                        }}
+                      >
+                        {mod.description}
+                      </Text>
+                    </Box>
+                  ))}
+                </Box>
+              )}
             </Box>
           </Box>
 
@@ -214,7 +327,7 @@ export const Content: React.FC = () => {
                 fontSize: "0.8rem",
               }}
             >
-              Cómo usar ProfitUp Manager en el día a día
+              Flujo diario recomendado
             </Text>
 
             <Box
@@ -231,17 +344,17 @@ export const Content: React.FC = () => {
                 css={{
                   color: MUTED,
                   fontSize: "0.85rem",
-                  lineHeight: 1.7,
+                  lineHeight: 1.8,
+                  maxWidth: "50rem",
+                  display: "block",
                 }}
               >
-                Comienza revisando el estado de inventario por bodega y los
-                vencimientos próximos. Registra las ventas desde el módulo de
-                Ventas para que el stock se mantenga alineado con la realidad.
-                Utiliza Operaciones para controlar las compras a proveedores y
-                mantener abastecida la bodega. Finalmente, apóyate en los
-                Reportes para analizar resultados y en Administración para
-                gestionar los usuarios y permisos de tu equipo dentro de
-                ProfitUp Manager.
+                Revisa primero el inventario y los vencimientos próximos. Luego
+                registra tus ventas para mantener el stock al día y utiliza
+                Operaciones para garantizar el abastecimiento de la bodega.
+                Finalmente, consulta los reportes para analizar resultados y
+                ajusta permisos y usuarios desde Administración cuando sea
+                necesario.
               </Text>
             </Box>
           </Box>

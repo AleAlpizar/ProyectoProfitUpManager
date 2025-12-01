@@ -13,6 +13,7 @@ using ProfitManagerApp.Api.Service.Reporting;
 using ProfitManagerApp.Application.Clientes;
 using ProfitManagerApp.Api.Background;
 using ProfitManagerApp.Api.Services;
+using ProfitManagerApp.Api.Repositories;
 using ProfitManagerApp.Data;
 using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Data.Infrastructure;
@@ -52,6 +53,8 @@ builder.Services.AddAutoMapper(typeof(ApiMappingProfile).Assembly);
 builder.Services.AddScoped<IInventarioRepository, InventarioRepository>();
 builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
 builder.Services.AddScoped<ClienteHandler>();
+
+builder.Services.AddScoped<IProveedorRepository, ProveedorRepository>(); 
 
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<JwtTokenService>();

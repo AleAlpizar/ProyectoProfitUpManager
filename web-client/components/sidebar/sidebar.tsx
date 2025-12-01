@@ -112,6 +112,15 @@ const Sidebar: React.FC = () => {
                 />
 
                 <SidebarItem
+                  title="Proveedores"
+                  icon={<AccountsIcon />} 
+                  isActive={router.pathname === "/providers"}
+                  href="/providers"
+                  onClickItem={setCollapsed}
+                />
+
+
+                <SidebarItem
                   title="Operaciones"
                   icon={<PaymentsIcon />}
                   isActive={router.pathname.startsWith("/compras")}

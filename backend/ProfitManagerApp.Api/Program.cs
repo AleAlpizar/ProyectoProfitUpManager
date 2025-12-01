@@ -19,6 +19,7 @@ using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Data.Infrastructure;
 using ProfitManagerApp.Data.Repositories;
 using QuestPDF.Infrastructure;
+
 using ApiDbContext = ProfitManagerApp.Api.Infrastructure.AppDbContext;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -81,6 +82,10 @@ builder.Services.AddScoped<VentasReportService>();
 builder.Services.AddScoped<InventarioReportService>();
 
 builder.Services.AddScoped<ReportUsersService>();
+
+builder.Services.AddScoped<IProveedorRepository, ProveedorRepository>();
+
+builder.Services.AddSingleton<SqlConnectionFactory>();
 
 builder.Services.AddControllers()
   .AddJsonOptions(o => o.JsonSerializerOptions.Converters

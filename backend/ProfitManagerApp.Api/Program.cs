@@ -26,17 +26,17 @@ var builder = WebApplication.CreateBuilder(args);
 
 const string CorsPolicy = "AllowFrontend";
 
-var allowedOrigins = builder.Configuration
-    .GetSection("Cors:AllowedOrigins")
-    .Get<string[]>() ?? new[] { "http://localhost:3000" };
-
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(CorsPolicy, p => p
-        .WithOrigins(allowedOrigins)
+        .WithOrigins(
+            "http://localhost:3000" 
+                                    
+        )
         .AllowAnyHeader()
         .AllowAnyMethod()
-        .AllowCredentials());
+        .AllowCredentials() 
+    );
 });
 
 builder.Services.AddDbContext<ApiDbContext>(opt =>
@@ -53,18 +53,18 @@ builder.Services.AddAutoMapper(typeof(ApiMappingProfile).Assembly);
 
 builder.Services.AddScoped<IInventarioRepository, InventarioRepository>();
 builder.Services.AddScoped<IClienteRepository, ClienteRepository>();
+builder.Services.AddScoped<IProveedorRepository, ProveedorRepository>();
+builder.Services.AddScoped<IVencimientosRepository, VencimientosRepository>();
+
 builder.Services.AddScoped<ClienteHandler>();
-
-builder.Services.AddScoped<IProveedorRepository, ProveedorRepository>(); 
-
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<JwtTokenService>();
 
+builder.Services.AddScoped<IVencimientosNotificationService, VencimientosNotificationService>();
+
+
 builder.Services.AddSingleton<IMailSender, SmtpMailSender>();
 builder.Services.AddScoped<PasswordResetService>();
-
-builder.Services.AddScoped<IVencimientosRepository, VencimientosRepository>();
-builder.Services.AddScoped<IVencimientosNotificationService, VencimientosNotificationService>();
 
 builder.Services.Configure<VencimientosNotificationOptions>(
     builder.Configuration.GetSection("VencimientosNotifications"));
@@ -75,17 +75,9 @@ builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<IReportSessionStore, ReportSessionStore>();
 builder.Services.AddSingleton<IReportExportService, ReportExportService>();
 builder.Services.AddScoped<InventarioReportService>();
-
 builder.Services.AddScoped<ClientesReportService>();
 builder.Services.AddScoped<VentasReportService>();
-
-builder.Services.AddScoped<InventarioReportService>();
-
 builder.Services.AddScoped<ReportUsersService>();
-
-builder.Services.AddScoped<IProveedorRepository, ProveedorRepository>();
-
-builder.Services.AddSingleton<SqlConnectionFactory>();
 
 builder.Services.AddControllers()
   .AddJsonOptions(o => o.JsonSerializerOptions.Converters
@@ -156,7 +148,11 @@ builder.Services
                 {
                     var bearer = ctx.Request.Headers["Authorization"].ToString();
                     var token = bearer?.Split(' ').LastOrDefault();
-                    if (string.IsNullOrWhiteSpace(token)) { ctx.Fail("Token ausente."); return; }
+                    if (string.IsNullOrWhiteSpace(token))
+                    {
+                        ctx.Fail("Token ausente.");
+                        return;
+                    }
 
                     var cfg = ctx.HttpContext.RequestServices.GetRequiredService<IConfiguration>();
                     var factory = ctx.HttpContext.RequestServices.GetRequiredService<SqlConnectionFactory>();
@@ -176,7 +172,11 @@ builder.Services
                     ", new { tok = token });
 
                     if (sesion.Equals(default((bool, DateTime)))) return;
-                    if (!sesion.IsActive) { ctx.Fail("Sesión inactiva."); return; }
+                    if (!sesion.IsActive)
+                    {
+                        ctx.Fail("Sesión inactiva.");
+                        return;
+                    }
 
                     var now = DateTime.UtcNow;
                     if (now > sesion.ExpireAt)
@@ -187,7 +187,8 @@ builder.Services
                     }
 
                     var newExpire = now.AddMinutes(slidingMinutes);
-                    await cn.ExecuteAsync(@"UPDATE dbo.Sesion SET ExpireAt = @exp WHERE Token = @tok",
+                    await cn.ExecuteAsync(
+                        @"UPDATE dbo.Sesion SET ExpireAt = @exp WHERE Token = @tok",
                         new { exp = newExpire, tok = token });
                 }
                 catch (Exception ex)
@@ -202,19 +203,21 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-else
-{
-    app.UseHttpsRedirection();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "ProfitManagerApp API v1");
+});
+
+app.UseHttpsRedirection();
 
 app.UseCors(CorsPolicy);
+
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapControllers().RequireCors(CorsPolicy);
 
 app.MapGet("/db-ping", (SqlConnectionFactory f) =>
 {
@@ -239,5 +242,5 @@ using (var scope = app.Services.CreateScope())
     await db.EnsureSeedUnidadesAsync();
 }
 
-app.MapControllers();
 app.Run();
+

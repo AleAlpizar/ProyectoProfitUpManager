@@ -6,7 +6,7 @@ import { Cliente } from "@/components/clientes/types";
 import { getFormattedDate } from "@/helpers/dateHelper";
 import Button from "@/components/buttons/button";
 import { formatMoney } from "@/helpers/ui-helpers";
-import { ProductoInLine } from "./types";
+import { ProductoInLine } from "../../types/types";
 import { useRouter } from "next/router";
 
 interface Line {

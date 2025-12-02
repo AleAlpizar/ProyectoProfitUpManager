@@ -33,9 +33,25 @@ namespace ProfitManagerApp.Api.Controllers
         [HttpGet("alertas")]
         public async Task<IActionResult> Alertas([FromQuery] int umbralDefault = 7)
         {
-            var rows = await _repo.ListAlertasPendientesAsync(umbralDefault);
-            return Ok(rows);
+            try
+            {
+                var rows = await _repo.ListAlertasPendientesAsync(umbralDefault);
+                return Ok(rows);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Vencimientos.Alertas] Error: {ex}");
+
+                // TEMPORALMENTE para ver el error desde Swagger:
+                return Problem(
+                    title: "ALERTAS_ERROR",
+                    detail: ex.Message,  // si quieres incluso ex.ToString() mientras debuggeas
+                    statusCode: 500
+                );
+            }
         }
+
+
 
         [HttpPost("procesar-alertas")]
         public async Task<IActionResult> ProcesarAlertas([FromQuery] int umbralDefault = 7, CancellationToken ct = default)

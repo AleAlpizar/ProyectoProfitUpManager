@@ -216,6 +216,7 @@ public class AuthController : ControllerBase
             return Conflict(new { message = "El correo ya está registrado." });
         }
     }
+
     [HttpGet("profile")]
     public async Task<ActionResult<UserProfileDto>> Profile()
     {

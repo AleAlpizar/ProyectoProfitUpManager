@@ -41,6 +41,7 @@ async function apiFetch<T>(
     ...init,
     headers,
     body,
+    // 🔒 Mantenemos credenciales incluidas para JWT en cookies/sesión
     credentials: init.credentials ?? "include",
   });
 
@@ -105,7 +106,8 @@ export function useApi() {
 
   const api = useMemo(
     () => ({
-      get:  <T,>(path: string, init?: RequestInit) => call<T>(path, { ...(init ?? {}), method: "GET" }),
+      get:  <T,>(path: string, init?: RequestInit) =>
+        call<T>(path, { ...(init ?? {}), method: "GET" }),
       post: <T,>(path: string, body?: any, init?: RequestInit) =>
         call<T>(path, { ...(init ?? {}), method: "POST", body }),
       put:  <T,>(path: string, body?: any, init?: RequestInit) =>

@@ -1,5 +1,5 @@
-import Clientes from "../../components/clientes/Clientes";
+import Clientes from "../../components/clientes/clientes";
 
-const customersPage = () => <Clientes />
+const CustomersPage = () => <Clientes />;
 
-export default customersPage;
+export default CustomersPage;

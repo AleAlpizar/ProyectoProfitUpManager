@@ -29,13 +29,10 @@ const string CorsPolicy = "AllowFrontend";
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(CorsPolicy, p => p
-        .WithOrigins(
-            "http://localhost:3000" 
-                                    
-        )
+        .WithOrigins("http://localhost:3000")
         .AllowAnyHeader()
         .AllowAnyMethod()
-        .AllowCredentials() 
+        .AllowCredentials()
     );
 });
 
@@ -61,7 +58,6 @@ builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<JwtTokenService>();
 
 builder.Services.AddScoped<IVencimientosNotificationService, VencimientosNotificationService>();
-
 
 builder.Services.AddSingleton<IMailSender, SmtpMailSender>();
 builder.Services.AddScoped<PasswordResetService>();
@@ -172,6 +168,7 @@ builder.Services
                     ", new { tok = token });
 
                     if (sesion.Equals(default((bool, DateTime)))) return;
+
                     if (!sesion.IsActive)
                     {
                         ctx.Fail("Sesión inactiva.");
@@ -203,15 +200,19 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-
-app.UseSwagger();
-app.UseSwaggerUI(c =>
+if (app.Environment.IsDevelopment())
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "ProfitManagerApp API v1");
-});
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "ProfitManagerApp API v1");
+    });
+}
 
-app.UseHttpsRedirection();
-
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseCors(CorsPolicy);
 
 app.UseAuthentication();
@@ -235,12 +236,16 @@ app.MapGet("/db-ping", (SqlConnectionFactory f) =>
         return Results.Problem(ex.Message);
     }
 });
-
-using (var scope = app.Services.CreateScope())
+try
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<ApiDbContext>();
     await db.EnsureSeedUnidadesAsync();
 }
+catch (Exception ex)
+{
+    Console.WriteLine("[SEED] " + ex);
+    throw;
+}
 
 app.Run();
-

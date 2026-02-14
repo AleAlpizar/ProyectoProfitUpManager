@@ -5,15 +5,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using ProfitManagerApp.Api.Auth;
+using ProfitManagerApp.Api.Background;
 using ProfitManagerApp.Api.Data.Abstractions;
 using ProfitManagerApp.Api.Infrastructure;
 using ProfitManagerApp.Api.Mapping;
-using ProfitManagerApp.Api.Models.Rows;
-using ProfitManagerApp.Api.Service.Reporting;
-using ProfitManagerApp.Application.Clientes;
-using ProfitManagerApp.Api.Background;
-using ProfitManagerApp.Api.Services;
 using ProfitManagerApp.Api.Repositories;
+using ProfitManagerApp.Api.Service.Reporting;
+using ProfitManagerApp.Api.Services;
+using ProfitManagerApp.Application.Clientes;
 using ProfitManagerApp.Data;
 using ProfitManagerApp.Data.Abstractions;
 using ProfitManagerApp.Data.Infrastructure;
@@ -26,16 +25,26 @@ var builder = WebApplication.CreateBuilder(args);
 
 const string CorsPolicy = "AllowFrontend";
 
+// -------------------------
+// CORS (desde config)
+// appsettings.json: "Cors": { "AllowedOrigins": [ "...", "..." ] }
+// -------------------------
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+                    ?? new[] { "http://localhost:3000" };
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy(CorsPolicy, p => p
-        .WithOrigins("http://localhost:3000")
+        .WithOrigins(allowedOrigins)
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials()
     );
 });
 
+// -------------------------
+// DB
+// -------------------------
 builder.Services.AddDbContext<ApiDbContext>(opt =>
 {
     var cs = builder.Configuration.GetConnectionString("Default")
@@ -43,6 +52,7 @@ builder.Services.AddDbContext<ApiDbContext>(opt =>
     opt.UseSqlServer(cs);
 });
 
+// Tus servicios
 builder.Services.AddProfitManagerData(builder.Configuration);
 builder.Services.AddSingleton<SqlConnectionFactory>();
 
@@ -76,12 +86,15 @@ builder.Services.AddScoped<VentasReportService>();
 builder.Services.AddScoped<ReportUsersService>();
 
 builder.Services.AddControllers()
-  .AddJsonOptions(o => o.JsonSerializerOptions.Converters
-      .Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
+    .AddJsonOptions(o => o.JsonSerializerOptions.Converters
+        .Add(new System.Text.Json.Serialization.JsonStringEnumConverter()));
 
 builder.Services.AddEndpointsApiExplorer();
 QuestPDF.Settings.License = LicenseType.Community;
 
+// -------------------------
+// Swagger
+// -------------------------
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "ProfitManagerApp API", Version = "v1" });
@@ -105,6 +118,9 @@ builder.Services.AddSwaggerGen(c =>
     c.AddSecurityRequirement(new OpenApiSecurityRequirement { { securityScheme, Array.Empty<string>() } });
 });
 
+// -------------------------
+// JWT
+// -------------------------
 var issuer = builder.Configuration["Jwt:Issuer"];
 var audience = builder.Configuration["Jwt:Audience"];
 var key = builder.Configuration["Jwt:Key"]
@@ -200,7 +216,11 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// -------------------------
+// Swagger en Dev o QA
+// En Azure: ASPNETCORE_ENVIRONMENT=QA
+// -------------------------
+if (app.Environment.IsDevelopment() || app.Environment.IsEnvironment("QA"))
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
@@ -209,16 +229,14 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
+app.UseHttpsRedirection();
+
 app.UseCors(CorsPolicy);
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers().RequireCors(CorsPolicy);
+app.MapControllers();
 
 app.MapGet("/db-ping", (SqlConnectionFactory f) =>
 {
@@ -236,6 +254,7 @@ app.MapGet("/db-ping", (SqlConnectionFactory f) =>
         return Results.Problem(ex.Message);
     }
 });
+
 try
 {
     using var scope = app.Services.CreateScope();

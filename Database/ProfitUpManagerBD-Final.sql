@@ -517,15 +517,31 @@ GO
 
 -- Obtener usuario por correo
 CREATE OR ALTER PROCEDURE dbo.usp_Usuario_GetByCorreo
-  @Correo NVARCHAR(200)
+    @Correo NVARCHAR(200)
 AS
 BEGIN
-  SET NOCOUNT ON;
-  SELECT TOP 1 u.*, r.NombreRol
-  FROM dbo.Usuario u
-  LEFT JOIN dbo.UsuarioRol ur ON ur.UsuarioID = u.UsuarioID
-  LEFT JOIN dbo.Rol r        ON r.RolID     = ur.RolID
-  WHERE u.Correo = @Correo AND u.IsActive = 1;
+    SET NOCOUNT ON;
+
+    SELECT TOP 1
+        u.UsuarioID,
+        u.Nombre,
+        u.Apellido,
+        u.Correo,
+        u.PasswordHash,
+        u.Salt,
+        u.Telefono,
+        u.FechaRegistro,
+        u.LastLogin,
+        u.IsActive,
+        u.EstadoUsuario,
+        r.NombreRol
+    FROM dbo.Usuario u
+    LEFT JOIN dbo.UsuarioRol ur
+        ON ur.UsuarioID = u.UsuarioID
+    LEFT JOIN dbo.Rol r
+        ON r.RolID = ur.RolID
+    WHERE u.Correo = @Correo
+    ORDER BY ur.AssignedAt DESC;
 END
 GO
 
@@ -940,4 +956,72 @@ WHERE NOT EXISTS (
     FROM dbo.TipoDocumentoVencimiento t
     WHERE t.Nombre = s.Nombre
 );
+GO
+
+
+
+
+
+
+
+
+
+
+USE ProfitUpManagerBD;
+GO
+
+DECLARE @NuevoCorreo NVARCHAR(200) = 'esteban@profit.local';
+DECLARE @Nombre NVARCHAR(100) = 'Esteban';
+DECLARE @Apellido NVARCHAR(100) = 'Admin';
+
+-- OJO:
+-- Este hash es solo un ejemplo COPIADO del admin bootstrap.
+-- Solo funcionará si conoces la contraseña original de ese hash.
+DECLARE @Salt NVARCHAR(100) = 'iuBtI7mI/8NdxJvTIvpL+Q==';
+DECLARE @PasswordHash NVARCHAR(512) = 'iuBtI7mI/8NdxJvTIvpL+Q==:t+P/wEu2u9xYblIGzt7zjQu+RQXvA3SLz0o4qnKtmyo=';
+
+IF NOT EXISTS (SELECT 1 FROM dbo.Usuario WHERE Correo = @NuevoCorreo)
+BEGIN
+    INSERT INTO dbo.Usuario
+    (
+        Nombre,
+        Apellido,
+        Correo,
+        PasswordHash,
+        Salt,
+        Telefono,
+        IsActive,
+        EstadoUsuario,
+        CreatedAt,
+        FechaRegistro
+    )
+    VALUES
+    (
+        @Nombre,
+        @Apellido,
+        @NuevoCorreo,
+        @PasswordHash,
+        @Salt,
+        NULL,
+        1,
+        'ACTIVE',
+        SYSUTCDATETIME(),
+        SYSUTCDATETIME()
+    );
+
+    DECLARE @NuevoUsuarioID INT = SCOPE_IDENTITY();
+
+    EXEC dbo.usp_UsuarioRol_AssignOrUpdate
+        @UsuarioID = @NuevoUsuarioID,
+        @NombreRol = 'Administrador',
+        @AssignedBy = @NuevoUsuarioID;
+
+    SELECT 'USUARIO_CREADO' AS Resultado, @NuevoUsuarioID AS UsuarioID, @NuevoCorreo AS Correo;
+END
+ELSE
+BEGIN
+    SELECT 'YA_EXISTE' AS Resultado, Correo
+    FROM dbo.Usuario
+    WHERE Correo = @NuevoCorreo;
+END
 GO

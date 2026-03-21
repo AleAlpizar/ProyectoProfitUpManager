@@ -1,25 +1,25 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using ProfitManagerApp.Api.Auth;                
-using ProfitManagerApp.Api.Background;          
-using ProfitManagerApp.Api.Data.Abstractions;  
-using ProfitManagerApp.Api.Dtos;               
+using ProfitManagerApp.Api.Background;
+using ProfitManagerApp.Api.Data.Abstractions;
+using ProfitManagerApp.Api.Dtos;
 
 namespace ProfitManagerApp.Api.Services
 {
     public sealed class VencimientosNotificationService : IVencimientosNotificationService
     {
         private readonly IVencimientosRepository _repo;
-        private readonly IMailSender _mailSender;
+        private readonly IEmailSender _mailSender;
         private readonly ILogger<VencimientosNotificationService> _logger;
         private readonly VencimientosNotificationOptions _options;
 
         public VencimientosNotificationService(
             IVencimientosRepository repo,
-            IMailSender mailSender,
+            IEmailSender mailSender,
             ILogger<VencimientosNotificationService> logger,
             IOptions<VencimientosNotificationOptions> options)
         {
@@ -71,7 +71,7 @@ namespace ProfitManagerApp.Api.Services
 
             try
             {
-                await _mailSender.SendEmailAsync(to, subject, html, ct);
+                await _mailSender.SendAsync(to, subject, html);
 
                 _logger.LogInformation(
                     "VencimientosNotificationService: se envió correo a {To} con {Count} alertas.",

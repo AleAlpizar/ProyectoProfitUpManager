@@ -2,10 +2,7 @@ import React from "react";
 import { useRouter } from "next/router";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_BASE_URL ?? "").replace(/\/+$/, "");
-
-
-const API_PREFIX = ""; 
-const ENDPOINT_PATH = "/auth/password/forgot"; 
+const ENDPOINT_PATH = "/auth/password/forgot";
 
 function ForgotPasswordPage() {
   const router = useRouter();
@@ -40,7 +37,8 @@ function ForgotPasswordPage() {
     setOkMsg(null);
     setErrMsg(null);
 
-    const vErr = validateEmail(email);
+    const cleanEmail = email.trim().toLowerCase();
+    const vErr = validateEmail(cleanEmail);
     setEmailErr(vErr);
     if (vErr) return;
 
@@ -51,11 +49,12 @@ function ForgotPasswordPage() {
 
     try {
       setLoading(true);
-      const url = `${API_BASE}${API_PREFIX}${ENDPOINT_PATH}`;
+
+      const url = `${API_BASE}${ENDPOINT_PATH}`;
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ Correo: email.trim() }),
+        body: JSON.stringify({ Correo: cleanEmail }),
       });
 
       if (!res.ok) {
@@ -64,7 +63,7 @@ function ForgotPasswordPage() {
         return;
       }
 
-      setOkMsg("Si el correo existe, te enviamos una contraseña temporal.");
+      setOkMsg("Si el correo existe, te enviaremos un enlace para restablecer la contraseña.");
     } catch {
       setErrMsg("No pudimos procesar la solicitud. Verifica tu conexión e intenta de nuevo.");
     } finally {
@@ -87,7 +86,6 @@ function ForgotPasswordPage() {
       <div className="w-full max-w-md">
         <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white dark:bg-neutral-950 shadow-xl overflow-hidden">
           <div className="px-6 py-7 sm:px-8">
-            {}
             <div className="flex justify-center mb-4">
               <img
                 src="/brand/pum-logo.jpg"
@@ -103,7 +101,7 @@ function ForgotPasswordPage() {
               Recuperar contraseña
             </h1>
             <p className="mt-2 text-center text-sm text-neutral-600 dark:text-neutral-400">
-              Te enviaremos una <span className="font-medium">contraseña temporal</span> si el correo existe.
+              Si el correo existe, te enviaremos un <span className="font-medium">enlace seguro</span> para restablecer tu contraseña.
             </p>
 
             <div aria-live="polite" className="mt-5 space-y-3">
@@ -158,7 +156,6 @@ function ForgotPasswordPage() {
                 )}
               </div>
 
-              { }
               <button
                 type="submit"
                 disabled={loading}
@@ -170,10 +167,9 @@ function ForgotPasswordPage() {
                   "disabled:opacity-60 disabled:cursor-not-allowed",
                 ].join(" ")}
               >
-                {loading ? "Enviando…" : "Enviar contraseña temporal"}
+                {loading ? "Enviando…" : "Enviar enlace de recuperación"}
               </button>
 
-              { }
               <button
                 type="button"
                 onClick={() => router.push("/login")}

@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using System.Security.Cryptography;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Dapper;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 
 public class AuthService
 {
@@ -11,50 +15,113 @@ public class AuthService
 
     public AuthService(IConfiguration cfg)
     {
-        _cn = cfg.GetConnectionString("Default")!;
+        _cn = cfg.GetConnectionString("Default")
+              ?? throw new InvalidOperationException("Connection string 'Default' no configurada.");
+    }
+
+    public static string NormalizeEmail(string? email)
+        => (email ?? string.Empty).Trim().ToLowerInvariant();
+
+    public static bool IsValidEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email)) return false;
+        email = email.Trim();
+        return Regex.IsMatch(email, @"^[^\s@]+@[^\s@]+\.[^\s@]+$");
+    }
+
+    public static bool IsStrongPassword(string? password)
+    {
+        if (string.IsNullOrWhiteSpace(password)) return false;
+        return password.Length >= 8
+            && password.Any(char.IsUpper)
+            && password.Any(char.IsLower)
+            && password.Any(char.IsDigit);
     }
 
     public static string HashPassword(string password, string? salt, int iter = 100_000)
     {
+        if (string.IsNullOrWhiteSpace(password))
+            throw new ArgumentException("La contraseña es obligatoria.", nameof(password));
+
         salt ??= Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
+
         var hash = Rfc2898DeriveBytes.Pbkdf2(
             password,
             Convert.FromBase64String(salt),
-            iter, HashAlgorithmName.SHA256, 32);
+            iter,
+            HashAlgorithmName.SHA256,
+            32);
+
         return $"{salt}:{Convert.ToBase64String(hash)}";
     }
 
     public static bool VerifyPassword(string password, string stored)
     {
-        var parts = stored.Split(':');
+        if (string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(stored))
+            return false;
+
+        var parts = stored.Split(':', StringSplitOptions.TrimEntries);
         if (parts.Length != 2) return false;
-        var salt = parts[0];
-        var expected = parts[1];
-        var computed = Rfc2898DeriveBytes.Pbkdf2(
-            password,
-            Convert.FromBase64String(salt),
-            100_000, HashAlgorithmName.SHA256, 32);
-        return Convert.ToBase64String(computed) == expected;
+
+        try
+        {
+            var saltBytes = Convert.FromBase64String(parts[0]);
+            var expectedBytes = Convert.FromBase64String(parts[1]);
+
+            var computed = Rfc2898DeriveBytes.Pbkdf2(
+                password,
+                saltBytes,
+                100_000,
+                HashAlgorithmName.SHA256,
+                32);
+
+            return CryptographicOperations.FixedTimeEquals(computed, expectedBytes);
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public async Task<int> CreateUserAsync(RegisterUserDto dto, int? createdBy)
     {
+        if (dto is null) throw new ArgumentNullException(nameof(dto));
+
+        var correo = NormalizeEmail(dto.Correo);
+        var nombre = dto.Nombre?.Trim();
+        var apellido = dto.Apellido?.Trim();
+        var telefono = dto.Telefono?.Trim();
+        var rol = dto.Rol?.Trim();
+
+        if (string.IsNullOrWhiteSpace(nombre))
+            throw new ArgumentException("El nombre es obligatorio.");
+
+        if (!IsValidEmail(correo))
+            throw new ArgumentException("El correo no es válido.");
+
+        if (!IsStrongPassword(dto.Password))
+            throw new ArgumentException("La contraseña no cumple los requisitos mínimos de seguridad.");
+
+        if (string.IsNullOrWhiteSpace(rol))
+            throw new ArgumentException("El rol es obligatorio.");
+
         var salt = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
         var hash = HashPassword(dto.Password, salt);
 
         try
         {
             using var sql = new SqlConnection(_cn);
+
             var usuarioId = await sql.ExecuteScalarAsync<int>(
                 "dbo.usp_Usuario_Create",
                 new
                 {
-                    dto.Nombre,
-                    dto.Apellido,
-                    Correo = dto.Correo,
+                    Nombre = nombre,
+                    Apellido = apellido,
+                    Correo = correo,
                     PasswordHash = hash,
                     Salt = (string?)salt,
-                    dto.Telefono,
+                    Telefono = telefono,
                     CreatedBy = createdBy
                 },
                 commandType: CommandType.StoredProcedure
@@ -62,7 +129,7 @@ public class AuthService
 
             await sql.ExecuteAsync(
                 "dbo.usp_UsuarioRol_AssignOrUpdate",
-                new { UsuarioID = usuarioId, NombreRol = dto.Rol, AssignedBy = createdBy },
+                new { UsuarioID = usuarioId, NombreRol = rol, AssignedBy = createdBy },
                 commandType: CommandType.StoredProcedure
             );
 
@@ -77,7 +144,7 @@ public class AuthService
         {
             throw new ApplicationException("EMAIL_DUPLICATE");
         }
-        catch (SqlException ex) when (ex.Message.Contains("EMAIL_DUPLICATE"))
+        catch (SqlException ex) when (ex.Message.Contains("EMAIL_DUPLICATE", StringComparison.OrdinalIgnoreCase))
         {
             throw new ApplicationException("EMAIL_DUPLICATE");
         }
@@ -86,12 +153,17 @@ public class AuthService
     public async Task<(int userId, string nombre, string? apellido, string correo, string rol, string estadoUsuario, string pwdHash)?>
         GetByCorreoAsync(string correo)
     {
+        correo = NormalizeEmail(correo);
+        if (string.IsNullOrWhiteSpace(correo)) return null;
+
         using var sql = new SqlConnection(_cn);
+
         var row = await sql.QueryFirstOrDefaultAsync(
             "dbo.usp_Usuario_GetByCorreo",
             new { Correo = correo },
             commandType: CommandType.StoredProcedure
         );
+
         if (row == null) return null;
 
         int userId = row.UsuarioID;
@@ -105,7 +177,7 @@ public class AuthService
 
         if (string.IsNullOrWhiteSpace(estadoUsuario))
         {
-            bool isActive = false;
+            bool isActive;
             try
             {
                 isActive = row.IsActive is bool b
@@ -125,13 +197,23 @@ public class AuthService
 
     public async Task CreateSessionAsync(int userId, string token, DateTime expireAt, string? device, string? ip)
     {
+        if (userId <= 0) throw new ArgumentException("Usuario inválido.", nameof(userId));
+        if (string.IsNullOrWhiteSpace(token)) throw new ArgumentException("Token inválido.", nameof(token));
+
         using var sql = new SqlConnection(_cn);
         await sql.OpenAsync();
         using var tx = sql.BeginTransaction();
 
         await sql.ExecuteAsync(
             "dbo.usp_Sesion_Create",
-            new { UsuarioID = userId, Token = token, DeviceInfo = device, IP = ip, ExpireAt = expireAt },
+            new
+            {
+                UsuarioID = userId,
+                Token = token,
+                DeviceInfo = string.IsNullOrWhiteSpace(device) ? null : device.Trim(),
+                IP = string.IsNullOrWhiteSpace(ip) ? null : ip.Trim(),
+                ExpireAt = expireAt
+            },
             commandType: CommandType.StoredProcedure,
             transaction: tx
         );
@@ -149,20 +231,25 @@ public class AuthService
 
     public async Task<int> InvalidateSessionAsync(string token)
     {
+        if (string.IsNullOrWhiteSpace(token)) return 0;
+
         using var sql = new SqlConnection(_cn);
         return await sql.ExecuteScalarAsync<int>(
             "dbo.usp_Sesion_Invalidate",
-            new { Token = token },
+            new { Token = token.Trim() },
             commandType: CommandType.StoredProcedure
         );
     }
 
     public async Task UpdateUserRoleAsync(int usuarioId, string rol, int? by)
     {
+        if (usuarioId <= 0) throw new ArgumentException("Usuario inválido.", nameof(usuarioId));
+        if (string.IsNullOrWhiteSpace(rol)) throw new ArgumentException("Rol inválido.", nameof(rol));
+
         using var sql = new SqlConnection(_cn);
         await sql.ExecuteAsync(
             "dbo.usp_UsuarioRol_AssignOrUpdate",
-            new { UsuarioID = usuarioId, NombreRol = rol, AssignedBy = by },
+            new { UsuarioID = usuarioId, NombreRol = rol.Trim(), AssignedBy = by },
             commandType: CommandType.StoredProcedure
         );
     }
@@ -199,6 +286,7 @@ public class AuthService
             FROM dbo.Usuario u
             ORDER BY u.UsuarioID DESC;
         ");
+
         return data;
     }
 
@@ -208,6 +296,11 @@ public class AuthService
         string newPassword,
         string? currentToken)
     {
+        if (userId <= 0) return false;
+        if (string.IsNullOrWhiteSpace(currentPassword) || string.IsNullOrWhiteSpace(newPassword)) return false;
+        if (!IsStrongPassword(newPassword)) return false;
+        if (currentPassword == newPassword) return false;
+
         using var sql = new SqlConnection(_cn);
         await sql.OpenAsync();
         using var tx = sql.BeginTransaction();
@@ -244,7 +337,7 @@ public class AuthService
             SET IsActive = 0
             WHERE UsuarioID = @uid AND IsActive = 1
               AND (@tok IS NULL OR Token <> @tok)
-        ", new { uid = userId, tok = currentToken }, tx);
+        ", new { uid = userId, tok = string.IsNullOrWhiteSpace(currentToken) ? null : currentToken.Trim() }, tx);
 
         tx.Commit();
         return true;
@@ -252,6 +345,10 @@ public class AuthService
 
     public async Task ResetPasswordAsync(int userId, string newPassword)
     {
+        if (userId <= 0) throw new ArgumentException("Usuario inválido.", nameof(userId));
+        if (!IsStrongPassword(newPassword))
+            throw new ArgumentException("La contraseña no cumple los requisitos mínimos de seguridad.", nameof(newPassword));
+
         using var sql = new SqlConnection(_cn);
         await sql.OpenAsync();
         using var tx = sql.BeginTransaction();
@@ -278,6 +375,8 @@ public class AuthService
 
     public async Task SetUserStatusAsync(int usuarioId, string estado, int? by)
     {
+        estado = (estado ?? string.Empty).Trim().ToUpperInvariant();
+
         if (estado != "ACTIVE" && estado != "PAUSED" && estado != "VACATION")
             throw new ArgumentException("Estado inválido");
 
@@ -301,6 +400,17 @@ public class AuthService
         string? rol,
         int? by)
     {
+        if (usuarioId <= 0) throw new ArgumentException("Usuario inválido.", nameof(usuarioId));
+
+        nombre = string.IsNullOrWhiteSpace(nombre) ? null : nombre.Trim();
+        apellido = string.IsNullOrWhiteSpace(apellido) ? null : apellido.Trim();
+        telefono = string.IsNullOrWhiteSpace(telefono) ? null : telefono.Trim();
+        rol = string.IsNullOrWhiteSpace(rol) ? null : rol.Trim();
+        correo = string.IsNullOrWhiteSpace(correo) ? null : NormalizeEmail(correo);
+
+        if (correo is not null && !IsValidEmail(correo))
+            throw new ArgumentException("El correo no es válido.");
+
         using var sql = new SqlConnection(_cn);
         await sql.OpenAsync();
         using var tx = sql.BeginTransaction();
@@ -391,6 +501,16 @@ public class AuthService
         string? correo,
         string? telefono)
     {
+        if (usuarioId <= 0) throw new ArgumentException("Usuario inválido.", nameof(usuarioId));
+
+        nombre = string.IsNullOrWhiteSpace(nombre) ? null : nombre.Trim();
+        apellido = string.IsNullOrWhiteSpace(apellido) ? null : apellido.Trim();
+        telefono = string.IsNullOrWhiteSpace(telefono) ? null : telefono.Trim();
+        correo = string.IsNullOrWhiteSpace(correo) ? null : NormalizeEmail(correo);
+
+        if (correo is not null && !IsValidEmail(correo))
+            throw new ArgumentException("El correo no es válido.");
+
         using var sql = new SqlConnection(_cn);
         await sql.OpenAsync();
         using var tx = sql.BeginTransaction();

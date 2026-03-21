@@ -1,6 +1,6 @@
 import React from "react";
 import { useRouter } from "next/router";
-import { useSession } from "../hooks/useSession";
+import { useSession } from ".././hooks/useSession";
 
 export default function Login() {
   const router = useRouter();
@@ -12,8 +12,12 @@ export default function Login() {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  const isEmailValid = React.useMemo(() => /\S+@\S+\.\S+/.test(email), [email]);
-  const isPassValid = password.length >= 6;
+  const isEmailValid = React.useMemo(
+    () => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()),
+    [email]
+  );
+
+  const isPassValid = password.trim().length >= 1;
   const canSubmit = isEmailValid && isPassValid && !loading;
 
   const vino = {
@@ -28,12 +32,14 @@ export default function Login() {
     e.preventDefault();
     setError(null);
 
+    const cleanEmail = email.trim().toLowerCase();
+
     if (!isEmailValid) return setError("Correo inválido");
-    if (!isPassValid) return setError("Mínimo 6 caracteres");
+    if (!isPassValid) return setError("La contraseña es obligatoria");
 
     try {
       setLoading(true);
-      await login({ correo: email.trim(), password });
+      await login({ correo: cleanEmail, password });
     } catch (err: any) {
       setError(err?.message || "Error iniciando sesión");
     } finally {
@@ -145,7 +151,6 @@ export default function Login() {
                 )}
               </button>
             </div>
-            <p className="text-[11px] text-white/40">Mínimo 6 caracteres</p>
           </div>
 
           <button

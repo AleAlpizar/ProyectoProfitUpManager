@@ -11,34 +11,34 @@ function SessionGate({ children }: { children: React.ReactNode }) {
   const { ready, isAuthenticated } = useSession();
   const router = useRouter();
 
-  const isAuthRoute =
-    router.pathname === "/login" || router.pathname === "/forgot-password";
+  const publicRoutes = ["/login", "/forgot-password", "/reset-password"];
+  const isPublicRoute = publicRoutes.includes(router.pathname);
 
   React.useEffect(() => {
     if (!ready) return;
 
     const currentPath = router.pathname;
 
-    if (!isAuthenticated && !isAuthRoute && currentPath !== "/login") {
+    if (!isAuthenticated && !isPublicRoute) {
       router.replace("/login");
       return;
     }
 
-    if (isAuthenticated && isAuthRoute && currentPath !== "/") {
+    if (isAuthenticated && isPublicRoute && currentPath !== "/") {
       router.replace("/");
       return;
     }
-  }, [ready, isAuthenticated, isAuthRoute, router]);
+  }, [ready, isAuthenticated, isPublicRoute, router]);
 
   if (!ready) {
     return <div style={{ minHeight: "100vh", background: "#0B0F0E" }} />;
   }
 
-  if (!isAuthenticated && !isAuthRoute) {
+  if (!isAuthenticated && !isPublicRoute) {
     return <div style={{ minHeight: "100vh", background: "#0B0F0E" }} />;
   }
 
-  if (isAuthenticated && isAuthRoute) {
+  if (isAuthenticated && isPublicRoute) {
     return <div style={{ minHeight: "100vh", background: "#0B0F0E" }} />;
   }
 

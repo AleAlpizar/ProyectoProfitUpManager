@@ -74,19 +74,18 @@ function ForgotPasswordPage() {
   const vino = {
     bg: "bg-[#62053B]",
     bgHover: "hover:bg-[#7A094B]",
-    ring: "focus:ring-[#62053B]/40 dark:focus:ring-[#62053B]/30",
-    text: "text-white",
-    outlineText: "text-[#62053B]",
-    outlineBorder: "border-[#62053B]",
-    outlineHover: "hover:bg-[#62053B]/5",
+    ring: "focus:ring-[#62053B]/40",
+    outlineBorder: "border-[#62053B]/60",
+    outlineText: "text-[#B10063]",
+    outlineHover: "hover:bg-[#62053B]/8",
   };
 
   return (
-    <main className="min-h-screen bg-neutral-50 dark:bg-neutral-900 flex items-center justify-center px-4">
-      <div className="w-full max-w-md">
-        <div className="rounded-2xl border border-black/5 dark:border-white/10 bg-white dark:bg-neutral-950 shadow-xl overflow-hidden">
-          <div className="px-6 py-7 sm:px-8">
-            <div className="flex justify-center mb-4">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(98,5,59,0.28),_transparent_35%),linear-gradient(to_bottom,_#171717,_#0a0a0a)] px-4">
+      <div className="mx-auto flex min-h-screen w-full max-w-md items-center justify-center py-8">
+        <div className="w-full rounded-3xl border border-white/10 bg-black/90 p-8 shadow-[0_20px_70px_rgba(0,0,0,.45)] backdrop-blur-sm sm:p-9">
+          <div className="mb-4 flex justify-center">
+            <div className="grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-white/5 shadow-inner">
               <img
                 src="/brand/pum-logo.jpg"
                 alt="Profit Up Manager"
@@ -96,100 +95,105 @@ function ForgotPasswordPage() {
                 }}
               />
             </div>
+          </div>
 
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-neutral-900 dark:text-white text-center">
+          <header className="mx-auto mb-7 max-w-[360px] text-center">
+            <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-[42px] sm:leading-[0.95]">
               Recuperar contraseña
             </h1>
-            <p className="mt-2 text-center text-sm text-neutral-600 dark:text-neutral-400">
-              Si el correo existe, te enviaremos un <span className="font-medium">enlace seguro</span> para restablecer tu contraseña.
+            <p className="mt-3 text-sm leading-7 text-white/60">
+              Si el correo existe, te enviaremos un{" "}
+              <span className="font-semibold text-white/75">enlace seguro</span>{" "}
+              para restablecer tu contraseña.
             </p>
+          </header>
 
-            <div aria-live="polite" className="mt-5 space-y-3">
-              {okMsg && (
-                <div className="rounded-md border border-emerald-300/50 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-800 dark:text-emerald-200">
-                  {okMsg}
-                </div>
-              )}
-              {errMsg && (
-                <div className="rounded-md border border-red-300/50 bg-red-400/10 px-4 py-3 text-sm text-red-800 dark:text-red-200">
-                  {errMsg}
-                </div>
+          <div aria-live="polite" className="mb-4 space-y-3">
+            {okMsg && (
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-[13px] text-emerald-200">
+                {okMsg}
+              </div>
+            )}
+
+            {errMsg && (
+              <div className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-[13px] text-red-200">
+                {errMsg}
+              </div>
+            )}
+          </div>
+
+          <form onSubmit={onSubmit} className="space-y-5" noValidate>
+            <div>
+              <label
+                htmlFor="email"
+                className="mb-2 block text-sm font-semibold text-white/85"
+              >
+                Correo
+              </label>
+
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (emailErr) setEmailErr(null);
+                }}
+                autoComplete="email"
+                required
+                placeholder="tucorreo@empresa.com"
+                disabled={loading}
+                aria-invalid={!!emailErr}
+                aria-describedby={emailErr ? "email-error" : undefined}
+                className={[
+                  "h-12 w-full rounded-2xl border bg-neutral-900/90 px-4 text-sm text-white outline-none transition",
+                  "placeholder-white/35",
+                  "focus:ring-2",
+                  "hover:border-white/20",
+                  emailErr
+                    ? "border-red-500/50 focus:ring-red-500/30"
+                    : `border-white/10 ${vino.ring}`,
+                ].join(" ")}
+              />
+
+              {emailErr && (
+                <p id="email-error" className="mt-2 text-xs text-red-400">
+                  {emailErr}
+                </p>
               )}
             </div>
 
-            <form onSubmit={onSubmit} className="mt-6 space-y-4" noValidate>
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-xs font-semibold tracking-wide text-neutral-800 dark:text-neutral-200 mb-1"
-                >
-                  Correo
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (emailErr) setEmailErr(null);
-                  }}
-                  autoComplete="email"
-                  required
-                  className={[
-                    "w-full rounded-lg px-3 py-2 text-sm outline-none transition",
-                    "bg-white dark:bg-neutral-900",
-                    "text-neutral-900 dark:text-neutral-100 placeholder-neutral-400",
-                    "border",
-                    emailErr
-                      ? "border-red-400 focus:ring-2 focus:ring-red-300/60 dark:focus:ring-red-500/40"
-                      : `border-neutral-300 dark:border-neutral-700 focus:ring-2 ${vino.ring}`,
-                  ].join(" ")}
-                  placeholder="tucorreo@empresa.com"
-                  disabled={loading}
-                  aria-invalid={!!emailErr}
-                  aria-describedby={emailErr ? "email-error" : undefined}
-                />
-                {emailErr && (
-                  <p id="email-error" className="mt-1 text-xs text-red-600 dark:text-red-400">
-                    {emailErr}
-                  </p>
-                )}
-              </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className={[
+                "h-12 w-full rounded-2xl px-4 text-sm font-semibold text-white shadow-[0_10px_24px_rgba(98,5,59,.28)] transition",
+                vino.bg,
+                vino.bgHover,
+                "disabled:cursor-not-allowed disabled:opacity-60",
+              ].join(" ")}
+            >
+              {loading ? "Enviando…" : "Enviar enlace de recuperación"}
+            </button>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className={[
-                  "w-full rounded-lg text-sm font-semibold px-4 py-2 shadow-sm transition",
-                  vino.bg,
-                  vino.bgHover,
-                  vino.text,
-                  "disabled:opacity-60 disabled:cursor-not-allowed",
-                ].join(" ")}
-              >
-                {loading ? "Enviando…" : "Enviar enlace de recuperación"}
-              </button>
+            <button
+              type="button"
+              onClick={() => router.push("/login")}
+              className={[
+                "h-12 w-full rounded-2xl border bg-transparent px-4 text-sm font-medium transition",
+                vino.outlineBorder,
+                vino.outlineText,
+                vino.outlineHover,
+              ].join(" ")}
+            >
+              Volver a iniciar sesión
+            </button>
+          </form>
 
-              <button
-                type="button"
-                onClick={() => router.push("/login")}
-                className={[
-                  "w-full rounded-lg text-sm font-medium px-4 py-2 transition",
-                  "bg-transparent border",
-                  vino.outlineBorder,
-                  vino.outlineText,
-                  vino.outlineHover,
-                ].join(" ")}
-              >
-                Volver a iniciar sesión
-              </button>
-            </form>
-          </div>
+          <footer className="mt-8 border-t border-white/5 pt-5 text-center text-[10px] text-white/40">
+            © {new Date().getFullYear()} Profit Up Manager
+          </footer>
         </div>
-
-        <p className="mt-4 text-center text-[11px] text-neutral-500 dark:text-neutral-400">
-          © {new Date().getFullYear()} Profit Up Manager
-        </p>
       </div>
     </main>
   );

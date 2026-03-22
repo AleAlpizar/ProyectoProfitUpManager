@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
 import { Button, Card, Input, Spacer, Text } from "@nextui-org/react";
 import { useSession } from "../../components/hooks/useSession";
@@ -26,25 +26,67 @@ type UserProfile = {
   estadoUsuario: string;
 };
 
+type ProfileForm = {
+  nombre: string;
+  apellido: string;
+  correo: string;
+  telefono: string;
+};
+
+type PasswordForm = {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+};
+
+type InputChangeElement = HTMLInputElement | HTMLTextAreaElement;
+type InputChangeEvent = React.ChangeEvent<InputChangeElement>;
+type InputKeyboardEvent = React.KeyboardEvent<InputChangeElement>;
+
 const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? "";
+
+const NAME_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÜüÑñ'\-\s]+$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const STRONG_PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+
+const normalizeText = (value: string): string =>
+  value.replace(/\s+/g, " ").trim();
+
+const normalizePhone = (value: string): string => value.replace(/\D/g, "");
+
+const sanitizeNameInput = (value: string): string =>
+  value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÜüÑñ'\-\s]/g, "");
+
+const formatDateTime = (value?: string | null): string => {
+  if (!value) return "No disponible";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "No disponible";
+
+  return new Intl.DateTimeFormat("es-CR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
+};
 
 const PerfilPage: React.FC = () => {
   const router = useRouter();
   const { token, ready } = useSession();
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ProfileForm>({
     nombre: "",
     apellido: "",
     correo: "",
     telefono: "",
   });
+
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
-  const [pwdForm, setPwdForm] = useState({
+  const [pwdForm, setPwdForm] = useState<PasswordForm>({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
@@ -67,6 +109,7 @@ const PerfilPage: React.FC = () => {
     const loadProfile = async () => {
       setLoading(true);
       setError(null);
+
       try {
         const res = await fetch(`${API}/auth/profile`, {
           headers: {
@@ -80,12 +123,13 @@ const PerfilPage: React.FC = () => {
         }
 
         if (!res.ok) {
-          setError("No se pudo cargar el perfil.");
-          setLoading(false);
+          const body = await res.json().catch(() => null);
+          setError(body?.message ?? "No se pudo cargar el perfil.");
           return;
         }
 
         const data: UserProfile = await res.json();
+
         setProfile(data);
         setForm({
           nombre: data.nombre ?? "",
@@ -103,35 +147,60 @@ const PerfilPage: React.FC = () => {
     loadProfile();
   }, [ready, token, router]);
 
+  const isDirty = useMemo(() => {
+    if (!profile) return false;
+
+    return (
+      normalizeText(form.nombre) !== normalizeText(profile.nombre ?? "") ||
+      normalizeText(form.apellido) !== normalizeText(profile.apellido ?? "") ||
+      normalizeText(form.correo).toLowerCase() !==
+        normalizeText(profile.correo ?? "").toLowerCase() ||
+      normalizePhone(form.telefono) !== normalizePhone(profile.telefono ?? "")
+    );
+  }, [form, profile]);
+
+  const userInitials = useMemo(() => {
+    const first = normalizeText(form.nombre || profile?.nombre || "")
+      .charAt(0)
+      .toUpperCase();
+    const second = normalizeText(form.apellido || profile?.apellido || "")
+      .charAt(0)
+      .toUpperCase();
+
+    return `${first || "U"}${second || ""}`;
+  }, [form.nombre, form.apellido, profile?.nombre, profile?.apellido]);
+
   const handleChange =
-    (field: keyof typeof form) =>
-    (e: any) => {
-      let value: string = e.target.value;
+    (field: keyof ProfileForm) =>
+    (e: InputChangeEvent) => {
+      let value = e.target.value;
 
       if (field === "nombre" || field === "apellido") {
-        value = value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÜüÑñ\s]/g, "");
+        value = sanitizeNameInput(value);
       }
 
       if (field === "telefono") {
-        value = value.replace(/\D/g, "");
+        value = normalizePhone(value);
       }
 
       setForm((prev) => ({ ...prev, [field]: value }));
+      setError(null);
+      setSuccess(null);
     };
 
-  const handleLettersKeyDown = (e: any) => {
-    const key: string = e.key;
+  const handleLettersKeyDown = (e: InputKeyboardEvent) => {
+    const key = e.key;
 
     if (key.length > 1) return;
 
-    const regex = /^[A-Za-zÁÉÍÓÚáéíóúÜüÑñ\s]$/;
+    const regex = /^[A-Za-zÁÉÍÓÚáéíóúÜüÑñ'\-\s]$/;
     if (!regex.test(key)) {
       e.preventDefault();
     }
   };
 
-  const handleNumbersKeyDown = (e: any) => {
-    const key: string = e.key;
+  const handleNumbersKeyDown = (e: InputKeyboardEvent) => {
+    const key = e.key;
 
     if (key.length > 1) return;
 
@@ -141,13 +210,66 @@ const PerfilPage: React.FC = () => {
     }
   };
 
+  const validateProfileForm = (): string | null => {
+    const nombre = normalizeText(form.nombre);
+    const apellido = normalizeText(form.apellido);
+    const correo = normalizeText(form.correo).toLowerCase();
+    const telefono = normalizePhone(form.telefono);
+
+    if (!nombre) return "El nombre es obligatorio.";
+    if (nombre.length < 2) return "El nombre debe tener al menos 2 caracteres.";
+    if (nombre.length > 100) return "El nombre no puede exceder 100 caracteres.";
+    if (!NAME_REGEX.test(nombre))
+      return "El nombre contiene caracteres no permitidos.";
+
+    if (!apellido) return "El apellido es obligatorio.";
+    if (apellido.length < 2)
+      return "El apellido debe tener al menos 2 caracteres.";
+    if (apellido.length > 100)
+      return "El apellido no puede exceder 100 caracteres.";
+    if (!NAME_REGEX.test(apellido))
+      return "El apellido contiene caracteres no permitidos.";
+
+    if (!correo) return "El correo es obligatorio.";
+    if (correo.length > 256) return "El correo no puede exceder 256 caracteres.";
+    if (!EMAIL_REGEX.test(correo)) return "Correo inválido.";
+
+    if (!telefono) return "El teléfono es obligatorio.";
+    if (telefono.length < 8 || telefono.length > 20) {
+      return "El teléfono debe tener entre 8 y 20 dígitos.";
+    }
+
+    return null;
+  };
+
   const doSaveProfile = async () => {
-    if (!token) return;
+    if (!token || saving) return;
+
+    const validationError = validateProfileForm();
+    if (validationError) {
+      setError(validationError);
+      setConfirmSaveOpen(false);
+      return;
+    }
+
+    if (!isDirty) {
+      setSuccess("No hay cambios para guardar.");
+      setError(null);
+      setConfirmSaveOpen(false);
+      return;
+    }
 
     setSaving(true);
     setError(null);
     setSuccess(null);
     setConfirmSaveOpen(false);
+
+    const payload: ProfileForm = {
+      nombre: normalizeText(form.nombre),
+      apellido: normalizeText(form.apellido),
+      correo: normalizeText(form.correo).toLowerCase(),
+      telefono: normalizePhone(form.telefono),
+    };
 
     try {
       const res = await fetch(`${API}/auth/profile`, {
@@ -156,31 +278,39 @@ const PerfilPage: React.FC = () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
 
-      if (res.status === 204) {
-        setSuccess("Perfil actualizado correctamente.");
+      const body = await res.json().catch(() => null);
+
+      if (res.ok) {
+        setSuccess(body?.message ?? "Perfil actualizado correctamente.");
         setProfile((prev) =>
           prev
             ? {
                 ...prev,
-                nombre: form.nombre,
-                apellido: form.apellido,
-                correo: form.correo,
-                telefono: form.telefono,
+                nombre: payload.nombre,
+                apellido: payload.apellido,
+                correo: payload.correo,
+                telefono: payload.telefono,
               }
             : prev
         );
-      } else if (res.status === 409) {
-        const body = await res.json().catch(() => null);
-        setError(body?.message ?? "El correo ya está registrado.");
-      } else if (res.status === 401) {
-        router.replace("/login");
-      } else {
-        const body = await res.json().catch(() => null);
-        setError(body?.message ?? "Error al guardar el perfil.");
+        setForm(payload);
+        return;
       }
+
+      if (res.status === 409) {
+        setError(body?.message ?? "El correo ya está registrado.");
+        return;
+      }
+
+      if (res.status === 401) {
+        router.replace("/login");
+        return;
+      }
+
+      setError(body?.message ?? "Error al guardar el perfil.");
     } catch {
       setError("Error de red al guardar el perfil.");
     } finally {
@@ -189,17 +319,33 @@ const PerfilPage: React.FC = () => {
   };
 
   const handleSaveClick = () => {
+    setError(null);
+    setSuccess(null);
+
+    const validationError = validateProfileForm();
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    if (!isDirty) {
+      setSuccess("No hay cambios para guardar.");
+      return;
+    }
+
     setConfirmSaveOpen(true);
   };
 
   const handlePwdFieldChange =
-    (field: keyof typeof pwdForm) =>
-    (e: any) => {
+    (field: keyof PasswordForm) =>
+    (e: InputChangeEvent) => {
       setPwdForm((prev) => ({ ...prev, [field]: e.target.value }));
+      setPwdError(null);
+      setPwdSuccess(null);
     };
 
   const doChangePassword = async () => {
-    if (!token) return;
+    if (!token || pwdSaving) return;
 
     setPwdError(null);
     setPwdSuccess(null);
@@ -221,18 +367,22 @@ const PerfilPage: React.FC = () => {
 
       const body = await res.json().catch(() => null);
 
+      if (res.status === 401) {
+        router.replace("/login");
+        return;
+      }
+
       if (!res.ok) {
         setPwdError(body?.message ?? "No se pudo cambiar la contraseña.");
-      } else {
-        setPwdSuccess(
-          body?.message ?? "Contraseña actualizada correctamente."
-        );
-        setPwdForm({
-          currentPassword: "",
-          newPassword: "",
-          confirmPassword: "",
-        });
+        return;
       }
+
+      setPwdSuccess(body?.message ?? "Contraseña actualizada correctamente.");
+      setPwdForm({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
     } catch {
       setPwdError("Error de red al cambiar la contraseña.");
     } finally {
@@ -255,6 +405,18 @@ const PerfilPage: React.FC = () => {
 
     if (pwdForm.newPassword !== pwdForm.confirmPassword) {
       setPwdError("La nueva contraseña y la confirmación no coinciden.");
+      return;
+    }
+
+    if (pwdForm.currentPassword === pwdForm.newPassword) {
+      setPwdError("La nueva contraseña debe ser diferente a la actual.");
+      return;
+    }
+
+    if (!STRONG_PASSWORD_REGEX.test(pwdForm.newPassword)) {
+      setPwdError(
+        "La nueva contraseña debe tener al menos 8 caracteres, mayúsculas, minúsculas y números."
+      );
       return;
     }
 
@@ -285,13 +447,15 @@ const PerfilPage: React.FC = () => {
     );
   }
 
-  const fechaRegistro = new Date(profile.fechaRegistro).toLocaleString();
+  const fechaRegistro = formatDateTime(profile.fechaRegistro);
+  const ultimoAcceso = formatDateTime(profile.lastLogin);
 
   const estadoLabelMap: Record<string, string> = {
     ACTIVE: "Activo",
     PAUSED: "Pausado",
     VACATION: "Vacaciones",
   };
+
   const estadoUpper = (profile.estadoUsuario ?? "").toUpperCase();
   const estadoLabel =
     estadoLabelMap[estadoUpper] ?? profile.estadoUsuario ?? "";
@@ -339,37 +503,97 @@ const PerfilPage: React.FC = () => {
   return (
     <div
       className="min-h-screen px-4 py-10"
-      style={{ background: BG, color: TEXT }}
+      style={{
+        background:
+          "radial-gradient(circle at top, rgba(163,8,98,0.10), transparent 24%), #05070A",
+        color: TEXT,
+      }}
     >
       <div className="mx-auto w-full max-w-5xl">
         <Text
           h2
           css={{
             color: TEXT,
-            marginBottom: "1.5rem",
-            fontWeight: 600,
+            marginBottom: "0.4rem",
+            fontWeight: 700,
+            letterSpacing: "-0.02em",
           }}
         >
           Mi perfil
+        </Text>
+        <Text
+          css={{
+            color: MUTED,
+            marginBottom: "1.5rem",
+            fontSize: "0.98rem",
+          }}
+        >
+          Administra tu información personal y la seguridad de tu cuenta.
         </Text>
 
         <Card
           css={{
             bg: CARD_BG,
-            borderRadius: "26px",
+            borderRadius: "28px",
             border: `1px solid ${BORDER_SUBTLE}`,
             boxShadow: "0 24px 80px rgba(0,0,0,0.65)",
-            padding: "28px 30px 24px",
+            padding: "30px 30px 24px",
+            overflow: "hidden",
+            position: "relative",
           }}
         >
-          <div className="flex items-center justify-between gap-4">
-            <Text size="$sm" css={{ color: MUTED, letterSpacing: 0.4 }}>
-              Información básica
-            </Text>
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              pointerEvents: "none",
+              background:
+                "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0) 22%)",
+            }}
+          />
+
+          <div className="relative z-[1] mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
+              <div
+                className="flex h-16 w-16 items-center justify-center rounded-2xl text-lg font-semibold"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(163,8,98,0.95), rgba(214,51,132,0.82))",
+                  color: "#FFFFFF",
+                  boxShadow: "0 12px 30px rgba(163,8,98,0.28)",
+                }}
+              >
+                {userInitials}
+              </div>
+
+              <div>
+                <Text
+                  css={{
+                    color: TEXT_STRONG,
+                    fontWeight: 700,
+                    fontSize: "1.15rem",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {`${form.nombre || profile.nombre} ${form.apellido || profile.apellido || ""}`.trim()}
+                </Text>
+                <Text
+                  css={{
+                    color: MUTED,
+                    fontSize: "0.94rem",
+                    marginTop: "0.18rem",
+                  }}
+                >
+                  {form.correo || profile.correo}
+                </Text>
+              </div>
+            </div>
+
             {profile.estadoUsuario && (
               <span
                 className="rounded-full px-3 py-1 text-xs font-medium"
                 style={{
+                  alignSelf: "flex-start",
                   background: estadoEsActivo
                     ? "rgba(52,211,153,0.09)"
                     : "rgba(248,113,113,0.08)",
@@ -379,6 +603,9 @@ const PerfilPage: React.FC = () => {
                       ? "rgba(52,211,153,0.35)"
                       : "rgba(248,113,113,0.35)"
                   }`,
+                  boxShadow: estadoEsActivo
+                    ? "0 0 18px rgba(52,211,153,0.10)"
+                    : "0 0 18px rgba(248,113,113,0.10)",
                 }}
               >
                 {estadoLabel}
@@ -386,7 +613,21 @@ const PerfilPage: React.FC = () => {
             )}
           </div>
 
-          <Spacer y={1} />
+          <div className="mb-5 h-px w-full bg-white/5" />
+
+          <Text
+            size="$sm"
+            css={{
+              color: MUTED,
+              letterSpacing: 0.4,
+              textTransform: "uppercase",
+              fontWeight: 700,
+            }}
+          >
+            Información básica
+          </Text>
+
+          <Spacer y={0.9} />
 
           <div className="grid gap-4 md:grid-cols-2">
             <Input
@@ -398,6 +639,8 @@ const PerfilPage: React.FC = () => {
               bordered
               css={editableInputCss}
               size="lg"
+              maxLength={100}
+              autoComplete="given-name"
             />
             <Input
               label="Apellido"
@@ -408,10 +651,13 @@ const PerfilPage: React.FC = () => {
               bordered
               css={editableInputCss}
               size="lg"
+              maxLength={100}
+              autoComplete="family-name"
             />
           </div>
 
           <Spacer y={0.8} />
+
           <div className="grid gap-4 md:grid-cols-2">
             <Input
               label="Correo"
@@ -422,6 +668,8 @@ const PerfilPage: React.FC = () => {
               bordered
               css={editableInputCss}
               size="lg"
+              maxLength={256}
+              autoComplete="email"
             />
             <Input
               label="Teléfono"
@@ -432,6 +680,8 @@ const PerfilPage: React.FC = () => {
               bordered
               css={editableInputCss}
               size="lg"
+              maxLength={20}
+              autoComplete="tel"
             />
           </div>
 
@@ -460,7 +710,7 @@ const PerfilPage: React.FC = () => {
 
           <Spacer y={1} />
 
-          <div className="grid gap-4 md:grid-cols-1">
+          <div className="grid gap-4 md:grid-cols-2">
             <Input
               label="Fecha de registro"
               value={fechaRegistro}
@@ -470,9 +720,18 @@ const PerfilPage: React.FC = () => {
               css={readonlyInputCss}
               size="lg"
             />
+            <Input
+              label="Último acceso"
+              value={ultimoAcceso}
+              readOnly
+              fullWidth
+              bordered
+              css={readonlyInputCss}
+              size="lg"
+            />
           </div>
 
-          <Spacer y={1.5} />
+          <Spacer y={1.4} />
 
           {error && (
             <Text
@@ -485,6 +744,7 @@ const PerfilPage: React.FC = () => {
               {error}
             </Text>
           )}
+
           {success && (
             <Text
               size="$sm"
@@ -501,9 +761,10 @@ const PerfilPage: React.FC = () => {
             <Button
               auto
               flat
-              disabled={saving}
+              disabled={saving || !isDirty}
               onClick={() => {
                 if (!profile) return;
+
                 setForm({
                   nombre: profile.nombre ?? "",
                   apellido: profile.apellido ?? "",
@@ -514,19 +775,25 @@ const PerfilPage: React.FC = () => {
                 setSuccess(null);
               }}
               css={{
-                bg: "transparent",
+                bg: isDirty ? "#FFFFFF" : "#000000",
                 borderRadius: "999px",
-                border: `1px solid ${BORDER_SUBTLE}`,
-                color: MUTED,
-                fontWeight: 500,
+                border: `1px solid ${
+                  isDirty
+                    ? "rgba(255,255,255,0.85)"
+                    : "rgba(255,255,255,0.08)"
+                }`,
+                color: isDirty ? "#111827" : "#E5E7EB",
+                fontWeight: 600,
                 px: "$10",
+                transition: "all 0.18s ease",
                 "&:hover": {
-                  bg: "#1F2933",
+                  bg: isDirty ? "#F3F4F6" : "#0B0B0B",
                 },
               }}
             >
               Deshacer cambios
             </Button>
+
             <Button
               auto
               disabled={saving}
@@ -535,8 +802,10 @@ const PerfilPage: React.FC = () => {
                 bg: ACCENT,
                 color: "white",
                 borderRadius: "999px",
-                fontWeight: 600,
+                fontWeight: 700,
                 px: "$12",
+                boxShadow: "0 12px 24px rgba(163,8,98,0.22)",
+                transition: "all 0.18s ease",
                 "&:hover": {
                   opacity: 0.92,
                 },
@@ -547,12 +816,32 @@ const PerfilPage: React.FC = () => {
           </div>
 
           <Spacer y={2} />
-          <div className="mt-4 border-t border-white/5 pt-5">
+
+          <div className="mt-3 border-t border-white/5 pt-6">
             <div className="flex items-center justify-between gap-4">
-              <Text size="$sm" css={{ color: MUTED, letterSpacing: 0.4 }}>
+              <Text
+                size="$sm"
+                css={{
+                  color: MUTED,
+                  letterSpacing: 0.4,
+                  textTransform: "uppercase",
+                  fontWeight: 700,
+                }}
+              >
                 Seguridad
               </Text>
             </div>
+
+            <Text
+              css={{
+                color: MUTED,
+                fontSize: "0.9rem",
+                marginTop: "0.45rem",
+              }}
+            >
+              Usa una contraseña segura con al menos 8 caracteres, mayúsculas,
+              minúsculas y números.
+            </Text>
 
             <Spacer y={1} />
 
@@ -566,6 +855,7 @@ const PerfilPage: React.FC = () => {
                 bordered
                 css={editableInputCss}
                 size="lg"
+                autoComplete="current-password"
               />
               <Input
                 label="Nueva contraseña"
@@ -576,6 +866,7 @@ const PerfilPage: React.FC = () => {
                 bordered
                 css={editableInputCss}
                 size="lg"
+                autoComplete="new-password"
               />
               <Input
                 label="Confirmar nueva contraseña"
@@ -586,6 +877,7 @@ const PerfilPage: React.FC = () => {
                 bordered
                 css={editableInputCss}
                 size="lg"
+                autoComplete="new-password"
               />
             </div>
 
@@ -599,6 +891,7 @@ const PerfilPage: React.FC = () => {
                 {pwdError}
               </Text>
             )}
+
             {pwdSuccess && (
               <Text
                 size="$sm"
@@ -618,8 +911,9 @@ const PerfilPage: React.FC = () => {
                   borderRadius: "999px",
                   border: `1px solid ${ACCENT}`,
                   color: ACCENT,
-                  fontWeight: 600,
+                  fontWeight: 700,
                   px: "$12",
+                  transition: "all 0.18s ease",
                   "&:hover": {
                     bg: "rgba(163,8,98,0.12)",
                   },
@@ -640,19 +934,24 @@ const PerfilPage: React.FC = () => {
                 Guardar cambios
               </Text>
               <button
+                type="button"
                 onClick={() => setConfirmSaveOpen(false)}
                 className="rounded-full p-1 text-gray-400 hover:bg-white/5 hover:text-gray-200"
+                disabled={saving}
               >
                 ✕
               </button>
             </div>
+
             <Text css={{ color: TEXT, fontSize: "0.95rem" }}>
               ¿Confirmas guardar los cambios de tu perfil?
             </Text>
+
             <div className="mt-6 flex justify-end gap-3">
               <Button
                 auto
                 onClick={() => setConfirmSaveOpen(false)}
+                disabled={saving}
                 css={{
                   bg: "#111827",
                   color: TEXT,
@@ -667,6 +966,7 @@ const PerfilPage: React.FC = () => {
               <Button
                 auto
                 onClick={doSaveProfile}
+                disabled={saving}
                 css={{
                   bg: ACCENT,
                   color: "white",
@@ -676,7 +976,7 @@ const PerfilPage: React.FC = () => {
                   "&:hover": { opacity: 0.9 },
                 }}
               >
-                Guardar
+                {saving ? "Guardando..." : "Guardar"}
               </Button>
             </div>
           </div>
@@ -691,20 +991,25 @@ const PerfilPage: React.FC = () => {
                 Cambiar contraseña
               </Text>
               <button
+                type="button"
                 onClick={() => setConfirmPwdOpen(false)}
                 className="rounded-full p-1 text-gray-400 hover:bg-white/5 hover:text-gray-200"
+                disabled={pwdSaving}
               >
                 ✕
               </button>
             </div>
+
             <Text css={{ color: TEXT, fontSize: "0.95rem" }}>
               ¿Confirmas cambiar tu contraseña? Se cerrarán tus otras sesiones
               activas.
             </Text>
+
             <div className="mt-6 flex justify-end gap-3">
               <Button
                 auto
                 onClick={() => setConfirmPwdOpen(false)}
+                disabled={pwdSaving}
                 css={{
                   bg: "#111827",
                   color: TEXT,
@@ -719,6 +1024,7 @@ const PerfilPage: React.FC = () => {
               <Button
                 auto
                 onClick={doChangePassword}
+                disabled={pwdSaving}
                 css={{
                   bg: ACCENT,
                   color: "white",
@@ -728,7 +1034,7 @@ const PerfilPage: React.FC = () => {
                   "&:hover": { opacity: 0.9 },
                 }}
               >
-                Confirmar
+                {pwdSaving ? "Actualizando..." : "Confirmar"}
               </Button>
             </div>
           </div>

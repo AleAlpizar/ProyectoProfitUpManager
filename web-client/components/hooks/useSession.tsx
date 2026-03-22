@@ -40,21 +40,83 @@ const SessionContext = createContext<SessionContextValue | undefined>(
   undefined
 );
 
+const getStoredToken = (): string | null => {
+  if (typeof window === "undefined") return null;
+
+  try {
+    return localStorage.getItem(TOKEN_KEY);
+  } catch {
+    return null;
+  }
+};
+
+const setStoredToken = (token: string): void => {
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.setItem(TOKEN_KEY, token);
+  } catch {
+    // noop
+  }
+};
+
+const removeStoredToken = (): void => {
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    // noop
+  }
+};
+
 function useProvideSession(): SessionContextValue {
   const [token, setToken] = useState<string | null>(null);
   const [me, setMe] = useState<Me | null>(null);
   const [ready, setReady] = useState<boolean>(false);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  const clearSession = useCallback(() => {
+    removeStoredToken();
+    setToken(null);
+    setMe(null);
+    setReady(true);
+  }, []);
 
-    const stored = localStorage.getItem(TOKEN_KEY);
+  useEffect(() => {
+    const stored = getStoredToken();
+
     if (stored) {
       setToken(stored);
     } else {
       setMe(null);
-      setReady(true); 
+      setReady(true);
     }
+  }, []);
+
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== TOKEN_KEY) return;
+
+      const newToken = event.newValue;
+      if (!newToken) {
+        setToken(null);
+        setMe(null);
+        setReady(true);
+        return;
+      }
+
+      setToken(newToken);
+    };
+
+    if (typeof window !== "undefined") {
+      window.addEventListener("storage", handleStorage);
+    }
+
+    return () => {
+      if (typeof window !== "undefined") {
+        window.removeEventListener("storage", handleStorage);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -79,16 +141,14 @@ function useProvideSession(): SessionContextValue {
         }
 
         const data: Me = await res.json();
+
         if (!abort) {
           setMe(data);
           setReady(true);
         }
       } catch {
         if (!abort) {
-          localStorage.removeItem(TOKEN_KEY);
-          setToken(null);
-          setMe(null);
-          setReady(true);
+          clearSession();
         }
       }
     };
@@ -98,55 +158,72 @@ function useProvideSession(): SessionContextValue {
     return () => {
       abort = true;
     };
-  }, [token]);
+  }, [token, clearSession]);
 
   const login = useCallback(
     async ({ correo, password }: LoginInput) => {
+      const normalizedEmail = correo.trim().toLowerCase();
       let res: Response;
+
+      setReady(false);
 
       try {
         res = await fetch(`${API}/auth/login`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ Correo: correo, Password: password }),
+          body: JSON.stringify({
+            Correo: normalizedEmail,
+            Password: password,
+          }),
         });
       } catch (err) {
         console.error("Error de red llamando /auth/login", err);
+        setReady(true);
         throw new Error(
           "No se pudo conectar con el servidor. Verifica que la API esté levantada."
         );
       }
 
       if (!res.ok) {
-        let msg = "Credenciales inválidas";
+        let msg = "Credenciales inválidas.";
+
         try {
           const e = await res.json();
           if (e?.message) msg = e.message;
         } catch {
+          // noop
         }
+
+        setReady(true);
         throw new Error(msg);
       }
 
       const data: { token: string; expireAt: string } = await res.json();
 
-      localStorage.setItem(TOKEN_KEY, data.token);
-      setToken(data.token); 
+      setStoredToken(data.token);
+      setToken(data.token);
 
       try {
         const meRes = await fetch(`${API}/auth/me`, {
           headers: { Authorization: `Bearer ${data.token}` },
         });
-        if (meRes.ok) {
-          const meData: Me = await meRes.json();
-          setMe(meData);
+
+        if (!meRes.ok) {
+          throw new Error("No se pudo validar la sesión.");
         }
+
+        const meData: Me = await meRes.json();
+        setMe(meData);
+        setReady(true);
       } catch (err) {
         console.error("Error cargando /auth/me después de login", err);
+        clearSession();
+        throw new Error("No se pudo validar la sesión del usuario.");
       }
 
       return true;
     },
-    []
+    [clearSession]
   );
 
   const logout = useCallback(async () => {
@@ -158,19 +235,17 @@ function useProvideSession(): SessionContextValue {
         });
       }
     } finally {
-      localStorage.removeItem(TOKEN_KEY);
-      setToken(null);
-      setMe(null);
-      setReady(true);
+      clearSession();
     }
-  }, [token]);
+  }, [token, clearSession]);
 
   const isAuthenticated = !!me && !!token;
 
-  const authHeader = useMemo<Record<string, string>>(
-    () => (token ? { Authorization: `Bearer ${token}` } : ({} as Record<string, string>)),
-    [token]
-  );
+  const authHeader = useMemo((): Record<string, string> => {
+    return token
+      ? { Authorization: `Bearer ${token}` }
+      : {};
+  }, [token]);
 
   const hasRole = useCallback(
     (role: Rol) => {
@@ -204,15 +279,20 @@ export const SessionProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const value = useProvideSession();
+
   return (
-    <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
+    <SessionContext.Provider value={value}>
+      {children}
+    </SessionContext.Provider>
   );
 };
 
 export function useSession(): SessionContextValue {
   const ctx = useContext(SessionContext);
+
   if (!ctx) {
     throw new Error("useSession must be used within a SessionProvider");
   }
+
   return ctx;
 }

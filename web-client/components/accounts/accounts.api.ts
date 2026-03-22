@@ -15,7 +15,8 @@ export type RegisterInput = {
 };
 
 export type UserDto = {
-  usuarioID: number;
+  usuarioID?: number;
+  UsuarioID?: number;
   nombre: string;
   apellido?: string;
   correo: string;
@@ -30,12 +31,26 @@ export async function listUsers(authHeader: Record<string, string>) {
 }
 
 export async function createUser(input: RegisterInput, authHeader: Record<string, string>) {
-  return apiJson<{ usuarioId: number }>(`${API}/auth/register`, "POST", input, authHeader);
+  return apiJson<{ usuarioId: number; message?: string }>(
+    `${API}/auth/register`,
+    "POST",
+    input,
+    authHeader
+  );
 }
 
-export async function updateUserRole(usuarioId: number, rol: Role, authHeader: Record<string, string>) {
+export async function updateUserRole(
+  usuarioId: number,
+  rol: Role,
+  authHeader: Record<string, string>
+) {
   const url = `${API}/auth/users/${usuarioId}/role/${encodeURIComponent(rol)}`;
-  return apiJson<{ usuarioId: number; rol: string }>(url, "PATCH", {}, authHeader);
+  return apiJson<{ usuarioId: number; rol: string; message?: string }>(
+    url,
+    "PATCH",
+    {},
+    authHeader
+  );
 }
 
 export type UpdateUserInput = Partial<{
@@ -52,7 +67,12 @@ export async function updateUser(
   authHeader: Record<string, string>
 ) {
   const url = `${API}/auth/users/${usuarioId}`;
-  return apiJson<{ usuarioId: number }>(url, "PATCH", payload, authHeader);
+  return apiJson<{ usuarioId: number; message?: string }>(
+    url,
+    "PATCH",
+    payload,
+    authHeader
+  );
 }
 
 export async function setUserStatus(
@@ -61,5 +81,10 @@ export async function setUserStatus(
   authHeader: Record<string, string>
 ) {
   const url = `${API}/auth/users/${usuarioId}/status/${status}`;
-  return apiJson<{ usuarioId: number; estado: Status }>(url, "PATCH", {}, authHeader);
+  return apiJson<{ usuarioId: number; estado: Status; message?: string }>(
+    url,
+    "PATCH",
+    {},
+    authHeader
+  );
 }

@@ -23,7 +23,6 @@ public class AuthController : ControllerBase
     private static readonly HashSet<string> AllowedRoles = new(StringComparer.OrdinalIgnoreCase)
     {
         "Administrador",
-        "Vendedor",
         "Empleado"
     };
 
@@ -142,8 +141,35 @@ public class AuthController : ControllerBase
 
         try
         {
+            var nombre = NormalizeRequiredText(dto.Nombre ?? string.Empty);
+            var apellido = NormalizeNullableText(dto.Apellido);
+            var correo = ValidateAndNormalizeEmail(dto.Correo, required: true);
+            var telefono = ValidateAndNormalizePhone(dto.Telefono);
+            var rol = ValidateAndNormalizeRole(dto.Rol);
+
+            ValidateNameField(nombre, "nombre", required: true);
+            ValidateNameField(apellido, "apellido", required: false);
+
+            if (!IsStrongPassword(dto.Password))
+            {
+                return BadRequest(new
+                {
+                    message = "La contraseña debe tener al menos 8 caracteres, mayúsculas, minúsculas y números."
+                });
+            }
+
             var createdBy = GetUserId();
-            var idNew = await _auth.CreateUserAsync(dto, createdBy);
+            var idNew = await _auth.CreateUserAsync(
+                dto with
+                {
+                    Nombre = nombre,
+                    Apellido = apellido,
+                    Correo = correo,
+                    Telefono = telefono,
+                    Rol = rol
+                },
+                createdBy
+            );
 
             return Ok(new
             {
@@ -252,10 +278,19 @@ public class AuthController : ControllerBase
         if (usuarioId <= 0)
             return BadRequest(new { message = "Usuario inválido." });
 
+        var currentUserId = GetUserId();
+        if (currentUserId.HasValue && currentUserId.Value == usuarioId)
+        {
+            return BadRequest(new
+            {
+                message = "No puedes cambiar tu propio rol mientras estás autenticado."
+            });
+        }
+
         try
         {
             var normalizedRole = ValidateAndNormalizeRole(rol);
-            var by = GetUserId();
+            var by = currentUserId;
 
             await _auth.UpdateUserRoleAsync(usuarioId, normalizedRole, by);
 

@@ -1,8 +1,8 @@
-import React from 'react';
-import Accounts from '../components/accounts/Accounts';
+import React from "react";
+import Accounts from "../components/accounts/Accounts";
 
-const accounts = () => {
-   return <Accounts />;
+const AccountsPage = () => {
+  return <Accounts />;
 };
 
-export default accounts;
+export default AccountsPage;

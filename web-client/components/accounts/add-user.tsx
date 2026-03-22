@@ -12,8 +12,58 @@ type Props = {
     apellido?: string;
     correo: string;
     rol: Role;
-  }) => void;
+  }) => void | Promise<void>;
 };
+
+const NAME_REGEX = /^[A-Za-zÁÉÍÓÚáéíóúÜüÑñ'\-\s]+$/;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function normalizeSpaces(value: string) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function sanitizeName(value: string) {
+  return value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÜüÑñ'\-\s]/g, "");
+}
+
+function sanitizePhone(value: string) {
+  return value.replace(/\D/g, "");
+}
+
+function validateForm(form: RegisterInput): string | null {
+  const nombre = normalizeSpaces(form.nombre || "");
+  const apellido = normalizeSpaces(form.apellido || "");
+  const correo = (form.correo || "").trim().toLowerCase();
+  const telefono = sanitizePhone(form.telefono || "");
+  const password = form.password || "";
+
+  if (!nombre) return "El nombre es obligatorio.";
+  if (nombre.length < 2) return "El nombre debe tener al menos 2 caracteres.";
+  if (nombre.length > 100) return "El nombre no puede exceder 100 caracteres.";
+  if (!NAME_REGEX.test(nombre)) return "El nombre contiene caracteres no permitidos.";
+
+  if (apellido) {
+    if (apellido.length < 2) return "El apellido debe tener al menos 2 caracteres.";
+    if (apellido.length > 100) return "El apellido no puede exceder 100 caracteres.";
+    if (!NAME_REGEX.test(apellido)) return "El apellido contiene caracteres no permitidos.";
+  }
+
+  if (!correo) return "El correo es obligatorio.";
+  if (correo.length > 256) return "El correo no puede exceder 256 caracteres.";
+  if (!EMAIL_REGEX.test(correo)) return "Correo inválido.";
+
+  if (telefono && (telefono.length < 8 || telefono.length > 20)) {
+    return "El teléfono debe tener entre 8 y 20 dígitos.";
+  }
+
+  if (!password) return "La contraseña es obligatoria.";
+  if (password.length < 8) return "La contraseña debe tener al menos 8 caracteres.";
+  if (!/[A-Z]/.test(password)) return "La contraseña debe incluir al menos una mayúscula.";
+  if (!/[a-z]/.test(password)) return "La contraseña debe incluir al menos una minúscula.";
+  if (!/[0-9]/.test(password)) return "La contraseña debe incluir al menos un número.";
+
+  return null;
+}
 
 export const AddUser: React.FC<Props> = ({ onCreated }) => {
   const [visible, setVisible] = React.useState<boolean>(false);
@@ -31,41 +81,61 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
   const { authHeader } = useSession();
   const confirm = useConfirm();
 
-  const open = () => setVisible(true);
+  const resetForm = React.useCallback(() => {
+    setForm({
+      nombre: "",
+      apellido: "",
+      correo: "",
+      telefono: "",
+      password: "",
+      rol: "Empleado",
+    });
+  }, []);
+
+  const open = () => {
+    setError(null);
+    setVisible(true);
+  };
+
   const close = () => {
+    if (loading) return;
     setVisible(false);
     setError(null);
-    setLoading(false);
+    resetForm();
   };
 
   const onChange =
     (k: keyof RegisterInput) =>
-    (e: any) => {
-      let value: string = e.target.value;
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      let value = e.target.value;
 
       if (k === "nombre" || k === "apellido") {
-        value = value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÜüÑñ\s]/g, "");
+        value = sanitizeName(value);
       }
 
       if (k === "telefono") {
-        value = value.replace(/\D/g, "");
+        value = sanitizePhone(value);
+      }
+
+      if (k === "correo") {
+        value = value.trimStart();
       }
 
       setForm((f) => ({ ...f, [k]: value }));
     };
 
-  const handleLettersKeyDown = (e: any) => {
-    const key: string = e.key;
-    if (key.length > 1) return; 
+  const handleLettersKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const key = e.key;
+    if (key.length > 1) return;
 
-    const regex = /^[A-Za-zÁÉÍÓÚáéíóúÜüÑñ\s]$/;
+    const regex = /^[A-Za-zÁÉÍÓÚáéíóúÜüÑñ'\-\s]$/;
     if (!regex.test(key)) {
       e.preventDefault();
     }
   };
 
-  const handleNumbersKeyDown = (e: any) => {
-    const key: string = e.key;
+  const handleNumbersKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const key = e.key;
     if (key.length > 1) return;
 
     const regex = /^[0-9]$/;
@@ -78,16 +148,26 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
     e?.preventDefault();
     setError(null);
 
-    if (!form.nombre.trim()) return setError("El nombre es obligatorio.");
-    if (!form.correo.includes("@")) return setError("Correo inválido.");
-    if (!form.password || form.password.length < 6)
-      return setError("La contraseña debe tener al menos 6 caracteres.");
+    const normalized: RegisterInput = {
+      nombre: normalizeSpaces(form.nombre || ""),
+      apellido: normalizeSpaces(form.apellido || ""),
+      correo: (form.correo || "").trim().toLowerCase(),
+      telefono: sanitizePhone(form.telefono || ""),
+      password: form.password,
+      rol: form.rol,
+    };
+
+    const validationError = validateForm(normalized);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
 
     const ok = await confirm({
       title: "Crear usuario",
       message: (
         <>
-          ¿Deseas crear al usuario <b>{form.nombre}</b> con rol {form.rol}?
+          ¿Deseas crear al usuario <b>{normalized.nombre}</b> con rol <b>{normalized.rol}</b>?
         </>
       ),
       tone: "brand",
@@ -98,14 +178,23 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
 
     try {
       setLoading(true);
-      const res = await createUser(form, authHeader as any);
-      onCreated?.({
+
+      const payload: RegisterInput = {
+        ...normalized,
+        apellido: normalized.apellido || undefined,
+        telefono: normalized.telefono || null,
+      };
+
+      const res = await createUser(payload, authHeader as Record<string, string>);
+
+      await onCreated?.({
         usuarioId: res.usuarioId,
-        nombre: form.nombre,
-        apellido: form.apellido,
-        correo: form.correo,
-        rol: form.rol,
+        nombre: normalized.nombre,
+        apellido: normalized.apellido || undefined,
+        correo: normalized.correo,
+        rol: normalized.rol,
       });
+
       close();
     } catch (err: any) {
       setError(err?.message || "No se pudo crear el usuario.");
@@ -118,7 +207,7 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
     <div>
       <Button
         onClick={open}
-        className="!rounded-xl !bg-[#A30862] !text-white hover:!opacity-95 focus:!ring-2 focus:!ring-[#A30862]/40"
+        className="!rounded-2xl !bg-[#A30862] !px-5 !py-3 !text-white shadow-[0_10px_25px_rgba(163,8,98,.22)] hover:!opacity-95 focus:!ring-2 focus:!ring-[#A30862]/40"
       >
         Nuevo usuario
       </Button>
@@ -127,14 +216,14 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
         <Modal frameless onClose={close}>
           <form
             onSubmit={onSubmit}
-            className="w-full max-w-4xl rounded-3xl border border-white/10 bg-[#13171A] text-[#E6E9EA] shadow-[0_30px_80px_rgba(0,0,0,.55)] ring-1 ring-black/20"
+            className="w-full max-w-4xl rounded-[28px] border border-white/10 bg-[#13171A] text-[#E6E9EA] shadow-[0_30px_90px_rgba(0,0,0,.55)] ring-1 ring-black/20"
           >
-            <div className="flex items-start justify-between gap-4 px-6 pt-5">
+            <div className="flex items-start justify-between gap-4 px-6 pt-6">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-2.5 py-1 text-[11px] text-[#8B9AA0]">
+                <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-[#8B9AA0]">
                   Usuarios
                 </div>
-                <h2 className="mt-2 text-xl font-semibold tracking-wide">
+                <h2 className="mt-3 text-[22px] font-semibold tracking-wide text-white">
                   Crear usuario
                 </h2>
                 <p className="mt-1 text-sm text-[#8B9AA0]">
@@ -145,7 +234,8 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
               <button
                 type="button"
                 onClick={close}
-                className="rounded-xl p-2 text-[#8B9AA0] hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/20"
+                disabled={loading}
+                className="rounded-2xl p-2.5 text-[#8B9AA0] transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-50"
                 aria-label="Cerrar"
                 title="Cerrar"
               >
@@ -153,17 +243,17 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
               </button>
             </div>
 
-            <div className="mx-6 my-4 h-px bg-white/10" />
+            <div className="mx-6 my-5 h-px bg-white/10" />
 
             {error && (
-              <div className="mx-6 mb-4 rounded-2xl border border-[#6C0F1C]/40 bg-[#6C0F1C]/15 px-4 py-3 text-sm text-[#F7C6CF]">
+              <div className="mx-6 mb-5 rounded-2xl border border-[#6C0F1C]/40 bg-[#6C0F1C]/15 px-4 py-3 text-sm text-[#F7C6CF]">
                 {error}
               </div>
             )}
 
-            <div className="grid grid-cols-1 gap-4 px-6 pb-2 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-5 px-6 pb-2 md:grid-cols-2">
               <Field
-                label="Primer nombre"
+                label="Nombre"
                 value={form.nombre}
                 onChange={onChange("nombre")}
                 onKeyDown={handleLettersKeyDown}
@@ -186,19 +276,22 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
                 value={form.telefono ?? ""}
                 onChange={onChange("telefono")}
                 onKeyDown={handleNumbersKeyDown}
+                helper="Entre 8 y 20 dígitos."
               />
               <Field
                 label="Contraseña"
                 type="password"
                 value={form.password}
                 onChange={onChange("password")}
-                helper="Mínimo 6 caracteres."
+                helper="Mínimo 8 caracteres, con mayúscula, minúscula y número."
               />
 
-              <label className="space-y-1">
-                <span className="text-xs text-[#8B9AA0]">Rol</span>
+              <label className="space-y-2">
+                <span className="text-xs font-medium uppercase tracking-wide text-[#8B9AA0]">
+                  Rol
+                </span>
                 <select
-                  className="w-full rounded-2xl border border-white/10 bg-[#0F1315] px-3 py-2.5 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
+                  className="w-full rounded-2xl border border-white/10 bg-[#0F1315] px-4 py-3 text-sm text-white outline-none transition focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
                   value={form.rol}
                   onChange={onChange("rol")}
                 >
@@ -208,12 +301,13 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
               </label>
             </div>
 
-            <div className="mx-6 my-6 flex items-center justify-end gap-2">
+            <div className="mx-6 my-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
               <Button
                 type="button"
                 variant="outline"
                 onClick={close}
-                className="!rounded-2xl !border-white/20 !bg-transparent !text-[#E6E9EA] hover:!bg-white/5 focus:!ring-2 focus:!ring-[#A30862]/40"
+                className="!rounded-2xl !border-white/20 !bg-transparent !px-5 !py-3 !text-[#E6E9EA] hover:!bg-white/5 focus:!ring-2 focus:!ring-[#A30862]/40"
+                disabled={loading}
               >
                 Cancelar
               </Button>
@@ -221,7 +315,7 @@ export const AddUser: React.FC<Props> = ({ onCreated }) => {
               <Button
                 type="submit"
                 disabled={loading}
-                className="!rounded-2xl !bg-[#A30862] !text-white hover:!opacity-95 focus:!ring-2 focus:!ring-[#A30862]/40 disabled:!opacity-60"
+                className="!rounded-2xl !bg-[#A30862] !px-5 !py-3 !text-white shadow-[0_10px_25px_rgba(163,8,98,.2)] hover:!opacity-95 focus:!ring-2 focus:!ring-[#A30862]/40 disabled:!opacity-60"
               >
                 {loading ? "Guardando..." : "Guardar usuario"}
               </Button>
@@ -240,17 +334,19 @@ const Field: React.FC<{
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   helper?: string;
   autoFocus?: boolean;
-  onKeyDown?: (e: any) => void;
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 }> = ({ label, type = "text", value, onChange, helper, autoFocus, onKeyDown }) => (
-  <label className="space-y-1">
-    <span className="text-xs text-[#8B9AA0]">{label}</span>
+  <label className="space-y-2">
+    <span className="text-xs font-medium uppercase tracking-wide text-[#8B9AA0]">
+      {label}
+    </span>
     <input
       autoFocus={!!autoFocus}
       type={type}
       value={value}
       onChange={onChange}
       onKeyDown={onKeyDown}
-      className="w-full rounded-2xl border border-white/10 bg-[#0F1315] px-3 py-2.5 text-sm outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] placeholder:text-[#8B9AA0] transition focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
+      className="w-full rounded-2xl border border-white/10 bg-[#0F1315] px-4 py-3 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] placeholder:text-[#8B9AA0] transition focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
     />
     {helper && (
       <span className="block text-[11px] text-[#8B9AA0]">{helper}</span>

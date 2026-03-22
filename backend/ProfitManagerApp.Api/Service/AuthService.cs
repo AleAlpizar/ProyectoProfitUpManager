@@ -13,6 +13,16 @@ public class AuthService
 {
     private readonly string _cn;
 
+    private static readonly Regex NameRegex = new(
+        @"^[A-Za-zÁÉÍÓÚáéíóúÜüÑñ'\-\s]+$",
+        RegexOptions.Compiled);
+
+    private static readonly HashSet<string> AllowedRoles = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "Administrador",
+        "Empleado"
+    };
+
     public AuthService(IConfiguration cfg)
     {
         _cn = cfg.GetConnectionString("Default")
@@ -21,6 +31,23 @@ public class AuthService
 
     public static string NormalizeEmail(string? email)
         => (email ?? string.Empty).Trim().ToLowerInvariant();
+
+    private static string? NormalizeNullableText(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        return Regex.Replace(value.Trim(), @"\s+", " ");
+    }
+
+    private static string NormalizeRequiredText(string value)
+        => Regex.Replace(value.Trim(), @"\s+", " ");
+
+    private static string? NormalizePhone(string? phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone)) return null;
+
+        var digits = new string(phone.Where(char.IsDigit).ToArray());
+        return string.IsNullOrWhiteSpace(digits) ? null : digits;
+    }
 
     public static bool IsValidEmail(string? email)
     {
@@ -36,6 +63,77 @@ public class AuthService
             && password.Any(char.IsUpper)
             && password.Any(char.IsLower)
             && password.Any(char.IsDigit);
+    }
+
+    private static void ValidateNameField(string? value, string fieldName, bool required)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            if (required)
+                throw new ArgumentException($"El campo {fieldName} es obligatorio.");
+            return;
+        }
+
+        var normalized = NormalizeRequiredText(value);
+
+        if (normalized.Length < 2)
+            throw new ArgumentException($"El campo {fieldName} debe tener al menos 2 caracteres.");
+
+        if (normalized.Length > 100)
+            throw new ArgumentException($"El campo {fieldName} no puede exceder 100 caracteres.");
+
+        if (!NameRegex.IsMatch(normalized))
+            throw new ArgumentException($"El campo {fieldName} contiene caracteres no permitidos.");
+    }
+
+    private static string ValidateAndNormalizeEmail(string? email, bool required)
+    {
+        var normalized = NormalizeEmail(email);
+
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            if (required)
+                throw new ArgumentException("El correo es obligatorio.");
+            return string.Empty;
+        }
+
+        if (!IsValidEmail(normalized))
+            throw new ArgumentException("El correo no es válido.");
+
+        if (normalized.Length > 256)
+            throw new ArgumentException("El correo no puede exceder 256 caracteres.");
+
+        return normalized;
+    }
+
+    private static string? ValidateAndNormalizePhone(string? phone, bool required = false)
+    {
+        var normalized = NormalizePhone(phone);
+
+        if (string.IsNullOrWhiteSpace(normalized))
+        {
+            if (required)
+                throw new ArgumentException("El teléfono es obligatorio.");
+            return null;
+        }
+
+        if (normalized.Length < 8 || normalized.Length > 20)
+            throw new ArgumentException("El teléfono debe tener entre 8 y 20 dígitos.");
+
+        return normalized;
+    }
+
+    private static string ValidateAndNormalizeRole(string? role)
+    {
+        var normalized = NormalizeNullableText(role);
+
+        if (string.IsNullOrWhiteSpace(normalized))
+            throw new ArgumentException("El rol es obligatorio.");
+
+        if (!AllowedRoles.Contains(normalized))
+            throw new ArgumentException("El rol indicado no es válido.");
+
+        return normalized;
     }
 
     public static string HashPassword(string password, string? salt, int iter = 100_000)
@@ -87,23 +185,17 @@ public class AuthService
     {
         if (dto is null) throw new ArgumentNullException(nameof(dto));
 
-        var correo = NormalizeEmail(dto.Correo);
-        var nombre = dto.Nombre?.Trim();
-        var apellido = dto.Apellido?.Trim();
-        var telefono = dto.Telefono?.Trim();
-        var rol = dto.Rol?.Trim();
+        var nombre = NormalizeNullableText(dto.Nombre);
+        var apellido = NormalizeNullableText(dto.Apellido);
+        var correo = ValidateAndNormalizeEmail(dto.Correo, required: true);
+        var telefono = ValidateAndNormalizePhone(dto.Telefono, required: false);
+        var rol = ValidateAndNormalizeRole(dto.Rol);
 
-        if (string.IsNullOrWhiteSpace(nombre))
-            throw new ArgumentException("El nombre es obligatorio.");
-
-        if (!IsValidEmail(correo))
-            throw new ArgumentException("El correo no es válido.");
+        ValidateNameField(nombre, "nombre", required: true);
+        ValidateNameField(apellido, "apellido", required: false);
 
         if (!IsStrongPassword(dto.Password))
             throw new ArgumentException("La contraseña no cumple los requisitos mínimos de seguridad.");
-
-        if (string.IsNullOrWhiteSpace(rol))
-            throw new ArgumentException("El rol es obligatorio.");
 
         var salt = Convert.ToBase64String(RandomNumberGenerator.GetBytes(16));
         var hash = HashPassword(dto.Password, salt);
@@ -244,12 +336,13 @@ public class AuthService
     public async Task UpdateUserRoleAsync(int usuarioId, string rol, int? by)
     {
         if (usuarioId <= 0) throw new ArgumentException("Usuario inválido.", nameof(usuarioId));
-        if (string.IsNullOrWhiteSpace(rol)) throw new ArgumentException("Rol inválido.", nameof(rol));
+
+        var normalizedRole = ValidateAndNormalizeRole(rol);
 
         using var sql = new SqlConnection(_cn);
         await sql.ExecuteAsync(
             "dbo.usp_UsuarioRol_AssignOrUpdate",
-            new { UsuarioID = usuarioId, NombreRol = rol.Trim(), AssignedBy = by },
+            new { UsuarioID = usuarioId, NombreRol = normalizedRole, AssignedBy = by },
             commandType: CommandType.StoredProcedure
         );
     }
@@ -282,7 +375,7 @@ public class AuthService
                               WHERE ur.UsuarioID = u.UsuarioID
                               ORDER BY ur.AssignedAt DESC), 'Empleado'),
                 u.IsActive,
-                u.EstadoUsuario
+                EstadoUsuario = ISNULL(u.EstadoUsuario, CASE WHEN u.IsActive = 1 THEN 'ACTIVE' ELSE 'PAUSED' END)
             FROM dbo.Usuario u
             ORDER BY u.UsuarioID DESC;
         ");
@@ -375,13 +468,16 @@ public class AuthService
 
     public async Task SetUserStatusAsync(int usuarioId, string estado, int? by)
     {
+        if (usuarioId <= 0)
+            throw new ArgumentException("Usuario inválido.", nameof(usuarioId));
+
         estado = (estado ?? string.Empty).Trim().ToUpperInvariant();
 
         if (estado != "ACTIVE" && estado != "PAUSED" && estado != "VACATION")
-            throw new ArgumentException("Estado inválido");
+            throw new ArgumentException("Estado inválido.");
 
         using var sql = new SqlConnection(_cn);
-        await sql.ExecuteAsync(@"
+        var affected = await sql.ExecuteAsync(@"
             UPDATE dbo.Usuario
                SET EstadoUsuario = @estado,
                    IsActive = @isActive,
@@ -389,6 +485,9 @@ public class AuthService
                    UpdatedBy = @by
              WHERE UsuarioID = @usuarioId
         ", new { usuarioId, estado, isActive = ToIsActive(estado), by });
+
+        if (affected <= 0)
+            throw new ArgumentException("El usuario indicado no existe.");
     }
 
     public async Task UpdateUserBasicAsync(
@@ -402,14 +501,14 @@ public class AuthService
     {
         if (usuarioId <= 0) throw new ArgumentException("Usuario inválido.", nameof(usuarioId));
 
-        nombre = string.IsNullOrWhiteSpace(nombre) ? null : nombre.Trim();
-        apellido = string.IsNullOrWhiteSpace(apellido) ? null : apellido.Trim();
-        telefono = string.IsNullOrWhiteSpace(telefono) ? null : telefono.Trim();
-        rol = string.IsNullOrWhiteSpace(rol) ? null : rol.Trim();
-        correo = string.IsNullOrWhiteSpace(correo) ? null : NormalizeEmail(correo);
+        nombre = NormalizeNullableText(nombre);
+        apellido = NormalizeNullableText(apellido);
+        telefono = ValidateAndNormalizePhone(telefono, required: false);
+        rol = string.IsNullOrWhiteSpace(rol) ? null : ValidateAndNormalizeRole(rol);
+        correo = string.IsNullOrWhiteSpace(correo) ? null : ValidateAndNormalizeEmail(correo, required: false);
 
-        if (correo is not null && !IsValidEmail(correo))
-            throw new ArgumentException("El correo no es válido.");
+        ValidateNameField(nombre, "nombre", required: false);
+        ValidateNameField(apellido, "apellido", required: false);
 
         using var sql = new SqlConnection(_cn);
         await sql.OpenAsync();
@@ -430,7 +529,7 @@ public class AuthService
             }
         }
 
-        await sql.ExecuteAsync(@"
+        var affected = await sql.ExecuteAsync(@"
             UPDATE dbo.Usuario
                SET Nombre   = COALESCE(@nombre, Nombre),
                    Apellido = COALESCE(@apellido, Apellido),
@@ -440,6 +539,12 @@ public class AuthService
                    UpdatedBy = @by
              WHERE UsuarioID = @usuarioId
         ", new { usuarioId, nombre, apellido, correo, telefono, by }, tx);
+
+        if (affected <= 0)
+        {
+            tx.Rollback();
+            throw new ArgumentException("El usuario indicado no existe.");
+        }
 
         if (!string.IsNullOrWhiteSpace(rol))
         {
@@ -467,7 +572,7 @@ public class AuthService
                 u.Telefono,
                 u.FechaRegistro,
                 u.LastLogin,
-                u.EstadoUsuario,
+                EstadoUsuario = ISNULL(u.EstadoUsuario, CASE WHEN u.IsActive = 1 THEN 'ACTIVE' ELSE 'PAUSED' END),
                 Rol = ISNULL((SELECT TOP (1) r.NombreRol
                               FROM dbo.UsuarioRol ur
                               JOIN dbo.Rol r ON r.RolID = ur.RolID
@@ -503,42 +608,45 @@ public class AuthService
     {
         if (usuarioId <= 0) throw new ArgumentException("Usuario inválido.", nameof(usuarioId));
 
-        nombre = string.IsNullOrWhiteSpace(nombre) ? null : nombre.Trim();
-        apellido = string.IsNullOrWhiteSpace(apellido) ? null : apellido.Trim();
-        telefono = string.IsNullOrWhiteSpace(telefono) ? null : telefono.Trim();
-        correo = string.IsNullOrWhiteSpace(correo) ? null : NormalizeEmail(correo);
+        nombre = NormalizeNullableText(nombre);
+        apellido = NormalizeNullableText(apellido);
+        telefono = ValidateAndNormalizePhone(telefono, required: true);
+        correo = ValidateAndNormalizeEmail(correo, required: true);
 
-        if (correo is not null && !IsValidEmail(correo))
-            throw new ArgumentException("El correo no es válido.");
+        ValidateNameField(nombre, "nombre", required: true);
+        ValidateNameField(apellido, "apellido", required: true);
 
         using var sql = new SqlConnection(_cn);
         await sql.OpenAsync();
         using var tx = sql.BeginTransaction();
 
-        if (!string.IsNullOrWhiteSpace(correo))
-        {
-            var exists = await sql.ExecuteScalarAsync<int>(@"
-                SELECT COUNT(1)
-                FROM dbo.Usuario
-                WHERE Correo = @correo AND UsuarioID <> @usuarioId
-            ", new { correo, usuarioId }, tx);
+        var exists = await sql.ExecuteScalarAsync<int>(@"
+            SELECT COUNT(1)
+            FROM dbo.Usuario
+            WHERE Correo = @correo AND UsuarioID <> @usuarioId
+        ", new { correo, usuarioId }, tx);
 
-            if (exists > 0)
-            {
-                tx.Rollback();
-                throw new ApplicationException("EMAIL_DUPLICATE");
-            }
+        if (exists > 0)
+        {
+            tx.Rollback();
+            throw new ApplicationException("EMAIL_DUPLICATE");
         }
 
-        await sql.ExecuteAsync(@"
+        var affected = await sql.ExecuteAsync(@"
             UPDATE dbo.Usuario
-               SET Nombre   = COALESCE(@nombre, Nombre),
-                   Apellido = COALESCE(@apellido, Apellido),
-                   Correo   = COALESCE(@correo, Correo),
-                   Telefono = COALESCE(@telefono, Telefono),
+               SET Nombre   = @nombre,
+                   Apellido = @apellido,
+                   Correo   = @correo,
+                   Telefono = @telefono,
                    UpdatedAt = SYSUTCDATETIME()
              WHERE UsuarioID = @usuarioId
         ", new { usuarioId, nombre, apellido, correo, telefono }, tx);
+
+        if (affected <= 0)
+        {
+            tx.Rollback();
+            throw new ArgumentException("El usuario indicado no existe.");
+        }
 
         tx.Commit();
     }

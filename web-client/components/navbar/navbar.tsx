@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, Navbar } from "@nextui-org/react";
+import { Navbar } from "@nextui-org/react";
 import { Box } from "../styles/box";
 import { BurguerButton } from "./burguer-button";
 import { UserDropdown } from "./user-dropdown";
@@ -14,19 +14,6 @@ const TEXT = "#E6E9EA";
 const BORDER = "rgba(255,255,255,0.08)";
 
 export const NavbarWrapper: React.FC<Props> = ({ children }) => {
-  const collapseItems = [
-    "Profile",
-    "Dashboard",
-    "Activity",
-    "Analytics",
-    "System",
-    "Deployments",
-    "My Settings",
-    "Team Settings",
-    "Help & Feedback",
-    "Log Out",
-  ];
-
   return (
     <Box
       css={{
@@ -34,8 +21,9 @@ export const NavbarWrapper: React.FC<Props> = ({ children }) => {
         display: "flex",
         flexDirection: "column",
         flex: "1 1 auto",
-        overflowY: "auto",
+        minHeight: "100vh",
         overflowX: "hidden",
+        overflowY: "visible",
         background: BG,
         color: TEXT,
       }}
@@ -46,6 +34,7 @@ export const NavbarWrapper: React.FC<Props> = ({ children }) => {
         css={{
           position: "sticky",
           top: 0,
+          zIndex: 200,
           backdropFilter: "none",
           bg: BG,
           boxShadow: "none",
@@ -71,8 +60,14 @@ export const NavbarWrapper: React.FC<Props> = ({ children }) => {
           },
         }}
       >
-        <Navbar.Content showIn="md">
-          <BurguerButton aria-label="Abrir menú" />
+        <Navbar.Content
+          css={{
+            "@md": {
+              display: "none",
+            },
+          }}
+        >
+          <BurguerButton />
         </Navbar.Content>
 
         <Navbar.Content css={{ flex: 1 }} />
@@ -86,32 +81,17 @@ export const NavbarWrapper: React.FC<Props> = ({ children }) => {
             <UserDropdown />
           </Navbar.Content>
         </Navbar.Content>
-
-        <Navbar.Collapse>
-          {collapseItems.map((item, index) => (
-            <Navbar.CollapseItem
-              key={item}
-              activeColor="secondary"
-              css={{
-                color: index === collapseItems.length - 1 ? "$error" : TEXT,
-                "&:hover": { opacity: 0.9 },
-              }}
-              isActive={index === 2}
-            >
-              <Link
-                color="inherit"
-                css={{ minWidth: "100%" }}
-                href="#"
-                className="hover:opacity-90"
-              >
-                {item}
-              </Link>
-            </Navbar.CollapseItem>
-          ))}
-        </Navbar.Collapse>
       </Navbar>
 
-      {children}
+      <Box
+        as="main"
+        css={{
+          flex: "1 1 auto",
+          minHeight: 0,
+        }}
+      >
+        {children}
+      </Box>
     </Box>
   );
 };

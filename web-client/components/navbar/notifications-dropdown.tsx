@@ -16,7 +16,7 @@ type Props = {
   loading?: boolean;
   error?: string;
   onMarkAllRead?: () => void;
-  onRefresh?: () => void;
+  onRefresh?: () => void | Promise<void>;
   onMarkRead?: (id: string | number) => void;
   onDismiss?: (id: string | number) => void;
 };
@@ -56,9 +56,20 @@ export const NotificationsDropdown: React.FC<Props> = ({
   onDismiss,
 }) => {
   const unreadCount = items.filter((i) => i.unread).length;
+  const unreadLabel = unreadCount > 99 ? "99+" : String(unreadCount);
 
   const handleItemClick = (id: string | number) => {
     onMarkRead?.(id);
+  };
+
+  const handleItemKeyDown = (
+    e: React.KeyboardEvent<HTMLDivElement>,
+    id: string | number
+  ) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onMarkRead?.(id);
+    }
   };
 
   const handleDismiss = (
@@ -72,7 +83,11 @@ export const NotificationsDropdown: React.FC<Props> = ({
   const renderBody = (): React.ReactElement => {
     if (error) {
       return (
-        <div className="py-4 text-center text-xs" style={{ color: "#fca5a5" }}>
+        <div
+          className="py-4 text-center text-xs"
+          style={{ color: "#fca5a5" }}
+          role="alert"
+        >
           {error}
         </div>
       );
@@ -95,22 +110,30 @@ export const NotificationsDropdown: React.FC<Props> = ({
     }
 
     return (
-      <div className="max-h-[360px] space-y-2 overflow-y-auto">
+      <div
+        className="max-h-[360px] space-y-2 overflow-y-auto"
+        aria-live="polite"
+      >
         {items.map((n) => (
           <div
             key={n.id}
-            className="flex w-full items-start gap-3 rounded-xl border px-3 py-2 text-left text-sm transition"
+            role="button"
+            tabIndex={0}
+            className="flex w-full items-start gap-3 rounded-xl border px-3 py-2 text-left text-sm transition outline-none hover:bg-[#1d2327] focus:ring-2 focus:ring-[#A30862]/40"
             style={{
               borderColor: "rgba(255,255,255,0.08)",
               backgroundColor: "#181d20",
             }}
             onClick={() => handleItemClick(n.id)}
+            onKeyDown={(e) => handleItemKeyDown(e, n.id)}
+            aria-label={`Abrir notificación: ${n.title}`}
           >
             <span
               className="mt-1 inline-block h-2.5 w-2.5 flex-shrink-0 rounded-full"
               style={{ background: n.unread ? MAGENTA : BORDER }}
               aria-hidden
             />
+
             <div className="min-w-0 flex-1">
               <div className="flex items-start gap-2">
                 <Text
@@ -123,6 +146,7 @@ export const NotificationsDropdown: React.FC<Props> = ({
                 >
                   {n.title}
                 </Text>
+
                 {n.unread && (
                   <Badge
                     size="sm"
@@ -136,6 +160,7 @@ export const NotificationsDropdown: React.FC<Props> = ({
                     Nuevo
                   </Badge>
                 )}
+
                 <button
                   type="button"
                   onClick={(e) => handleDismiss(e, n.id)}
@@ -185,15 +210,15 @@ export const NotificationsDropdown: React.FC<Props> = ({
               <BellIcon />
               {unreadCount > 0 && (
                 <span
-                  aria-hidden
-                  className="absolute -right-1 -top-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full text-[11px] font-semibold"
+                  aria-label={`${unreadCount} notificaciones sin leer`}
+                  className="absolute -right-1 -top-1 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full px-1 text-[11px] font-semibold"
                   style={{
                     backgroundColor: MAGENTA,
                     color: "#ffffff",
                     boxShadow: `0 0 0 2px ${SURFACE}`,
                   }}
                 >
-                  {unreadCount}
+                  {unreadLabel}
                 </span>
               )}
             </div>
@@ -237,15 +262,17 @@ export const NotificationsDropdown: React.FC<Props> = ({
                       ? `${unreadCount} sin leer`
                       : "Estás al día"}
                   </Text>
+
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
-                      onClick={() => onRefresh?.()}
+                      onClick={() => void onRefresh?.()}
                       className="text-xs underline underline-offset-2 hover:opacity-90"
                       style={{ color: MUTED }}
                     >
                       Refrescar
                     </button>
+
                     {unreadCount > 0 && (
                       <button
                         type="button"

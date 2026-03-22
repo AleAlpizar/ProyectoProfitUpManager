@@ -14,6 +14,7 @@ export const CollapseItems: React.FC<Props> = ({
   onItemClick,
 }) => {
   const [open, setOpen] = React.useState(false);
+  const contentId = React.useId();
 
   return (
     <div className="w-full">
@@ -21,8 +22,8 @@ export const CollapseItems: React.FC<Props> = ({
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="group w-full rounded-lg border border-white/5 bg-transparent px-4 py-3
-                   text-left transition active:scale-[0.99] hover:bg-white/5"
+        aria-controls={contentId}
+        className="group w-full rounded-lg border border-white/5 bg-transparent px-4 py-3 text-left transition active:scale-[0.99] hover:bg-white/5"
       >
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -49,22 +50,28 @@ export const CollapseItems: React.FC<Props> = ({
       </button>
 
       <div
+        id={contentId}
         className={`grid transition-[grid-template-rows] duration-300 ${
           open ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
         }`}
       >
         <div className="min-h-0 overflow-hidden">
-          {items.map((item, index) => (
-            <button
-              key={`${item}-${index}`}
-              type="button"
-              onClick={() => onItemClick?.(item, index)}
-              className="w-full rounded-md px-4 py-2 pl-12 text-left text-sm
-                         text-gray-400 transition hover:bg-white/[0.03] hover:text-white"
-            >
-              {item}
-            </button>
-          ))}
+          {items.length === 0 ? (
+            <div className="px-4 py-3 pl-12 text-sm text-gray-500">
+              No hay elementos disponibles.
+            </div>
+          ) : (
+            items.map((item, index) => (
+              <button
+                key={`${item}-${index}`}
+                type="button"
+                onClick={() => onItemClick?.(item, index)}
+                className="w-full rounded-md px-4 py-2 pl-12 text-left text-sm text-gray-400 transition hover:bg-white/[0.03] hover:text-white"
+              >
+                {item}
+              </button>
+            ))
+          )}
         </div>
       </div>
     </div>

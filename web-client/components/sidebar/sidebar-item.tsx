@@ -1,4 +1,3 @@
-
 import React from "react";
 import { useRouter } from "next/router";
 
@@ -20,9 +19,12 @@ export const SidebarItem: React.FC<Props> = ({
   const router = useRouter();
 
   const handleClick = async () => {
+    if (!href) return;
+
     if (router.asPath !== href) {
       await router.push(href);
     }
+
     if (typeof window !== "undefined" && window.innerWidth < 768) {
       onClickItem?.();
     }
@@ -31,10 +33,7 @@ export const SidebarItem: React.FC<Props> = ({
   return (
     <button
       type="button"
-      onClick={handleClick}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") handleClick();
-      }}
+      onClick={() => void handleClick()}
       aria-current={isActive ? "page" : undefined}
       className={[
         "group w-full select-none",

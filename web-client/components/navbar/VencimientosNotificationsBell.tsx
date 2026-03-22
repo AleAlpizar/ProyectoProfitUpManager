@@ -11,6 +11,11 @@ const DISMISSED_KEY = "venc_notifs_dismissed_v1";
 function fmtISO(dateISO: string) {
   try {
     const d = new Date(dateISO);
+
+    if (Number.isNaN(d.getTime())) {
+      return dateISO;
+    }
+
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, "0");
     const da = String(d.getDate()).padStart(2, "0");
@@ -40,7 +45,7 @@ function mapRowToNotification(r: AlertRowDto): NotificationItem {
   const time = daysToText(r.daysToDue);
 
   const descParts: string[] = [];
-  descParts.push(r.tipoNombre);
+  if (r.tipoNombre) descParts.push(r.tipoNombre);
   descParts.push(`Vence el ${fecha}`);
   descParts.push(time);
   if (r.referencia) descParts.push(`Ref: ${r.referencia}`);
@@ -56,11 +61,19 @@ function mapRowToNotification(r: AlertRowDto): NotificationItem {
 
 function loadIdSet(key: string): Set<number> {
   if (typeof window === "undefined") return new Set();
+
   try {
     const raw = window.localStorage.getItem(key);
     if (!raw) return new Set();
-    const arr = JSON.parse(raw) as number[];
-    return new Set(arr);
+
+    const arr = JSON.parse(raw) as unknown[];
+    if (!Array.isArray(arr)) return new Set();
+
+    const normalized = arr
+      .map((v) => Number(v))
+      .filter((n) => Number.isFinite(n));
+
+    return new Set(normalized);
   } catch {
     return new Set();
   }
@@ -83,11 +96,10 @@ const VencimientosNotificationsBell: React.FC = () => {
 
   React.useEffect(() => {
     if (!data || data.length === 0) return;
+
     const validIds = new Set(data.map((r) => r.documentoVencimientoID));
 
-    const newRead = new Set(
-      Array.from(readIds).filter((id) => validIds.has(id))
-    );
+    const newRead = new Set(Array.from(readIds).filter((id) => validIds.has(id)));
     const newDismissed = new Set(
       Array.from(dismissedIds).filter((id) => validIds.has(id))
     );
@@ -96,38 +108,36 @@ const VencimientosNotificationsBell: React.FC = () => {
       setReadIds(newRead);
       saveIdSet(READ_KEY, newRead);
     }
+
     if (newDismissed.size !== dismissedIds.size) {
       setDismissedIds(newDismissed);
       saveIdSet(DISMISSED_KEY, newDismissed);
     }
-  }, [data]);
+  }, [data, readIds, dismissedIds]);
 
   const markAllRead = React.useCallback(() => {
-    const all = new Set(
-      (data ?? []).map((r) => r.documentoVencimientoID)
-    );
+    const all = new Set((data ?? []).map((r) => r.documentoVencimientoID));
     setReadIds(all);
     saveIdSet(READ_KEY, all);
   }, [data]);
 
-  const markRead = React.useCallback(
-    (id: string | number) => {
-      const num = Number(id);
-      if (Number.isNaN(num)) return;
-      setReadIds((prev) => {
-        if (prev.has(num)) return prev;
-        const next = new Set(prev);
-        next.add(num);
-        saveIdSet(READ_KEY, next);
-        return next;
-      });
-    },
-    []
-  );
+  const markRead = React.useCallback((id: string | number) => {
+    const num = Number(id);
+    if (Number.isNaN(num)) return;
+
+    setReadIds((prev) => {
+      if (prev.has(num)) return prev;
+      const next = new Set(prev);
+      next.add(num);
+      saveIdSet(READ_KEY, next);
+      return next;
+    });
+  }, []);
 
   const dismiss = React.useCallback((id: string | number) => {
     const num = Number(id);
     if (Number.isNaN(num)) return;
+
     setDismissedIds((prev) => {
       if (prev.has(num)) return prev;
       const next = new Set(prev);
@@ -141,6 +151,7 @@ const VencimientosNotificationsBell: React.FC = () => {
     const baseRows = (data ?? []).filter(
       (r) => !dismissedIds.has(r.documentoVencimientoID)
     );
+
     return baseRows.map((r) => {
       const n = mapRowToNotification(r);
       const isRead = readIds.has(r.documentoVencimientoID);
@@ -149,10 +160,11 @@ const VencimientosNotificationsBell: React.FC = () => {
   }, [data, readIds, dismissedIds]);
 
   React.useEffect(() => {
-    const id = setInterval(() => {
-      reload().catch(() => {});
+    const id = window.setInterval(() => {
+      void reload().catch(() => {});
     }, 5 * 60 * 1000);
-    return () => clearInterval(id);
+
+    return () => window.clearInterval(id);
   }, [reload]);
 
   return (

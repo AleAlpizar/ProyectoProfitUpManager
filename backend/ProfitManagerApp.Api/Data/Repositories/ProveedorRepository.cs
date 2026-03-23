@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Dapper;
@@ -125,39 +124,28 @@ namespace ProfitManagerApp.Api.Repositories
         {
             using var cn = _factory.Create();
 
-            var sets = new List<string>();
-
-            if (input.Nombre != null) sets.Add("Nombre = @Nombre");
-            if (input.Contacto != null) sets.Add("Contacto = @Contacto");
-            if (input.Telefono != null) sets.Add("Telefono = @Telefono");
-            if (input.Correo != null) sets.Add("Correo = @Correo");
-            if (input.Direccion != null) sets.Add("Direccion = @Direccion");
-            if (input.IsActive.HasValue) sets.Add("IsActive = @IsActive");
-
-            if (sets.Count == 0)
-            {
-                // Nada que actualizar
-                return false;
-            }
-
-            var sql = $@"
+            var cmd = new CommandDefinition(@"
                 UPDATE dbo.Proveedor
-                SET {string.Join(", ", sets)}
+                SET
+                    Nombre = @Nombre,
+                    Contacto = @Contacto,
+                    Telefono = @Telefono,
+                    Correo = @Correo,
+                    Direccion = @Direccion,
+                    IsActive = COALESCE(@IsActive, IsActive)
                 WHERE ProveedorID = @ProveedorID;
-            ";
-
-            var cmd = new CommandDefinition(sql,
-                new
-                {
-                    ProveedorID = proveedorId,
-                    input.Nombre,
-                    input.Contacto,
-                    input.Telefono,
-                    input.Correo,
-                    input.Direccion,
-                    IsActive = input.IsActive
-                },
-                cancellationToken: cancellationToken);
+            ",
+            new
+            {
+                ProveedorID = proveedorId,
+                input.Nombre,
+                input.Contacto,
+                input.Telefono,
+                input.Correo,
+                input.Direccion,
+                input.IsActive
+            },
+            cancellationToken: cancellationToken);
 
             var affected = await cn.ExecuteAsync(cmd);
             return affected > 0;

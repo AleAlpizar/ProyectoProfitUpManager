@@ -10,23 +10,116 @@ import { useConfirm } from "../modals/ConfirmProvider";
 
 type Props = {
   provider: ProviderViewModel;
-  onSaved?: () => void;
+  onSaved?: (message?: string) => void | Promise<void>;
   onClose: () => void;
 };
+
+const normalizeSpaces = (value: string) => value.replace(/\s{2,}/g, " ");
+const normalizeText = (value: string) => normalizeSpaces(value).trim();
+const normalizeEmail = (value: string) =>
+  normalizeSpaces(value).trim().toLowerCase();
+const normalizePhone = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  return trimmed.startsWith("+")
+    ? `+${trimmed.slice(1).replace(/\D/g, "")}`
+    : trimmed.replace(/\D/g, "");
+};
+
+const providerNameRegex = /^[A-Za-zÁÉÍÓÚáéíóúÜüÑñ0-9&.\-_'()/#,\s]+$/;
+const contactRegex = /^[A-Za-zÁÉÍÓÚáéíóúÜüÑñ.\-'\s]*$/;
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phoneRegex = /^\+?[0-9]{8,15}$/;
+
+function validateForm(form: {
+  nombre: string;
+  contacto: string;
+  telefono: string;
+  correo: string;
+  direccion: string;
+}): string | null {
+  const nombre = normalizeText(form.nombre);
+  const contacto = normalizeText(form.contacto);
+  const telefono = normalizePhone(form.telefono);
+  const correo = normalizeEmail(form.correo);
+  const direccion = normalizeText(form.direccion);
+
+  if (!nombre) return "El nombre es obligatorio.";
+  if (nombre.length < 2 || nombre.length > 150) {
+    return "El nombre debe tener entre 2 y 150 caracteres.";
+  }
+  if (!providerNameRegex.test(nombre)) {
+    return "El nombre contiene caracteres no permitidos.";
+  }
+
+  if (contacto) {
+    if (contacto.length > 120) {
+      return "El contacto no puede exceder 120 caracteres.";
+    }
+    if (!contactRegex.test(contacto)) {
+      return "El contacto contiene caracteres no permitidos.";
+    }
+  }
+
+  if (telefono && !phoneRegex.test(telefono)) {
+    return "El teléfono debe contener entre 8 y 15 dígitos y solo puede incluir '+' al inicio.";
+  }
+
+  if (correo) {
+    if (correo.length > 150) {
+      return "El correo no puede exceder 150 caracteres.";
+    }
+    if (!emailRegex.test(correo)) {
+      return "Correo inválido.";
+    }
+  }
+
+  if (direccion.length > 300) {
+    return "La dirección no puede exceder 300 caracteres.";
+  }
+
+  return null;
+}
 
 const Field: React.FC<{
   label: string;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   type?: React.HTMLInputTypeAttribute;
-}> = ({ label, value, onChange, type = "text" }) => (
-  <label className="space-y-1">
-    <span className="text-xs text-[#8B9AA0]">{label}</span>
+  onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  maxLength?: number;
+}> = ({ label, value, onChange, type = "text", onKeyDown, maxLength }) => (
+  <label className="space-y-1.5">
+    <span className="text-xs font-medium uppercase tracking-[0.14em] text-[#8B9AA0]">
+      {label}
+    </span>
     <input
       type={type}
       value={value}
       onChange={onChange}
-      className="w-full rounded-2xl border border-white/10 bg-[#0F1315] px-3 py-2.5 text-sm outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] placeholder:text-[#8B9AA0] transition focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
+      onKeyDown={onKeyDown}
+      maxLength={maxLength}
+      className="h-12 w-full rounded-2xl border border-white/10 bg-[#0F1315] px-4 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] placeholder:text-[#8B9AA0] transition focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
+    />
+  </label>
+);
+
+const FieldArea: React.FC<{
+  label: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  maxLength?: number;
+}> = ({ label, value, onChange, maxLength }) => (
+  <label className="space-y-1.5 md:col-span-2">
+    <span className="text-xs font-medium uppercase tracking-[0.14em] text-[#8B9AA0]">
+      {label}
+    </span>
+    <textarea
+      rows={4}
+      value={value}
+      onChange={onChange}
+      maxLength={maxLength}
+      className="w-full rounded-2xl border border-white/10 bg-[#0F1315] px-4 py-3 text-sm text-white outline-none shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] placeholder:text-[#8B9AA0] transition focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40 resize-none"
     />
   </label>
 );
@@ -46,26 +139,88 @@ const EditProvider: React.FC<Props> = ({ provider, onSaved, onClose }) => {
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
+  React.useEffect(() => {
+    setForm({
+      nombre: provider.nombre ?? "",
+      contacto: provider.contacto ?? "",
+      telefono: provider.telefono ?? "",
+      correo: provider.correo ?? "",
+      direccion: provider.direccion ?? "",
+    });
+    setError(null);
+    setLoading(false);
+  }, [provider]);
+
   const onChange =
     (k: keyof typeof form) =>
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setForm((f) => ({ ...f, [k]: e.target.value }));
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      let value = e.target.value;
+
+      if (k === "nombre") {
+        value = value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÜüÑñ0-9&.\-_'()/#,\s]/g, "");
+      }
+
+      if (k === "contacto") {
+        value = value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÜüÑñ.\-'\s]/g, "");
+      }
+
+      if (k === "telefono") {
+        const trimmed = value.trimStart();
+        value = trimmed.startsWith("+")
+          ? `+${trimmed.slice(1).replace(/\D/g, "")}`
+          : trimmed.replace(/\D/g, "");
+      }
+
+      setForm((f) => ({ ...f, [k]: value }));
     };
+
+  const handleContactKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const key = e.key;
+    if (key.length > 1) return;
+    if (!/^[A-Za-zÁÉÍÓÚáéíóúÜüÑñ.\-'\s]$/.test(key)) {
+      e.preventDefault();
+    }
+  };
+
+  const handlePhoneKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    const key = e.key;
+    if (key.length > 1) return;
+    if (!/^[0-9+]$/.test(key)) {
+      e.preventDefault();
+    }
+    if (
+      key === "+" &&
+      (e.currentTarget.value.includes("+") || e.currentTarget.selectionStart !== 0)
+    ) {
+      e.preventDefault();
+    }
+  };
 
   const submit = async (e?: React.FormEvent) => {
     e?.preventDefault();
+    if (loading) return;
+
     setError(null);
 
-    if (!form.nombre.trim()) {
-      setError("El nombre es obligatorio.");
+    const validationError = validateForm(form);
+    if (validationError) {
+      setError(validationError);
       return;
     }
+
+    const payload: ProveedorUpdateInput = {
+      nombre: normalizeText(form.nombre),
+      contacto: normalizeText(form.contacto) || null,
+      telefono: normalizePhone(form.telefono) || null,
+      correo: normalizeEmail(form.correo) || null,
+      direccion: normalizeText(form.direccion) || null,
+    };
 
     const ok = await confirm({
       title: "Guardar cambios",
       message: (
         <>
-          ¿Deseas guardar los cambios del proveedor <b>{form.nombre}</b>?
+          ¿Deseas guardar los cambios del proveedor <b>{payload.nombre}</b>?
         </>
       ),
       tone: "brand",
@@ -76,18 +231,8 @@ const EditProvider: React.FC<Props> = ({ provider, onSaved, onClose }) => {
 
     try {
       setLoading(true);
-
-      const payload: ProveedorUpdateInput = {
-        nombre: form.nombre.trim(),
-        contacto: form.contacto.trim() || null,
-        telefono: form.telefono.trim() || null,
-        correo: form.correo.trim() || null,
-        direccion: form.direccion.trim() || null,
-      };
-
       await updateProvider(provider.proveedorId, payload, authHeader as any);
-
-      onSaved?.();
+      await onSaved?.("Proveedor actualizado correctamente.");
       onClose();
     } catch (err: any) {
       setError(err?.message || "No se pudo actualizar el proveedor.");
@@ -97,29 +242,29 @@ const EditProvider: React.FC<Props> = ({ provider, onSaved, onClose }) => {
   };
 
   return (
-    <Modal frameless onClose={onClose}>
+    <Modal frameless onClose={loading ? () => {} : onClose}>
       <form
         onSubmit={submit}
-        className="w-full max-w-4xl rounded-3xl border border-white/10 bg-[#13171A] text-[#E6E9EA] shadow-[0_30px_80px_rgba(0,0,0,.55)] ring-1 ring-black/20"
+        className="w-full max-w-5xl rounded-[28px] border border-white/10 bg-[#13171A] text-[#E6E9EA] shadow-[0_30px_80px_rgba(0,0,0,.55)] ring-1 ring-black/20"
       >
-        {/* Header */}
-        <div className="flex items-start justify-between gap-4 px-6 pt-5">
+        <div className="flex items-start justify-between gap-4 px-7 pt-6">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-2.5 py-1 text-[11px] text-[#8B9AA0]">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-[#9AA8AE]">
               Proveedores
             </div>
-            <h2 className="mt-2 text-xl font-semibold tracking-wide">
+            <h2 className="mt-3 text-[22px] font-semibold tracking-[0.01em] text-white">
               Editar proveedor
             </h2>
-            <p className="mt-1 text-sm text-[#8B9AA0]">
-              Actualiza los datos del proveedor.
+            <p className="mt-1.5 max-w-2xl text-sm leading-6 text-[#8B9AA0]">
+              Actualiza la información del proveedor manteniendo la consistencia de sus datos.
             </p>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl p-2 text-[#8B9AA0] hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/20"
+            disabled={loading}
+            className="rounded-2xl border border-white/10 bg-white/[0.03] p-2.5 text-[#8B9AA0] transition hover:bg-white/5 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-50"
             aria-label="Cerrar"
             title="Cerrar"
           >
@@ -127,56 +272,68 @@ const EditProvider: React.FC<Props> = ({ provider, onSaved, onClose }) => {
           </button>
         </div>
 
-        <div className="mx-6 my-4 h-px bg-white/10" />
+        <div className="mx-7 my-5 h-px bg-white/10" />
 
         {error && (
-          <div className="mx-6 mb-4 rounded-2xl border border-[#6C0F1C]/40 bg-[#6C0F1C]/15 px-4 py-3 text-sm text-[#F7C6CF]">
+          <div className="mx-7 mb-5 rounded-2xl border border-[#6C0F1C]/40 bg-[#6C0F1C]/15 px-4 py-3.5 text-sm text-[#F7C6CF]">
             {error}
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-4 px-6 pb-2 md:grid-cols-2">
-          <Field
-            label="Nombre"
-            value={form.nombre}
-            onChange={onChange("nombre")}
-          />
-          <Field
-            label="Contacto"
-            value={form.contacto}
-            onChange={onChange("contacto")}
-          />
-          <Field
-            label="Teléfono"
-            value={form.telefono}
-            onChange={onChange("telefono")}
-          />
-          <Field
-            label="Correo"
-            value={form.correo}
-            onChange={onChange("correo")}
-            type="email"
-          />
-          <Field
-            label="Dirección"
-            value={form.direccion}
-            onChange={onChange("direccion")}
-          />
+        <div className="px-7 pb-2">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <Field
+              label="Nombre"
+              value={form.nombre}
+              onChange={onChange("nombre")}
+              maxLength={150}
+            />
+            <Field
+              label="Contacto"
+              value={form.contacto}
+              onChange={onChange("contacto")}
+              onKeyDown={handleContactKeyDown}
+              maxLength={120}
+            />
+            <Field
+              label="Teléfono"
+              value={form.telefono}
+              onChange={onChange("telefono")}
+              onKeyDown={handlePhoneKeyDown}
+              maxLength={16}
+            />
+            <Field
+              label="Correo"
+              value={form.correo}
+              onChange={onChange("correo")}
+              type="email"
+              maxLength={150}
+            />
+            <FieldArea
+              label="Dirección"
+              value={form.direccion}
+              onChange={onChange("direccion")}
+              maxLength={300}
+            />
+          </div>
         </div>
 
-        <div className="mx-6 my-6 flex items-center justify-end gap-2">
+        <div className="mx-7 my-6 h-px bg-white/10" />
+
+        <div className="flex flex-col-reverse gap-3 px-7 pb-7 sm:flex-row sm:items-center sm:justify-end">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
-            className="!rounded-2xl !border-white/20 !bg-transparent !text-[#E6E9EA] hover:!bg-white/5 focus:!ring-2 focus:!ring-[#A30862]/40"
+            disabled={loading}
+            className="!h-11 !rounded-2xl !border-white/20 !bg-transparent !px-5 !text-[#E6E9EA] hover:!bg-white/5 focus:!ring-2 focus:!ring-[#A30862]/40 disabled:!opacity-60"
           >
             Cancelar
           </Button>
           <Button
             type="submit"
             disabled={loading}
-            className="!rounded-2xl !bg-[#A30862] !text-white"
+            className="!h-11 !rounded-2xl !bg-[#A30862] !px-5 !text-white disabled:!opacity-60"
           >
             {loading ? "Guardando..." : "Guardar cambios"}
           </Button>

@@ -6,26 +6,30 @@ namespace ProfitManagerApp.Api.Dtos
     public sealed class OrdenCompraFromUiDto
     {
         [Required]
+        [Range(1, int.MaxValue, ErrorMessage = "El proveedor es requerido.")]
         public int ProveedorID { get; set; }
 
         public DateTime? FechaSolicitud { get; set; }
         public DateTime? FechaEstimada { get; set; }
 
-        public string? Observaciones { get; set; } 
+        [StringLength(500, ErrorMessage = "Las observaciones no pueden superar los 500 caracteres.")]
+        public string? Observaciones { get; set; }
 
-        [Required, MinLength(1)]
+        [Required]
+        [MinLength(1, ErrorMessage = "Debe incluir al menos una línea de detalle.")]
         public List<OrdenCompraLineaFromUiDto> Lineas { get; set; } = new();
     }
 
     public sealed class OrdenCompraLineaFromUiDto
     {
-        [Required]
+        [Required(ErrorMessage = "El SKU es requerido.")]
+        [StringLength(100, ErrorMessage = "El SKU no puede superar los 100 caracteres.")]
         public string Sku { get; set; } = default!;
 
-        [Range(0.01, 9999999999999.99)]
+        [Range(0.01, 9999999999999.99, ErrorMessage = "La cantidad debe ser mayor a 0.")]
         public decimal Cantidad { get; set; } = 1;
 
-        [Range(0.01, 9999999999999.99)]
+        [Range(0.01, 9999999999999.99, ErrorMessage = "El precio unitario debe ser mayor a 0.")]
         public decimal? PrecioUnitario { get; set; }
     }
 
@@ -54,7 +58,7 @@ namespace ProfitManagerApp.Api.Dtos
 
         public decimal Total { get; set; }
 
-        public string? Observaciones { get; set; } 
+        public string? Observaciones { get; set; }
 
         public EstadoOrdenCompraEnum Estado { get; set; }
 
@@ -63,6 +67,8 @@ namespace ProfitManagerApp.Api.Dtos
 
     public sealed class OrdenCompraHistorialFilterDto
     {
+        public int? OrdenCompraID { get; set; }
+
         public DateTime? FechaDesde { get; set; }
         public DateTime? FechaHasta { get; set; }
 
@@ -75,7 +81,10 @@ namespace ProfitManagerApp.Api.Dtos
         public decimal? TotalMin { get; set; }
         public decimal? TotalMax { get; set; }
 
+        [Range(1, int.MaxValue)]
         public int Page { get; set; } = 1;
+
+        [Range(1, 100)]
         public int PageSize { get; set; } = 20;
     }
 

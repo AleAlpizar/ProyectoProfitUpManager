@@ -47,6 +47,16 @@ function toInputDate(d: Date) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+function getApiErrorMessage(error: any, fallback: string) {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.detail ||
+    error?.response?.data?.title ||
+    error?.message ||
+    fallback
+  );
+}
+
 export default function VentasHistorialPage() {
   const { call } = useApi();
   const router = useRouter();
@@ -54,7 +64,7 @@ export default function VentasHistorialPage() {
   const hoy = new Date();
   const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
 
-  const [filters, setFilters] = useState<FiltersState>({
+  const getDefaultFilters = (): FiltersState => ({
     fechaDesde: toInputDate(primerDiaMes),
     fechaHasta: toInputDate(hoy),
     clienteCodigo: "",
@@ -63,43 +73,69 @@ export default function VentasHistorialPage() {
     totalMax: "",
   });
 
+  const [filters, setFilters] = useState<FiltersState>(getDefaultFilters);
   const [data, setData] = useState<VentaHistorialPageDto | null>(null);
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const loadData = async (pageToLoad: number) => {
+  const buildQueryString = (state: FiltersState, pageToLoad: number) => {
+    const qs = new URLSearchParams();
+
+    if (state.fechaDesde) qs.append("FechaDesde", state.fechaDesde);
+    if (state.fechaHasta) qs.append("FechaHasta", state.fechaHasta);
+    if (state.clienteCodigo.trim()) qs.append("ClienteCodigo", state.clienteCodigo.trim());
+    if (state.estado) qs.append("Estado", state.estado);
+    if (state.totalMin.trim()) qs.append("TotalMin", state.totalMin.trim());
+    if (state.totalMax.trim()) qs.append("TotalMax", state.totalMax.trim());
+
+    qs.append("Page", String(pageToLoad));
+    qs.append("PageSize", String(pageSize));
+
+    return qs.toString();
+  };
+
+  const validateFilters = (state: FiltersState) => {
+    if (state.fechaDesde && state.fechaHasta && state.fechaDesde > state.fechaHasta) {
+      return "La fecha desde no puede ser mayor que la fecha hasta.";
+    }
+
+    const totalMin = state.totalMin.trim() ? Number(state.totalMin) : null;
+    const totalMax = state.totalMax.trim() ? Number(state.totalMax) : null;
+
+    if (totalMin != null && totalMax != null && totalMin > totalMax) {
+      return "El total mínimo no puede ser mayor que el total máximo.";
+    }
+
+    return null;
+  };
+
+  const loadData = async (pageToLoad: number, filtersToUse?: FiltersState) => {
+    const currentFilters = filtersToUse ?? filters;
+    const validationError = validateFilters(currentFilters);
+
+    if (validationError) {
+      setErr(validationError);
+      return;
+    }
+
     try {
       setLoading(true);
       setErr(null);
 
-      const qs = new URLSearchParams();
-
-      if (filters.fechaDesde) qs.append("FechaDesde", filters.fechaDesde);
-      if (filters.fechaHasta) qs.append("FechaHasta", filters.fechaHasta);
-      if (filters.clienteCodigo.trim())
-        qs.append("ClienteCodigo", filters.clienteCodigo.trim());
-      if (filters.estado) qs.append("Estado", filters.estado);
-
-      if (filters.totalMin.trim())
-        qs.append("TotalMin", filters.totalMin.trim());
-      if (filters.totalMax.trim())
-        qs.append("TotalMax", filters.totalMax.trim());
-
-      qs.append("Page", String(pageToLoad));
-      qs.append("PageSize", String(pageSize));
-
-      const url = `/api/ventas/historial?${qs.toString()}`;
+      const url = `/api/ventas/historial?${buildQueryString(currentFilters, pageToLoad)}`;
 
       const result = await call<VentaHistorialPageDto>(url, {
         method: "GET",
       });
+
       setData(result ?? null);
       setPage(pageToLoad);
     } catch (e: any) {
-      setErr(e?.message ?? "No se pudo cargar el historial de ventas.");
+      setErr(getApiErrorMessage(e, "No se pudo cargar el historial de ventas."));
     } finally {
       setLoading(false);
     }
@@ -112,13 +148,24 @@ export default function VentasHistorialPage() {
       });
       setClientes(result ?? []);
     } catch {
+      setClientes([]);
     }
   };
 
   useEffect(() => {
-    loadData(1).catch(console.error);
+    loadData(1, getDefaultFilters()).catch(console.error);
     loadClientes().catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (!router.isReady) return;
+
+    if (router.query.anulada === "1") {
+      setSuccessMsg("La venta fue anulada correctamente.");
+    } else {
+      setSuccessMsg(null);
+    }
+  }, [router.isReady, router.query.anulada]);
 
   const handleFilterChange =
     (field: keyof FiltersState) =>
@@ -132,15 +179,10 @@ export default function VentasHistorialPage() {
   };
 
   const handleLimpiar = () => {
-    setFilters({
-      fechaDesde: toInputDate(primerDiaMes),
-      fechaHasta: toInputDate(hoy),
-      clienteCodigo: "",
-      estado: "",
-      totalMin: "",
-      totalMax: "",
-    });
-    loadData(1).catch(console.error);
+    const reset = getDefaultFilters();
+    setFilters(reset);
+    setErr(null);
+    loadData(1, reset).catch(console.error);
   };
 
   const handleVerVenta = (ventaID: number) => {
@@ -148,11 +190,11 @@ export default function VentasHistorialPage() {
   };
 
   const canPrev = page > 1;
-  const canNext = data && page < (data.totalPages || 1);
+  const canNext = !!data && page < (data.totalPages || 1);
 
   return (
-    <div className="mx-auto max-w-6xl p-4 md:p-6">
-      <header className="mb-4">
+    <div className="mx-auto max-w-7xl p-4 md:p-6">
+      <header className="mb-5">
         <nav className="mb-3 flex items-center text-sm text-[#8B9AA0]">
           <div className="flex items-center gap-1">
             <svg
@@ -188,41 +230,45 @@ export default function VentasHistorialPage() {
 
       <SectionHeader
         title="Historial de ventas"
-        subtitle="Consulta y filtra las ventas realizadas."
+        subtitle="Consulta, filtra y revisa el detalle de las ventas realizadas."
       />
 
-      <section className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-4">
+      {successMsg && (
+        <div className="mb-4 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
+          {successMsg}
+        </div>
+      )}
+
+      <section className="mb-6 rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.05),rgba(255,255,255,0.025))] p-5 shadow-[0_14px_35px_rgba(0,0,0,0.16)]">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5">
             <Label>Fecha desde</Label>
             <input
               type="date"
               value={filters.fechaDesde}
               onChange={handleFilterChange("fechaDesde")}
-              className="w-full rounded-xl border border-white/10 bg-[#0F1416] px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+              className="h-12 w-full rounded-2xl border border-white/10 bg-[#0F1416] px-4 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/15"
             />
           </div>
-          <div className="flex flex-col gap-1">
+
+          <div className="flex flex-col gap-1.5">
             <Label>Fecha hasta</Label>
             <input
               type="date"
               value={filters.fechaHasta}
               onChange={handleFilterChange("fechaHasta")}
-              className="w-full rounded-xl border border-white/10 bg-[#0F1416] px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+              className="h-12 w-full rounded-2xl border border-white/10 bg-[#0F1416] px-4 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/15"
             />
           </div>
-          <div className="flex flex-col gap-1">
+
+          <div className="flex flex-col gap-1.5">
             <Label>Cliente</Label>
             <select
               value={filters.clienteCodigo}
               onChange={handleFilterChange("clienteCodigo")}
-              className="w-full rounded-xl border border-white/10 bg-[#0F1416] px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+              className="h-12 w-full rounded-2xl border border-white/10 bg-[#0F1416] px-4 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/15"
             >
-              <option
-                value=""
-                className="bg-[#0F1416]"
-                style={{ color: "#ffffff" }}
-              >
+              <option value="" className="bg-[#0F1416]" style={{ color: "#ffffff" }}>
                 Todos los clientes
               </option>
               {clientes.map((c) => (
@@ -237,32 +283,21 @@ export default function VentasHistorialPage() {
               ))}
             </select>
           </div>
-          <div className="flex flex-col gap-1">
+
+          <div className="flex flex-col gap-1.5">
             <Label>Estado</Label>
             <select
               value={filters.estado}
               onChange={handleFilterChange("estado")}
-              className="w-full rounded-xl border border-white/10 bg-[#0F1416] px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+              className="h-12 w-full rounded-2xl border border-white/10 bg-[#0F1416] px-4 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/15"
             >
-              <option
-                value=""
-                className="bg-[#0F1416]"
-                style={{ color: "#ffffff" }}
-              >
+              <option value="" className="bg-[#0F1416]" style={{ color: "#ffffff" }}>
                 Todos
               </option>
-              <option
-                value="Registrada"
-                className="bg-[#0F1416]"
-                style={{ color: "#ffffff" }}
-              >
+              <option value="Registrada" className="bg-[#0F1416]" style={{ color: "#ffffff" }}>
                 Registrada
               </option>
-              <option
-                value="Anulada"
-                className="bg-[#0F1416]"
-                style={{ color: "#ffffff" }}
-              >
+              <option value="Anulada" className="bg-[#0F1416]" style={{ color: "#ffffff" }}>
                 Anulada
               </option>
             </select>
@@ -270,39 +305,44 @@ export default function VentasHistorialPage() {
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3">
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5">
             <Label>Total mínimo</Label>
             <input
               type="number"
               min={0}
+              step="0.01"
               value={filters.totalMin}
               onChange={handleFilterChange("totalMin")}
-              className="w-full rounded-xl border border-white/10 bg-[#0F1416] px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+              className="h-12 w-full rounded-2xl border border-white/10 bg-[#0F1416] px-4 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/15"
             />
           </div>
-          <div className="flex flex-col gap-1">
+
+          <div className="flex flex-col gap-1.5">
             <Label>Total máximo</Label>
             <input
               type="number"
               min={0}
+              step="0.01"
               value={filters.totalMax}
               onChange={handleFilterChange("totalMax")}
-              className="w-full rounded-xl border border-white/10 bg-[#0F1416] px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/20"
+              className="h-12 w-full rounded-2xl border border-white/10 bg-[#0F1416] px-4 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/15"
             />
           </div>
-          <div className="flex items-end justify-start gap-2">
+
+          <div className="flex items-end gap-2">
             <Button
               type="button"
               variant="primary"
-              className="!bg-[#A30862] hover:!opacity-95 focus:!ring-2 focus:!ring-[#A30862]/40"
+              className="h-12 !rounded-2xl !bg-[#A30862] px-5 hover:!opacity-95 focus:!ring-2 focus:!ring-[#A30862]/40"
               onClick={handleBuscar}
             >
               Buscar
             </Button>
+
             <Button
               type="button"
               variant="ghost"
-              className="border border-white/10 bg-transparent text-xs text-white/70 hover:bg-white/5"
+              className="h-12 rounded-2xl border border-white/10 bg-transparent px-4 text-sm text-white/75 hover:bg-white/5"
               onClick={handleLimpiar}
             >
               Limpiar filtros
@@ -312,21 +352,21 @@ export default function VentasHistorialPage() {
       </section>
 
       {loading && (
-        <div className="mb-4 rounded-2xl border border-white/10 bg-[#121618] p-4 text-sm text-[#8B9AA0]">
+        <div className="mb-4 rounded-2xl border border-white/10 bg-[#121618] px-4 py-3 text-sm text-[#8B9AA0]">
           Cargando ventas…
         </div>
       )}
 
       {err && !loading && (
-        <div className="mb-4 rounded-2xl border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-200">
+        <div className="mb-4 rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
           {err}
         </div>
       )}
 
-      <section className="rounded-2xl border border-white/10 bg-[#13171A]">
+      <section className="overflow-hidden rounded-3xl border border-white/10 bg-[#13171A] shadow-[0_18px_40px_rgba(0,0,0,0.18)]">
         <CardTable>
           <thead>
-            <tr className="bg-[#1C2224] text-left text-xs uppercase tracking-wide text-[#8B9AA0]">
+            <tr className="bg-[#1C2224] text-left text-[12px] uppercase tracking-[0.04em] text-[#8B9AA0]">
               <Th># Venta</Th>
               <Th>Fecha</Th>
               <Th>Cliente</Th>
@@ -337,13 +377,19 @@ export default function VentasHistorialPage() {
               <Th className="text-right">Acciones</Th>
             </tr>
           </thead>
+
           <tbody className="[&>tr:not(:last-child)]:border-b [&>tr]:border-white/10">
             {!loading && data && data.items.length === 0 && (
               <tr>
                 <Td colSpan={8}>
-                  <span className="text-xs text-white/40">
-                    No se encontraron ventas con los filtros seleccionados.
-                  </span>
+                  <div className="flex min-h-[180px] flex-col items-center justify-center text-center">
+                    <div className="mb-2 text-sm font-medium text-white/70">
+                      No se encontraron ventas
+                    </div>
+                    <span className="text-xs text-white/35">
+                      Ajusta los filtros para intentar nuevamente.
+                    </span>
+                  </div>
                 </Td>
               </tr>
             )}
@@ -351,42 +397,38 @@ export default function VentasHistorialPage() {
             {data?.items.map((v) => (
               <tr
                 key={v.ventaID}
-                className="hover:bg-white/5 cursor-pointer"
+                className="cursor-pointer hover:bg-white/[0.035]"
                 onDoubleClick={() => handleVerVenta(v.ventaID)}
               >
-                <Td>#{v.ventaID}</Td>
+                <Td className="font-medium text-white/90">#{v.ventaID}</Td>
                 <Td>{new Date(v.fecha).toLocaleString()}</Td>
                 <Td>
                   <div className="flex flex-col">
-                    <span className="text-white/90">{v.clienteNombre}</span>
+                    <span className="font-medium text-white/90">{v.clienteNombre}</span>
                     {v.clienteCodigo && (
-                      <span className="text-xs text-white/40">
-                        {v.clienteCodigo}
-                      </span>
+                      <span className="mt-0.5 text-xs text-white/38">{v.clienteCodigo}</span>
                     )}
                   </div>
                 </Td>
-                <Td className="text-right">
-                  {formatMoney(v.subtotal ?? 0)}
-                </Td>
-                <Td className="text-right">
-                  {formatMoney(v.descuento ?? 0)}
-                </Td>
+                <Td className="text-right">{formatMoney(v.subtotal ?? 0)}</Td>
+                <Td className="text-right">{formatMoney(v.descuento ?? 0)}</Td>
                 <Td className="text-right font-semibold text-white">
                   {formatMoney(v.total ?? 0)}
                 </Td>
                 <Td className="text-center">
-                  {v.estado === "Anulada" ? (
-                    <PillBadge variant="danger">Anulada</PillBadge>
-                  ) : (
-                    <PillBadge variant="success">Registrada</PillBadge>
-                  )}
+                  <div className="flex justify-center">
+                    {v.estado === "Anulada" ? (
+                      <PillBadge variant="danger">Anulada</PillBadge>
+                    ) : (
+                      <PillBadge variant="success">Registrada</PillBadge>
+                    )}
+                  </div>
                 </Td>
                 <Td className="text-right">
                   <Button
                     type="button"
                     variant="ghost"
-                    className="border border-white/10 bg-white/5 text-xs text-white hover:bg-white/10"
+                    className="h-10 rounded-2xl border border-white/10 bg-white/5 px-4 text-xs text-white hover:bg-white/10"
                     onClick={() => handleVerVenta(v.ventaID)}
                   >
                     Ver detalle
@@ -398,24 +440,26 @@ export default function VentasHistorialPage() {
         </CardTable>
 
         {data && data.totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-white/10 px-4 py-3 text-xs text-white/60">
+          <div className="flex flex-col gap-3 border-t border-white/10 px-5 py-4 text-xs text-white/60 sm:flex-row sm:items-center sm:justify-between">
             <span>
               Página {page} de {data.totalPages} · {data.totalItems} ventas
             </span>
+
             <div className="flex items-center gap-2">
               <Button
                 type="button"
                 variant="ghost"
-                className="border border-white/10 bg-transparent text-xs text-white/70 hover:bg-white/5 disabled:opacity-40"
+                className="h-10 rounded-2xl border border-white/10 bg-transparent px-4 text-xs text-white/75 hover:bg-white/5 disabled:opacity-40"
                 disabled={!canPrev}
                 onClick={() => canPrev && loadData(page - 1)}
               >
                 ← Anterior
               </Button>
+
               <Button
                 type="button"
                 variant="ghost"
-                className="border border-white/10 bg-transparent text-xs text-white/70 hover:bg-white/5 disabled:opacity-40"
+                className="h-10 rounded-2xl border border-white/10 bg-transparent px-4 text-xs text-white/75 hover:bg-white/5 disabled:opacity-40"
                 disabled={!canNext}
                 onClick={() => canNext && loadData(page + 1)}
               >
@@ -434,7 +478,7 @@ const Label: React.FC<React.PropsWithChildren<{ className?: string }>> = ({
   children,
 }) => (
   <label
-    className={["mb-1 block text-xs font-medium text-white/70", className].join(
+    className={["text-xs font-medium tracking-wide text-white/70", className].join(
       " "
     )}
   >

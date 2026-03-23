@@ -5,28 +5,28 @@ import FeatureCard from "../../components/inventario/FeatureCard";
 
 export default function VentasHubPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6">
-      <header className="border-b border-white/5 pb-4">
+    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
+      <header className="border-b border-white/8 pb-5">
         <h1 className="text-3xl font-extrabold tracking-tight">
           <span className="text-[#A30862]">Ventas</span>
         </h1>
-        <p className="mt-1 text-sm text-white/70">
-          Accede rápidamente a los módulos de ventas.
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/65">
+          Accede rápidamente a las opciones principales del módulo para registrar nuevas ventas o consultar el historial.
         </p>
       </header>
 
-      <div className="mt-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
-        Elige una opción del módulo de ventas.
+      <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.045] px-4 py-3 text-sm text-white/70 shadow-sm">
+        Selecciona una opción para continuar con la gestión de ventas.
       </div>
 
       <section
         aria-label="Accesos de ventas"
-        className="mt-6 grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2"
+        className="mt-7 grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2"
         role="list"
       >
         <FeatureCard
           title="Registrar venta"
-          desc="Crear una nueva venta al cliente."
+          desc="Crear una nueva venta y asociarla al cliente con sus productos, cantidades y bodega."
           href="/ventas/registrar"
           cta="Ir a registro"
           icon={
@@ -50,7 +50,7 @@ export default function VentasHubPage() {
 
         <FeatureCard
           title="Historial de ventas"
-          desc="Consulta y detalla ventas realizadas."
+          desc="Consultar ventas realizadas, aplicar filtros y revisar el detalle de cada registro."
           href="/ventas/historial"
           cta="Ver historial"
           icon={

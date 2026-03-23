@@ -20,6 +20,23 @@ const formatDateTime = (value?: string | null) => {
 
 const safe = (v?: string | null) => (v && v.trim() ? v : "—");
 
+function DetailItem({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-black/70 bg-white/[0.02] px-4 py-3">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8B9AA0]">
+        {label}
+      </div>
+      <div className="mt-2 text-sm text-[#E6E9EA]">{value}</div>
+    </div>
+  );
+}
+
 export default function ClienteDetails({
   cliente,
   onClose,
@@ -30,125 +47,99 @@ export default function ClienteDetails({
   const estado = cliente.isActive ? "Activo" : "Inactivo";
 
   return (
-    <div className="w-full max-w-2xl rounded-3xl border border-white/10 bg-[#13171A] text-[#E6E9EA] shadow-[0_30px_80px_rgba(0,0,0,.55)] ring-1 ring-black/20">
-      <div className="flex items-start justify-between gap-4 px-6 pt-5">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/5 px-2.5 py-1 text-[11px] text-[#8B9AA0]">
-            Detalle de cliente
+    <div className="w-[min(100%,960px)] max-h-[92vh] overflow-y-auto rounded-2xl border border-black/70 bg-[#13171A] text-[#E6E9EA] shadow-[0_24px_70px_rgba(0,0,0,.55)] ring-1 ring-black/80">
+      <div className="bg-gradient-to-r from-[#171C20] via-[#13171A] to-[#13171A] px-5 pt-5 pb-4 sm:px-6">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full border border-black/70 bg-white/[0.03] px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-[#8B9AA0]">
+              Detalle de cliente
+            </div>
+            <h2 className="mt-3 text-[clamp(1.35rem,2vw,1.9rem)] font-semibold tracking-[0.01em] text-white">
+              {cliente.nombre}
+            </h2>
+            <p className="mt-1.5 text-sm leading-6 text-[#8B9AA0]">
+              Visualiza la información principal, estado y descuento del cliente.
+            </p>
           </div>
-          <h2 className="mt-2 text-xl font-semibold tracking-wide">{cliente.nombre}</h2>
-          <p className="mt-1 text-sm text-[#8B9AA0]">
-            Visualiza los datos importantes del cliente.
-          </p>
-        </div>
 
-        <Button
-          variant="outline"
-          type="button"
-          onClick={onClose}
-          className="!rounded-xl !border-white/20 !bg-transparent !text-[#E6E9EA] hover:!bg-white/5 focus:!ring-2 focus:!ring-[#A30862]/40"
-        >
-          Cerrar
-        </Button>
+          <Button
+            variant="outline"
+            type="button"
+            onClick={onClose}
+            className="!rounded-xl !border-black/70 !bg-white/[0.03] !px-4 !py-2 !text-[#E6E9EA] hover:!bg-white/8 focus:!ring-2 focus:!ring-[#A30862]/40"
+          >
+            Cerrar
+          </Button>
+        </div>
       </div>
 
-      <div className="mx-6 my-4 h-px bg-white/10" />
+      <div className="h-px bg-black/70" />
 
-      <div className="px-6 pb-6">
-        <table className="w-full border-separate border-spacing-y-2 text-sm">
-          <tbody>
-            <tr>
-              <td className="w-1/3 align-top text-xs font-semibold uppercase tracking-wide text-[#8B9AA0]">
-                Código
-              </td>
-              <td className="align-top text-sm">{safe(cliente.codigoCliente ?? undefined)}</td>
-            </tr>
-            <tr>
-              <td className="align-top text-xs font-semibold uppercase tracking-wide text-[#8B9AA0]">
-                Nombre
-              </td>
-              <td className="align-top text-sm">{cliente.nombre}</td>
-            </tr>
-            <tr>
-              <td className="align-top text-xs font-semibold uppercase tracking-wide text-[#8B9AA0]">
-                Tipo de persona
-              </td>
-              <td className="align-top text-sm">{safe(cliente.tipoPersona)}</td>
-            </tr>
-            <tr>
-              <td className="align-top text-xs font-semibold uppercase tracking-wide text-[#8B9AA0]">
-                Identificación
-              </td>
-              <td className="align-top text-sm">{safe(cliente.identificacion)}</td>
-            </tr>
-            <tr>
-              <td className="align-top text-xs font-semibold uppercase tracking-wide text-[#8B9AA0]">
-                Correo
-              </td>
-              <td className="align-top text-sm">{safe(cliente.correo)}</td>
-            </tr>
-            <tr>
-              <td className="align-top text-xs font-semibold uppercase tracking-wide text-[#8B9AA0]">
-                Teléfono
-              </td>
-              <td className="align-top text-sm">{safe(cliente.telefono)}</td>
-            </tr>
-            <tr>
-              <td className="align-top text-xs font-semibold uppercase tracking-wide text-[#8B9AA0]">
-                Dirección
-              </td>
-              <td className="align-top text-sm">{safe(cliente.direccion)}</td>
-            </tr>
-            <tr>
-              <td className="align-top text-xs font-semibold uppercase tracking-wide text-[#8B9AA0]">
-                Estado
-              </td>
-              <td className="align-top text-sm">
-                <PillBadge variant={cliente.isActive ? "success" : "danger"}>
-                  {estado}
-                </PillBadge>
-              </td>
-            </tr>
-            <tr>
-              <td className="align-top text-xs font-semibold uppercase tracking-wide text-[#8B9AA0]">
-                Fecha de registro
-              </td>
-              <td className="align-top text-sm">
-                {formatDateTime(cliente.fechaRegistro ?? cliente.createdAt)}
-              </td>
-            </tr>
-            <tr>
-              <td className="align-top text-xs font-semibold uppercase tracking-wide text-[#8B9AA0]">
-                Descuento actual
-              </td>
-              <td className="align-top text-sm">
-                <span className="font-medium">
-                  {Math.round(cliente.descuentoPorcentaje ?? 0)}%
-                </span>
-              </td>
-            </tr>
-            <tr>
-              <td className="align-top text-xs font-semibold uppercase tracking-wide text-[#8B9AA0]">
-                Notas / Motivo
-              </td>
-              <td className="align-top text-sm">
-                {safe(cliente.descuentoDescripcion)}
-              </td>
-            </tr>
-            <tr>
-              <td className="align-top text-xs font-semibold uppercase tracking-wide text-[#8B9AA0]">
-                Creado
-              </td>
-              <td className="align-top text-sm">{formatDateTime(cliente.createdAt)}</td>
-            </tr>
-            <tr>
-              <td className="align-top text-xs font-semibold uppercase tracking-wide text-[#8B9AA0]">
-                Última actualización
-              </td>
-              <td className="align-top text-sm">{formatDateTime(cliente.updatedAt)}</td>
-            </tr>
-          </tbody>
-        </table>
+      <div className="px-5 py-5 sm:px-6">
+        <div className="mb-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="rounded-xl border border-black/70 bg-[#171C20] px-4 py-4">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8B9AA0]">
+              Código
+            </div>
+            <div className="mt-2 text-lg font-semibold text-white">
+              {safe(cliente.codigoCliente ?? undefined)}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-black/70 bg-[#171C20] px-4 py-4">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#8B9AA0]">
+              Estado
+            </div>
+            <div className="mt-2">
+              <PillBadge variant={cliente.isActive ? "success" : "danger"}>
+                {estado}
+              </PillBadge>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-black/70 bg-[#16191D] px-4 py-4">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#D9A3C4]">
+              Descuento actual
+            </div>
+            <div className="mt-2 text-lg font-semibold text-white">
+              {Math.round(cliente.descuentoPorcentaje ?? 0)}%
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-[#8B9AA0]">
+            Información del cliente
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <DetailItem label="Nombre" value={cliente.nombre} />
+          <DetailItem label="Tipo de persona" value={safe(cliente.tipoPersona)} />
+          <DetailItem label="Identificación" value={safe(cliente.identificacion)} />
+          <DetailItem label="Correo" value={safe(cliente.correo)} />
+          <DetailItem label="Teléfono" value={safe(cliente.telefono)} />
+          <DetailItem label="Fecha de registro" value={formatDateTime(cliente.fechaRegistro ?? cliente.createdAt)} />
+          <div className="md:col-span-2">
+            <DetailItem label="Dirección" value={safe(cliente.direccion)} />
+          </div>
+          <div className="md:col-span-2">
+            <DetailItem label="Notas / Motivo" value={safe(cliente.descuentoDescripcion)} />
+          </div>
+        </div>
+
+        <div className="mx-0 my-5 h-px bg-black/70" />
+
+        <div className="mb-4">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-[#8B9AA0]">
+            Auditoría
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <DetailItem label="Creado" value={formatDateTime(cliente.createdAt)} />
+          <DetailItem label="Última actualización" value={formatDateTime(cliente.updatedAt)} />
+        </div>
       </div>
     </div>
   );

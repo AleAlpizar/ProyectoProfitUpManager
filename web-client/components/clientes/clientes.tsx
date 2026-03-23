@@ -11,6 +11,14 @@ import { useConfirm } from "../modals/ConfirmProvider";
 import { CardTable, Th, Td, PageBtn, PillBadge } from "../ui/table";
 import ClienteDetails from "./ClienteDetails";
 
+type ApiEstadoResponse = {
+  clienteID: number;
+  isActive: boolean;
+  updatedAt?: string | null;
+  updatedBy?: number | null;
+  message?: string;
+};
+
 export default function ClientesPage() {
   const [rows, setRows] = React.useState<Cliente[]>([]);
   const { call } = useApi();
@@ -22,29 +30,56 @@ export default function ClientesPage() {
   const [formOpen, setFormOpen] = React.useState(false);
   const [edit, setEdit] = React.useState<Cliente | null>(null);
   const [view, setView] = React.useState<Cliente | null>(null);
+  const [feedback, setFeedback] = React.useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [loading, setLoading] = React.useState(false);
 
   const confirm = useConfirm();
 
   const fetchClientData = async () => {
-    const data = await call<Cliente[]>(`/api/clientes`, { method: "GET" });
-    if (data) setRows(data);
+    setLoading(true);
+    try {
+      const data = await call<Cliente[]>(`/api/clientes`, { method: "GET" });
+      setRows(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "No se pudieron cargar los clientes.";
+      setFeedback({ type: "error", text: message });
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    fetchClientData().catch(console.error);
+    fetchClientData().catch(() => undefined);
   }, []);
 
   useEffect(() => {
     document.body.classList.toggle("overflow-hidden", formOpen || !!view);
+
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
   }, [formOpen, view]);
+
+  useEffect(() => {
+    if (!feedback) return;
+    const timer = window.setTimeout(() => setFeedback(null), 3500);
+    return () => window.clearTimeout(timer);
+  }, [feedback]);
 
   const filtered = React.useMemo(() => {
     const term = q.trim().toLowerCase();
+
     return rows.filter((r) => {
       const matchQ =
         !term ||
         r.nombre.toLowerCase().includes(term) ||
-        (r.correo ?? "").toLowerCase().includes(term);
+        (r.correo ?? "").toLowerCase().includes(term) ||
+        (r.codigoCliente ?? "").toLowerCase().includes(term) ||
+        (r.identificacion ?? "").toLowerCase().includes(term);
 
       const matchEstado =
         filterEstado === "Todos"
@@ -56,6 +91,11 @@ export default function ClientesPage() {
   }, [rows, q, filterEstado]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+
+  useEffect(() => {
+    setPage((current) => Math.min(current, totalPages));
+  }, [totalPages]);
+
   const pageRows = React.useMemo(() => {
     const start = (page - 1) * pageSize;
     return filtered.slice(start, start + pageSize);
@@ -66,13 +106,25 @@ export default function ClientesPage() {
   }, [q, filterEstado]);
 
   const onSaveCliente = async (payload: Cliente) => {
-    await call<Cliente>(`/api/clientes${edit ? `/${payload.clienteID}` : ""}`, {
-      method: edit ? "PUT" : "POST",
+    const endpoint = edit ? `/api/clientes/${payload.clienteID}` : `/api/clientes`;
+    const method = edit ? "PUT" : "POST";
+
+    const result = await call<Cliente>(endpoint, {
+      method,
       body: JSON.stringify(payload),
-    }).catch(console.error);
+    });
+
+    if (!result) {
+      throw new Error(edit ? "No se pudo actualizar el cliente." : "No se pudo crear el cliente.");
+    }
 
     setFormOpen(false);
     setEdit(null);
+    setFeedback({
+      type: "success",
+      text: edit ? "Cliente actualizado correctamente." : "Cliente creado correctamente.",
+    });
+
     await fetchClientData();
   };
 
@@ -81,26 +133,54 @@ export default function ClientesPage() {
 
     const ok = await confirm({
       title: toAct ? "Reactivar cliente" : "Inactivar cliente",
-      message: <>¿Confirmas {toAct ? "reactivar" : "inactivar"} al cliente <b>{r.nombre}</b>?</>,
+      message: (
+        <>
+          ¿Confirmas {toAct ? "reactivar" : "inactivar"} al cliente <b>{r.nombre}</b>?
+        </>
+      ),
       tone: toAct ? "brand" : "danger",
       confirmText: toAct ? "Reactivar" : "Inactivar",
       cancelText: "Cancelar",
     });
+
     if (!ok) return;
 
-    await call<{ clienteID: number; isActive: boolean }>(
-      `/api/clientes/${r.clienteID}/activo`,
-      { method: "PATCH", body: JSON.stringify({ isActive: toAct }) }
-    ).catch(console.error);
+    try {
+      const result = await call<ApiEstadoResponse>(
+        `/api/clientes/${r.clienteID}/activo`,
+        {
+          method: "PATCH",
+          body: JSON.stringify({ isActive: toAct }),
+        }
+      );
 
-    await fetchClientData();
+      if (!result) {
+        throw new Error("No se pudo actualizar el estado del cliente.");
+      }
+
+      setFeedback({
+        type: "success",
+        text:
+          result.message ||
+          (toAct
+            ? "Cliente reactivado correctamente."
+            : "Cliente inactivado correctamente."),
+      });
+
+      await fetchClientData();
+    } catch (err: any) {
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "No se pudo actualizar el estado del cliente.";
+      setFeedback({ type: "error", text: message });
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0F0E] text-[#E6E9EA] p-6">
-      <header className="mb-6">
-        {/* Breadcrumb */}
-        <nav className="mb-3 flex items-center text-sm text-[#8B9AA0]">
+    <div className="min-h-screen bg-[#0B0F0E] px-4 py-5 text-[#E6E9EA] sm:px-6">
+      <header className="mb-5">
+        <nav className="mb-3 flex flex-wrap items-center gap-2 text-sm text-[#8B9AA0]">
           <div className="flex items-center gap-1">
             <svg
               className="h-4 w-4 opacity-80"
@@ -113,7 +193,7 @@ export default function ClientesPage() {
             <span>Inicio</span>
           </div>
 
-          <span className="mx-2 text-[#4B5563]">/</span>
+          <span className="text-[#4B5563]">/</span>
 
           <div className="flex items-center gap-1 text-white">
             <svg
@@ -128,124 +208,185 @@ export default function ClientesPage() {
           </div>
         </nav>
 
-        <h1 className="text-2xl font-semibold tracking-wide">Clientes</h1>
-        <p className="text-sm text-[#8B9AA0]">
-          Registrar, editar, inactivar y administrar descuentos
-        </p>
+        <div className="rounded-2xl border border-black/70 bg-gradient-to-r from-[#14191C] via-[#101416] to-[#0E1214] px-5 py-5 shadow-[0_14px_40px_rgba(0,0,0,.20)]">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-black/70 bg-white/[0.03] px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-[#8B9AA0]">
+                Gestión comercial
+              </div>
+              <h1 className="mt-3 text-[clamp(1.5rem,2vw,2rem)] font-semibold tracking-wide text-white">
+                Clientes
+              </h1>
+              <p className="mt-1 text-sm leading-6 text-[#8B9AA0]">
+                Registrar, editar, inactivar y administrar descuentos de clientes.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-black/70 bg-white/[0.02] px-4 py-3 text-sm text-[#8B9AA0]">
+              <span className="block text-[10px] uppercase tracking-[0.16em] text-[#8B9AA0]">
+                Total registrados
+              </span>
+              <span className="mt-1 block text-2xl font-semibold text-white">
+                {rows.length}
+              </span>
+            </div>
+          </div>
+        </div>
       </header>
 
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-1 items-center gap-2">
-          <div className="relative w-full max-w-sm">
-            <input
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-              placeholder="Buscar por nombre o correo"
-              className="w-full rounded-xl border border-white/10 bg-[#121618] pl-9 pr-3 py-2 text-sm outline-none placeholder:text-[#8B9AA0] focus:ring-2 focus:ring-[#A30862]/40 focus:border-transparent transition"
-            />
-            <svg
-              className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 opacity-70"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="m21 21-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z"
+      {feedback && (
+        <div
+          className={`mb-4 rounded-xl border px-4 py-3 text-sm shadow-sm ${
+            feedback.type === "success"
+              ? "border-emerald-700/40 bg-emerald-500/10 text-emerald-200"
+              : "border-red-700/40 bg-red-500/10 text-red-200"
+          }`}
+        >
+          {feedback.text}
+        </div>
+      )}
+
+      <div className="mb-5 rounded-2xl border border-black/70 bg-[#111517] p-4 shadow-[0_12px_35px_rgba(0,0,0,.16)]">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-1 flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative w-full max-w-md">
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Buscar por nombre, correo, código o identificación"
+                className="w-full rounded-xl border border-black/70 bg-[#121618] py-2.5 pl-10 pr-3 text-sm outline-none transition placeholder:text-[#8B9AA0] focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
               />
-            </svg>
+              <svg
+                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-70"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="m21 21-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16Z"
+                />
+              </svg>
+            </div>
+
+            <select
+              value={filterEstado}
+              onChange={(e) => setFilterEstado(e.target.value as "Todos" | Estado)}
+              className="rounded-xl border border-black/70 bg-[#121618] px-3.5 py-2.5 text-sm outline-none transition focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
+            >
+              <option value="Todos">Todos</option>
+              <option value="Activo">Activos</option>
+              <option value="Inactivo">Inactivos</option>
+            </select>
           </div>
 
-          <select
-            value={filterEstado}
-            onChange={(e) => setFilterEstado(e.target.value as any)}
-            className="rounded-xl border border-white/10 bg-[#121618] px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#A30862]/40 focus:border-transparent transition"
-          >
-            <option value="Todos">Todos</option>
-            <option value="Activo">Activos</option>
-            <option value="Inactivo">Inactivos</option>
-          </select>
-        </div>
-
-        <div className="flex justify-end">
-          <Button
-            variant="primary"
-            onClick={() => {
-              setEdit(null);
-              setFormOpen(true);
-            }}
-          >
-            Nuevo cliente
-          </Button>
+          <div className="flex justify-end">
+            <Button
+              variant="primary"
+              onClick={() => {
+                setEdit(null);
+                setFormOpen(true);
+              }}
+              className="!rounded-xl !px-5 !py-2.5"
+            >
+              Nuevo cliente
+            </Button>
+          </div>
         </div>
       </div>
 
-      <CardTable>
-        <thead>
-          <tr className="bg-[#1C2224]">
-            <Th>#</Th>
-            <Th>Cliente</Th>
-            <Th>Email</Th>
-            <Th>Estado</Th>
-            <Th className="text-right">Acciones</Th>
-          </tr>
-        </thead>
-
-        <tbody className="[&>tr:not(:last-child)]:border-b [&>tr]:border-white/10">
-          {pageRows.map((r) => (
-            <tr key={r.clienteID ?? ""} className="hover:bg-white/5 transition">
-              <Td strong>{r.codigoCliente}</Td>
-              <Td>
-                <div className="font-medium">{r.nombre}</div>
-              </Td>
-              <Td className="text-[#8B9AA0]">{r.correo}</Td>
-              <Td>
-                <PillBadge variant={r.isActive ? "success" : "danger"}>
-                  {r.isActive ? "Activo" : "Inactivo"}
-                </PillBadge>
-              </Td>
-              <Td className="text-right">
-                <div className="inline-flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    onClick={() => setView(r)}
-                    className="!rounded-xl !border-white/20 !bg-transparent hover:!bg-white/5"
-                  >
-                    Ver
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      setEdit(r);
-                      setFormOpen(true);
-                    }}
-                    className="!rounded-xl !border-white/20 !bg-white/5 hover:!bg-white/10"
-                  >
-                    Editar
-                  </Button>
-                  <Button variant="danger" onClick={() => toggleEstado(r)}>
-                    {r.isActive ? "Inactivar" : "Reactivar"}
-                  </Button>
-                </div>
-              </Td>
+      <div className="overflow-hidden rounded-2xl border border-black/70 bg-[#111517] shadow-[0_14px_40px_rgba(0,0,0,.18)]">
+        <CardTable>
+          <thead>
+            <tr className="bg-[#1A1F22]">
+              <Th>#</Th>
+              <Th>Cliente</Th>
+              <Th>Email</Th>
+              <Th>Estado</Th>
+              <Th className="text-right">Acciones</Th>
             </tr>
-          ))}
+          </thead>
 
-          {pageRows.length === 0 && (
-            <tr>
-              <td
-                colSpan={5}
-                className="px-4 py-10 text-center text-sm text-[#8B9AA0]"
+          <tbody className="[&>tr:not(:last-child)]:border-b [&>tr]:border-black/70">
+            {pageRows.map((r) => (
+              <tr
+                key={r.clienteID ?? `${r.codigoCliente ?? "sin-codigo"}-${r.nombre}`}
+                className="transition hover:bg-white/[0.03]"
               >
-                No hay clientes para mostrar.
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </CardTable>
+                <Td strong>{r.codigoCliente?.trim() || "—"}</Td>
+                <Td>
+                  <div className="font-medium text-white">{r.nombre}</div>
+                  <div className="mt-0.5 text-xs text-[#8B9AA0]">
+                    {r.identificacion?.trim() || r.tipoPersona || "—"}
+                  </div>
+                </Td>
+                <Td className="text-[#8B9AA0]">{r.correo?.trim() || "—"}</Td>
+                <Td>
+                  <PillBadge variant={r.isActive ? "success" : "danger"}>
+                    {r.isActive ? "Activo" : "Inactivo"}
+                  </PillBadge>
+                </Td>
+                <Td className="text-right">
+                  <div className="inline-flex flex-wrap items-center justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setView(r)}
+                      className="!rounded-xl !border-black/70 !bg-transparent hover:!bg-white/5"
+                    >
+                      Ver
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setEdit(r);
+                        setFormOpen(true);
+                      }}
+                      className="!rounded-xl !border-black/70 !bg-white/5 hover:!bg-white/10"
+                    >
+                      Editar
+                    </Button>
+                    <Button
+                      variant="danger"
+                      onClick={() => toggleEstado(r)}
+                      className="!rounded-xl"
+                    >
+                      {r.isActive ? "Inactivar" : "Reactivar"}
+                    </Button>
+                  </div>
+                </Td>
+              </tr>
+            ))}
+
+            {pageRows.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-12 text-center">
+                  <div className="mx-auto flex max-w-md flex-col items-center">
+                    <div className="mb-3 rounded-full border border-black/70 bg-white/5 p-3 text-[#8B9AA0]">
+                      <svg
+                        className="h-6 w-6"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        aria-hidden
+                      >
+                        <path d="M10 4a6 6 0 1 1-4.472 10 6 6 0 0 1 4.472-10Zm8.707 13.293-2.823-2.823a8 8 0 1 0-1.414 1.414l2.823 2.823a1 1 0 0 0 1.414-1.414Z" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-medium text-white">
+                      {loading ? "Cargando clientes..." : "No hay clientes para mostrar."}
+                    </p>
+                    <p className="mt-1 text-sm text-[#8B9AA0]">
+                      Ajusta los filtros o registra un nuevo cliente.
+                    </p>
+                  </div>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </CardTable>
+      </div>
 
       {formOpen && (
         <Modal
@@ -282,7 +423,7 @@ export default function ClientesPage() {
         </Modal>
       )}
 
-      <div className="mt-4 flex items-center justify-between text-sm text-[#8B9AA0]">
+      <div className="mt-4 flex flex-col gap-3 rounded-xl border border-black/70 bg-[#111517] px-4 py-3 text-sm text-[#8B9AA0] sm:flex-row sm:items-center sm:justify-between">
         <span>
           Mostrando{" "}
           <b className="text-white">
@@ -291,6 +432,7 @@ export default function ClientesPage() {
           </b>{" "}
           de <b className="text-white">{filtered.length}</b>
         </span>
+
         <div className="flex items-center gap-2">
           <PageBtn
             disabled={page <= 1}

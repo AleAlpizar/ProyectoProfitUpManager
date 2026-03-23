@@ -6,9 +6,9 @@ export interface Cliente {
   clienteID?: number;
   codigoCliente?: string | null;
   nombre: string;
-  tipoPersona: TipoDePersona;     
+  tipoPersona: TipoDePersona;
   identificacion?: string | null;
-  correo: string;
+  correo?: string | null;
   telefono?: string | null;
   direccion?: string | null;
 

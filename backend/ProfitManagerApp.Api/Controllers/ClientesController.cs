@@ -9,10 +9,47 @@ namespace ProfitManagerApp.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Administrador,Vendedor")] 
-
+[Authorize(Roles = "Administrador,Vendedor")]
 public class ClientesController(ClienteHandler handlers) : ControllerBase
 {
+    private static string? Clean(string? value)
+        => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static bool EsTipoPersonaValido(string? tipoPersona)
+    {
+        if (string.IsNullOrWhiteSpace(tipoPersona)) return true;
+        return tipoPersona.Equals("Natural", StringComparison.OrdinalIgnoreCase)
+            || tipoPersona.Equals("Juridico", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string NormalizarTipoPersona(string? tipoPersona)
+    {
+        if (string.IsNullOrWhiteSpace(tipoPersona)) return "Natural";
+        return tipoPersona.Equals("Juridico", StringComparison.OrdinalIgnoreCase)
+            ? "Juridico"
+            : "Natural";
+    }
+
+    private static ClienteReadDto ToReadDto(dynamic model) =>
+        new(
+            model.ClienteID,
+            model.CodigoCliente,
+            model.Nombre,
+            model.TipoPersona,
+            model.Identificacion,
+            model.Correo,
+            model.Telefono,
+            model.Direccion,
+            model.FechaRegistro,
+            model.IsActive,
+            model.CreatedAt,
+            model.CreatedBy,
+            model.UpdatedAt,
+            model.UpdatedBy,
+            model.DescuentoPorcentaje,
+            model.DescuentoDescripcion
+        );
+
     private int? GetUserId()
     {
         var v =
@@ -26,36 +63,46 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] ClienteCreateDto dto, CancellationToken ct)
     {
-        var user = GetUserId();
-
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
-        if (!string.IsNullOrWhiteSpace(dto.CodigoCliente)
-            && await handlers.CodigoExisteAsync(dto.CodigoCliente!, ct))
+        var nombre = Clean(dto.Nombre);
+        var codigoCliente = Clean(dto.CodigoCliente);
+        var tipoPersona = NormalizarTipoPersona(dto.TipoPersona);
+        var identificacion = Clean(dto.Identificacion);
+        var correo = Clean(dto.Correo);
+        var telefono = Clean(dto.Telefono);
+        var direccion = Clean(dto.Direccion);
+        var descuentoDescripcion = Clean(dto.DescuentoDescripcion);
+
+        if (string.IsNullOrWhiteSpace(nombre))
+            return BadRequest(new { message = "El nombre es obligatorio." });
+
+        if (!EsTipoPersonaValido(dto.TipoPersona))
+            return BadRequest(new { message = "TipoPersona debe ser 'Natural' o 'Juridico'." });
+
+        if (dto.DescuentoPorcentaje is < 0 or > 100)
+            return BadRequest(new { message = "El descuento debe estar entre 0 y 100." });
+
+        if (!string.IsNullOrWhiteSpace(codigoCliente)
+            && await handlers.CodigoExisteAsync(codigoCliente, ct))
             return Conflict(new { message = "CodigoCliente ya existe." });
 
         var model = await handlers.CrearAsync(
-            dto.Nombre,
-            dto.CodigoCliente,
-            dto.TipoPersona,
-            dto.Identificacion,
-            dto.Correo,
-            dto.Telefono,
-            dto.Direccion,
+            nombre,
+            codigoCliente,
+            tipoPersona,
+            identificacion,
+            correo,
+            telefono,
+            direccion,
             dto.IsActive,
             dto.DescuentoPorcentaje,
-            dto.DescuentoDescripcion,
+            descuentoDescripcion,
             User,
-            ct);
-
-        var read = new ClienteReadDto(
-            model.ClienteID, model.CodigoCliente, model.Nombre, model.TipoPersona,
-            model.Identificacion, model.Correo, model.Telefono, model.Direccion,
-            model.FechaRegistro, model.IsActive, model.CreatedAt,
-            model.CreatedBy, model.UpdatedAt, model.UpdatedBy,
-            model.DescuentoPorcentaje, model.DescuentoDescripcion
+            ct
         );
 
+        var read = ToReadDto(model);
         return CreatedAtAction(nameof(GetById), new { id = model.ClienteID }, read);
     }
 
@@ -63,24 +110,39 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
     public async Task<IActionResult> GetById(int id, CancellationToken ct)
     {
         var model = await handlers.ObtenerPorIdAsync(id, ct);
-        if (model is null) return NotFound();
+        if (model is null) return NotFound(new { message = "Cliente no encontrado." });
 
-        var read = new ClienteReadDto(
-            model.ClienteID, model.CodigoCliente, model.Nombre, model.TipoPersona,
-            model.Identificacion, model.Correo, model.Telefono, model.Direccion,
-            model.FechaRegistro, model.IsActive, model.CreatedAt,
-            model.CreatedBy, model.UpdatedAt, model.UpdatedBy,
-            model.DescuentoPorcentaje, model.DescuentoDescripcion
-        );
-
+        var read = ToReadDto(model);
         return Ok(read);
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken ct)
     {
-        var model = await handlers.ObtenerClientes(ct);
-        return Ok(model);
+        var models = await handlers.ObtenerClientes(ct);
+
+        var result = models
+            .Select(x => new ClienteReadDto(
+                x.ClienteID,
+                x.CodigoCliente,
+                x.Nombre,
+                x.TipoPersona,
+                x.Identificacion,
+                x.Correo,
+                x.Telefono,
+                x.Direccion,
+                x.FechaRegistro,
+                x.IsActive,
+                x.CreatedAt,
+                x.CreatedBy,
+                x.UpdatedAt,
+                x.UpdatedBy,
+                x.DescuentoPorcentaje,
+                x.DescuentoDescripcion
+            ))
+            .ToList();
+
+        return Ok(result);
     }
 
     [HttpPatch("{id:int}/activo")]
@@ -89,10 +151,11 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
         var model = await handlers.SetActivoAsync(id, dto.IsActive, User, ct);
-        if (model is null) return NotFound();
+        if (model is null) return NotFound(new { message = "Cliente no encontrado." });
 
         return Ok(new
         {
+            message = dto.IsActive ? "Cliente reactivado correctamente." : "Cliente inactivado correctamente.",
             model.ClienteID,
             model.IsActive,
             model.UpdatedAt,
@@ -105,28 +168,48 @@ public class ClientesController(ClienteHandler handlers) : ControllerBase
     {
         if (!ModelState.IsValid) return ValidationProblem(ModelState);
 
+        var nombre = Clean(dto.Nombre);
+        var codigoCliente = Clean(dto.CodigoCliente);
+        var tipoPersona = NormalizarTipoPersona(dto.TipoPersona);
+        var identificacion = Clean(dto.Identificacion);
+        var correo = Clean(dto.Correo);
+        var telefono = Clean(dto.Telefono);
+        var direccion = Clean(dto.Direccion);
+        var descuentoDescripcion = Clean(dto.DescuentoDescripcion);
+
+        if (string.IsNullOrWhiteSpace(nombre))
+            return BadRequest(new { message = "El nombre es obligatorio." });
+
+        if (!EsTipoPersonaValido(dto.TipoPersona))
+            return BadRequest(new { message = "TipoPersona debe ser 'Natural' o 'Juridico'." });
+
+        if (dto.DescuentoPorcentaje is < 0 or > 100)
+            return BadRequest(new { message = "El descuento debe estar entre 0 y 100." });
+
         try
         {
             var model = await handlers.ActualizarAsync(
                 id,
-                dto.Nombre, dto.CodigoCliente, dto.TipoPersona, dto.Identificacion,
-                dto.Correo, dto.Telefono, dto.Direccion, dto.IsActive,
-                dto.DescuentoPorcentaje ?? 0, dto.DescuentoDescripcion ?? "",
-                User, ct);
-
-            if (model is null) return NotFound();
-
-            var read = new ClienteReadDto(
-                model.ClienteID, model.CodigoCliente, model.Nombre, model.TipoPersona,
-                model.Identificacion, model.Correo, model.Telefono, model.Direccion,
-                model.FechaRegistro, model.IsActive, model.CreatedAt,
-                model.CreatedBy, model.UpdatedAt, model.UpdatedBy,
-                model.DescuentoPorcentaje, model.DescuentoDescripcion
+                nombre,
+                codigoCliente,
+                tipoPersona,
+                identificacion,
+                correo,
+                telefono,
+                direccion,
+                dto.IsActive,
+                dto.DescuentoPorcentaje ?? 0,
+                descuentoDescripcion ?? string.Empty,
+                User,
+                ct
             );
 
+            if (model is null) return NotFound(new { message = "Cliente no encontrado." });
+
+            var read = ToReadDto(model);
             return Ok(read);
         }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("CodigoCliente"))
+        catch (InvalidOperationException ex) when (ex.Message.Contains("CodigoCliente", StringComparison.OrdinalIgnoreCase))
         {
             return Conflict(new { message = ex.Message });
         }

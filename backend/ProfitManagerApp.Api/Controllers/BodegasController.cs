@@ -1,10 +1,8 @@
-﻿using AutoMapper;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using ProfitManagerApp.Api.Dto;
 using ProfitManagerApp.Api.Infrastructure;
-using ProfitManagerApp.Api.Models;
 using ProfitManagerApp.Api.Models.Rows;
 
 namespace ProfitManagerApp.Api.Controllers
@@ -15,12 +13,10 @@ namespace ProfitManagerApp.Api.Controllers
     public class BodegasController : ControllerBase
     {
         private readonly AppDbContext _db;
-        private readonly IMapper _mapper;
 
-        public BodegasController(AppDbContext db, IMapper mapper)
+        public BodegasController(AppDbContext db)
         {
             _db = db;
-            _mapper = mapper;
         }
 
         [HttpGet]
@@ -33,7 +29,7 @@ namespace ProfitManagerApp.Api.Controllers
             if (page <= 0) page = 1;
             if (pageSize <= 0 || pageSize > 200) pageSize = 20;
 
-            var q = _db.Bodegas.AsNoTracking();
+            IQueryable<BodegaRow> q = _db.Bodegas.AsNoTracking();
 
             if (soloActivas)
                 q = q.Where(x => x.IsActive);
@@ -71,12 +67,15 @@ namespace ProfitManagerApp.Api.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
+            if (id <= 0)
+                return BadRequest(new { code = "INVALID_ID", message = "El identificador de la bodega no es válido." });
+
             var e = await _db.Bodegas
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.BodegaID == id);
 
             if (e is null)
-                return NotFound();
+                return NotFound(new { code = "BODEGA_NOT_FOUND", message = "Bodega no encontrada." });
 
             return Ok(new
             {
@@ -92,22 +91,32 @@ namespace ProfitManagerApp.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] BodegaCreateDto dto)
         {
+            if (dto is null)
+                return BadRequest(new { code = "BODY_REQUIRED", message = "El cuerpo de la solicitud es obligatorio." });
+
+            dto.Codigo = string.IsNullOrWhiteSpace(dto.Codigo) ? null : dto.Codigo.Trim();
+            dto.Nombre = dto.Nombre?.Trim() ?? string.Empty;
+            dto.Direccion = string.IsNullOrWhiteSpace(dto.Direccion) ? null : dto.Direccion.Trim();
+            dto.Contacto = string.IsNullOrWhiteSpace(dto.Contacto) ? null : dto.Contacto.Trim();
+
             if (string.IsNullOrWhiteSpace(dto.Nombre))
-                return Problem(title: "FIELD_REQUIRED:Nombre", statusCode: 400);
+                return BadRequest(new { code = "FIELD_REQUIRED:Nombre", message = "El nombre es obligatorio." });
 
             if (!string.IsNullOrWhiteSpace(dto.Codigo))
             {
+                var codigoNormalizado = dto.Codigo.ToUpper();
+
                 var dup = await _db.Bodegas
-                    .AnyAsync(x => x.Codigo == dto.Codigo);
+                    .AnyAsync(x => x.Codigo != null && x.Codigo.Trim().ToUpper() == codigoNormalizado);
 
                 if (dup)
-                    return Problem(title: "CODIGO_DUPLICATE", statusCode: 409);
+                    return Conflict(new { code = "CODIGO_DUPLICATE", message = "El código de bodega ya existe." });
             }
 
             var entity = new BodegaRow
             {
-                Codigo = dto.Codigo?.Trim(),
-                Nombre = dto.Nombre.Trim(),
+                Codigo = dto.Codigo,
+                Nombre = dto.Nombre,
                 Direccion = dto.Direccion,
                 Contacto = dto.Contacto,
                 IsActive = true
@@ -123,36 +132,63 @@ namespace ProfitManagerApp.Api.Controllers
                 entity.Nombre,
                 entity.Direccion,
                 entity.Contacto,
-                entity.IsActive
+                entity.IsActive,
+                message = "Bodega creada correctamente."
             });
         }
 
         [HttpPut("{id:int}")]
-        public async Task<IActionResult> Update(
-            [FromRoute] int id,
-            [FromBody] BodegaUpdateDto dto)
+        public async Task<IActionResult> Update([FromRoute] int id, [FromBody] BodegaUpdateDto dto)
         {
-            var entity = await _db.Bodegas
-                .FirstOrDefaultAsync(x => x.BodegaID == id);
+            if (id <= 0)
+                return BadRequest(new { code = "INVALID_ID", message = "El identificador de la bodega no es válido." });
 
+            if (dto is null)
+                return BadRequest(new { code = "BODY_REQUIRED", message = "El cuerpo de la solicitud es obligatorio." });
+
+            var entity = await _db.Bodegas.FirstOrDefaultAsync(x => x.BodegaID == id);
             if (entity is null)
-                return NotFound();
+                return NotFound(new { code = "BODEGA_NOT_FOUND", message = "Bodega no encontrada." });
+
+            dto.Codigo = string.IsNullOrWhiteSpace(dto.Codigo) ? null : dto.Codigo.Trim();
+            dto.Nombre = dto.Nombre?.Trim() ?? string.Empty;
+            dto.Direccion = string.IsNullOrWhiteSpace(dto.Direccion) ? null : dto.Direccion.Trim();
+            dto.Contacto = string.IsNullOrWhiteSpace(dto.Contacto) ? null : dto.Contacto.Trim();
 
             if (string.IsNullOrWhiteSpace(dto.Nombre))
-                return Problem(title: "FIELD_REQUIRED:Nombre", statusCode: 400);
+                return BadRequest(new { code = "FIELD_REQUIRED:Nombre", message = "El nombre es obligatorio." });
 
             if (!string.IsNullOrWhiteSpace(dto.Codigo))
             {
+                var codigoNormalizado = dto.Codigo.ToUpper();
+
                 var dup = await _db.Bodegas
-                    .AnyAsync(x => x.Codigo == dto.Codigo && x.BodegaID != id);
+                    .AnyAsync(x => x.Codigo != null &&
+                                   x.Codigo.Trim().ToUpper() == codigoNormalizado &&
+                                   x.BodegaID != id);
 
                 if (dup)
-                    return Problem(title: "CODIGO_DUPLICATE", statusCode: 409);
-
-                entity.Codigo = dto.Codigo.Trim();
+                    return Conflict(new { code = "CODIGO_DUPLICATE", message = "El código de bodega ya existe." });
             }
 
-            entity.Nombre = dto.Nombre.Trim();
+            if (dto.IsActive.HasValue && dto.IsActive.Value == false)
+            {
+                var tieneStock = await _db.Inventarios
+                    .AsNoTracking()
+                    .AnyAsync(x => x.BodegaID == id && x.Cantidad > 0);
+
+                if (tieneStock)
+                {
+                    return Conflict(new
+                    {
+                        code = "BODEGA_CON_STOCK",
+                        message = "No se puede inactivar la bodega porque tiene stock disponible."
+                    });
+                }
+            }
+
+            entity.Codigo = dto.Codigo;
+            entity.Nombre = dto.Nombre;
             entity.Direccion = dto.Direccion;
             entity.Contacto = dto.Contacto;
 
@@ -168,44 +204,60 @@ namespace ProfitManagerApp.Api.Controllers
                 entity.Nombre,
                 entity.Direccion,
                 entity.Contacto,
-                entity.IsActive
+                entity.IsActive,
+                message = "Bodega actualizada correctamente."
             });
         }
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Inactivar([FromRoute] int id)
         {
-            var entity = await _db.Bodegas
-                .FirstOrDefaultAsync(x => x.BodegaID == id);
+            if (id <= 0)
+                return BadRequest(new { code = "INVALID_ID", message = "El identificador de la bodega no es válido." });
 
+            var entity = await _db.Bodegas.FirstOrDefaultAsync(x => x.BodegaID == id);
             if (entity is null)
-                return NotFound();
+                return NotFound(new { code = "BODEGA_NOT_FOUND", message = "Bodega no encontrada." });
 
             if (!entity.IsActive)
-                return NoContent();
+                return Ok(new { message = "La bodega ya se encontraba inactiva." });
+
+            var tieneStock = await _db.Inventarios
+                .AsNoTracking()
+                .AnyAsync(x => x.BodegaID == id && x.Cantidad > 0);
+
+            if (tieneStock)
+            {
+                return Conflict(new
+                {
+                    code = "BODEGA_CON_STOCK",
+                    message = "No se puede inactivar la bodega porque tiene stock disponible."
+                });
+            }
 
             entity.IsActive = false;
             await _db.SaveChangesAsync();
 
-            return NoContent();
+            return Ok(new { message = "Bodega inactivada correctamente." });
         }
 
         [HttpPost("{id:int}/reactivar")]
         public async Task<IActionResult> Reactivar([FromRoute] int id)
         {
-            var entity = await _db.Bodegas
-                .FirstOrDefaultAsync(x => x.BodegaID == id);
+            if (id <= 0)
+                return BadRequest(new { code = "INVALID_ID", message = "El identificador de la bodega no es válido." });
 
+            var entity = await _db.Bodegas.FirstOrDefaultAsync(x => x.BodegaID == id);
             if (entity is null)
-                return NotFound();
+                return NotFound(new { code = "BODEGA_NOT_FOUND", message = "Bodega no encontrada." });
 
             if (entity.IsActive)
-                return NoContent();
+                return Ok(new { message = "La bodega ya se encontraba activa." });
 
             entity.IsActive = true;
             await _db.SaveChangesAsync();
 
-            return NoContent();
+            return Ok(new { message = "Bodega reactivada correctamente." });
         }
     }
 

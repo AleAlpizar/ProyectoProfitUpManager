@@ -1,15 +1,30 @@
 ﻿using Microsoft.Data.SqlClient;
-using ProfitManagerApp.Api.Dtos;
+using Microsoft.EntityFrameworkCore;
 using ProfitManagerApp.Api.Data.Abstractions;
+using ProfitManagerApp.Api.Dtos;
+using ProfitManagerApp.Api.Infrastructure;
 using ProfitManagerApp.Domain.Inventory.Dto;
 using System.Data;
-using ProfitManagerApp.Api.Infrastructure;
-using Microsoft.EntityFrameworkCore;
 
 namespace ProfitManagerApp.Data
 {
     public sealed class InventarioRepository : IInventarioRepository
     {
+        private static readonly HashSet<string> TiposEntrada = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Entrada",
+            "AjustePositivo",
+            "AjusteManualEntrada"
+        };
+
+        private static readonly HashSet<string> TiposSalida = new(StringComparer.OrdinalIgnoreCase)
+        {
+            "Salida",
+            "AjusteSalidaManual",
+            "AjusteManualSalida",
+            "RetiroPorInactivacion"
+        };
+
         private readonly string _cs;
         private readonly AppDbContext _db;
 
@@ -22,33 +37,102 @@ namespace ProfitManagerApp.Data
 
         private static object DbNull(object? v) => v ?? DBNull.Value;
 
-        public async Task<int> CrearProductoAsync(ProductoCreateDto dto, int? userId)
+        private static string? Clean(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return null;
+            return value.Trim();
+        }
+
+        private static void ThrowCode(string code) => throw new InvalidOperationException(code);
+
+        private async Task<bool> ExisteUnidadAsync(int unidadId)
         {
             await using var cn = new SqlConnection(_cs);
             await cn.OpenAsync();
 
+            const string sql = @"SELECT 1 FROM dbo.UnidadAlmacenamiento WHERE UnidadID=@id AND Activo=1";
+            await using var cmd = new SqlCommand(sql, cn);
+            cmd.Parameters.AddWithValue("@id", unidadId);
+
+            var obj = await cmd.ExecuteScalarAsync();
+            return obj != null;
+        }
+
+        private static int ResolverSigno(string? tipoMovimiento)
+        {
+            if (string.IsNullOrWhiteSpace(tipoMovimiento))
+                ThrowCode("TIPO_MOVIMIENTO_REQUIRED");
+
+            if (TiposEntrada.Contains(tipoMovimiento))
+                return 1;
+
+            if (TiposSalida.Contains(tipoMovimiento))
+                return -1;
+
+            ThrowCode("TIPO_MOVIMIENTO_INVALIDO");
+            return 0;
+        }
+
+        public async Task<int> CrearProductoAsync(ProductoCreateDto dto, int? userId)
+        {
+            if (dto is null) throw new ArgumentNullException(nameof(dto));
+
+            dto.Nombre = dto.Nombre?.Trim() ?? string.Empty;
+            dto.SKU = Clean(dto.SKU);
+            dto.Descripcion = Clean(dto.Descripcion);
+            dto.CodigoInterno = Clean(dto.CodigoInterno);
+
             if (string.IsNullOrWhiteSpace(dto.Nombre))
-                throw new SqlExceptionBuilder("FIELD_REQUIRED:Nombre");
+                ThrowCode("FIELD_REQUIRED:Nombre");
+
             if (dto.PrecioVenta < 0)
-                throw new SqlExceptionBuilder("FIELD_REQUIRED:PrecioVenta");
+                ThrowCode("FIELD_INVALID:PrecioVenta");
+
+            if (dto.PrecioCosto.HasValue && dto.PrecioCosto.Value < 0)
+                ThrowCode("FIELD_INVALID:PrecioCosto");
+
+            if (dto.Descuento.HasValue && (dto.Descuento.Value < 0 || dto.Descuento.Value > 100))
+                ThrowCode("FIELD_INVALID:Descuento");
+
+            if (dto.Peso.HasValue && dto.Peso.Value < 0) ThrowCode("FIELD_INVALID:Peso");
+            if (dto.Largo.HasValue && dto.Largo.Value < 0) ThrowCode("FIELD_INVALID:Largo");
+            if (dto.Alto.HasValue && dto.Alto.Value < 0) ThrowCode("FIELD_INVALID:Alto");
+            if (dto.Ancho.HasValue && dto.Ancho.Value < 0) ThrowCode("FIELD_INVALID:Ancho");
+
+            if (dto.BodegaID.HasValue && !await ExisteBodegaAsync(dto.BodegaID.Value))
+                ThrowCode("BODEGA_NOT_FOUND_OR_INACTIVE");
+
+            if (dto.UnidadAlmacenamientoID.HasValue && !await ExisteUnidadAsync(dto.UnidadAlmacenamientoID.Value))
+                ThrowCode("UNIDAD_NOT_FOUND_OR_INACTIVE");
+
+            await using var cn = new SqlConnection(_cs);
+            await cn.OpenAsync();
 
             if (!string.IsNullOrWhiteSpace(dto.SKU))
             {
-                const string skuCheck = "SELECT 1 FROM dbo.Producto WHERE SKU=@sku";
+                const string skuCheck = @"
+SELECT 1
+FROM dbo.Producto
+WHERE LTRIM(RTRIM(ISNULL(SKU, ''))) = @sku;";
                 await using var skuCmd = new SqlCommand(skuCheck, cn);
-                skuCmd.Parameters.AddWithValue("@sku", dto.SKU!);
+                skuCmd.Parameters.AddWithValue("@sku", dto.SKU);
                 var exists = await skuCmd.ExecuteScalarAsync();
                 if (exists != null)
-                    throw new SqlExceptionBuilder("SKU_DUPLICATE");
+                    ThrowCode("SKU_DUPLICATE");
             }
 
             const string insertSql = @"
 INSERT INTO dbo.Producto
-(SKU,Nombre,Descripcion,CodigoInterno,Peso,Largo,Alto,Ancho,UnidadAlmacenamientoID,
- PrecioCosto,PrecioVenta,IsActive,CreatedAt,CreatedBy,Descuento)
+(
+    SKU, Nombre, Descripcion, CodigoInterno, Peso, Largo, Alto, Ancho,
+    UnidadAlmacenamientoID, PrecioCosto, PrecioVenta, IsActive, CreatedAt, CreatedBy, Descuento
+)
 VALUES
-(@SKU,@Nombre,@Descripcion,@CodigoInterno,@Peso,@Largo,@Alto,@Ancho,@UnidadAlmacenamientoID,
- @PrecioCosto,@PrecioVenta,1,SYSUTCDATETIME(),@CreatedBy,@Descuento);
+(
+    @SKU, @Nombre, @Descripcion, @CodigoInterno, @Peso, @Largo, @Alto, @Ancho,
+    @UnidadAlmacenamientoID, @PrecioCosto, @PrecioVenta, 1, SYSUTCDATETIME(), @CreatedBy, @Descuento
+);
+
 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
             await using var cmd = new SqlCommand(insertSql, cn);
@@ -77,7 +161,21 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
         public async Task AjusteAsync(AjusteInventarioDto dto, int? userId)
         {
-            if (dto.Cantidad <= 0) throw new InvalidOperationException("INVALID_QTY");
+            if (dto is null) throw new ArgumentNullException(nameof(dto));
+            if (dto.ProductoID <= 0) ThrowCode("PRODUCTO_ID_INVALIDO");
+            if (dto.BodegaID <= 0) ThrowCode("BODEGA_ID_INVALIDO");
+            if (dto.Cantidad <= 0) ThrowCode("INVALID_QTY");
+
+            if (!await ExisteProductoAsync(dto.ProductoID))
+                ThrowCode("PRODUCTO_NOT_FOUND_OR_INACTIVE");
+
+            if (!await ExisteBodegaAsync(dto.BodegaID))
+                ThrowCode("BODEGA_NOT_FOUND_OR_INACTIVE");
+
+            dto.TipoMovimiento = Clean(dto.TipoMovimiento);
+            dto.Motivo = Clean(dto.Motivo);
+
+            var sign = ResolverSigno(dto.TipoMovimiento);
 
             await using var cn = new SqlConnection(_cs);
             await cn.OpenAsync();
@@ -87,56 +185,65 @@ SELECT CAST(SCOPE_IDENTITY() AS INT);";
             {
                 const string ensureSql = @"
 IF NOT EXISTS (SELECT 1 FROM dbo.Inventario WHERE ProductoID=@p AND BodegaID=@b)
+BEGIN
     INSERT INTO dbo.Inventario(ProductoID,BodegaID,Cantidad,CantidadReservada,FechaUltimaActualizacion)
-    VALUES(@p,@b,0,0,SYSUTCDATETIME());";
+    VALUES(@p,@b,0,0,SYSUTCDATETIME());
+END";
                 await using (var ensure = new SqlCommand(ensureSql, cn, (SqlTransaction)tx))
                 {
                     ensure.Parameters.AddWithValue("@p", dto.ProductoID);
                     ensure.Parameters.AddWithValue("@b", dto.BodegaID);
                     await ensure.ExecuteNonQueryAsync();
                 }
-                var isPositive =
-                    dto.TipoMovimiento?.Equals("Entrada", StringComparison.OrdinalIgnoreCase) == true ||
-                    dto.TipoMovimiento?.Equals("AjustePositivo", StringComparison.OrdinalIgnoreCase) == true ||
-                    dto.TipoMovimiento?.Equals("AjusteManualEntrada", StringComparison.OrdinalIgnoreCase) == true;
-
-                var sign = isPositive ? +1 : -1;
 
                 if (sign < 0)
                 {
                     const string disponibleSql = @"
-SELECT (Cantidad - CantidadReservada) FROM dbo.Inventario
+SELECT (Cantidad - CantidadReservada)
+FROM dbo.Inventario
 WHERE ProductoID=@p AND BodegaID=@b;";
                     await using var disp = new SqlCommand(disponibleSql, cn, (SqlTransaction)tx);
                     disp.Parameters.AddWithValue("@p", dto.ProductoID);
                     disp.Parameters.AddWithValue("@b", dto.BodegaID);
+
                     var dispObj = await disp.ExecuteScalarAsync();
                     var disponible = dispObj == null || dispObj == DBNull.Value ? 0m : Convert.ToDecimal(dispObj);
-                    if (disponible < dto.Cantidad) throw new InvalidOperationException("STOCK_INSUFICIENTE");
+
+                    if (disponible < dto.Cantidad)
+                        ThrowCode("STOCK_INSUFICIENTE");
                 }
 
                 const string upSql = @"
 UPDATE dbo.Inventario
-   SET Cantidad = Cantidad + (@k * @c),
-       FechaUltimaActualizacion = SYSUTCDATETIME()
- WHERE ProductoID=@p AND BodegaID=@b;";
+SET Cantidad = Cantidad + (@k * @c),
+    FechaUltimaActualizacion = SYSUTCDATETIME()
+WHERE ProductoID=@p AND BodegaID=@b;";
                 await using (var up = new SqlCommand(upSql, cn, (SqlTransaction)tx))
                 {
                     up.Parameters.AddWithValue("@k", sign);
                     up.Parameters.AddWithValue("@c", dto.Cantidad);
                     up.Parameters.AddWithValue("@p", dto.ProductoID);
                     up.Parameters.AddWithValue("@b", dto.BodegaID);
-                    await up.ExecuteNonQueryAsync();
+
+                    var affected = await up.ExecuteNonQueryAsync();
+                    if (affected == 0)
+                        ThrowCode("INVENTARIO_UPDATE_FAILED");
                 }
 
                 const string movSql = @"
-INSERT INTO dbo.MovimientoInventario(ProductoID,BodegaID,TipoMovimiento,Cantidad,ReferenciaTipo,Motivo,FechaMovimiento,UsuarioID)
-VALUES(@p,@b,@t,@c,NULL,@m,SYSUTCDATETIME(),@u);";
+INSERT INTO dbo.MovimientoInventario
+(
+    ProductoID,BodegaID,TipoMovimiento,Cantidad,ReferenciaTipo,Motivo,FechaMovimiento,UsuarioID
+)
+VALUES
+(
+    @p,@b,@t,@c,NULL,@m,SYSUTCDATETIME(),@u
+);";
                 await using (var mov = new SqlCommand(movSql, cn, (SqlTransaction)tx))
                 {
                     mov.Parameters.AddWithValue("@p", dto.ProductoID);
                     mov.Parameters.AddWithValue("@b", dto.BodegaID);
-                    mov.Parameters.AddWithValue("@t", dto.TipoMovimiento ?? (sign > 0 ? "Entrada" : "Salida"));
+                    mov.Parameters.AddWithValue("@t", dto.TipoMovimiento!);
                     mov.Parameters.AddWithValue("@c", dto.Cantidad);
                     mov.Parameters.AddWithValue("@m", DbNull(dto.Motivo));
                     mov.Parameters.AddWithValue("@u", DbNull(userId));
@@ -151,7 +258,6 @@ VALUES(@p,@b,@t,@c,NULL,@m,SYSUTCDATETIME(),@u);";
                 throw;
             }
         }
-
 
         public async Task<ProductoDetalleDto?> GetProductoDetalleAsync(int productoId)
         {
@@ -183,29 +289,62 @@ WHERE ProductoID=@id;";
 
         public async Task UpdateProductoAsync(int id, ProductoUpdateDto dto)
         {
+            if (dto is null) throw new ArgumentNullException(nameof(dto));
+            if (id <= 0) throw new KeyNotFoundException();
+
+            dto.Nombre = dto.Nombre?.Trim() ?? string.Empty;
+            dto.SKU = Clean(dto.SKU);
+            dto.Descripcion = Clean(dto.Descripcion);
+            dto.CodigoInterno = Clean(dto.CodigoInterno);
+
+            if (string.IsNullOrWhiteSpace(dto.Nombre))
+                ThrowCode("FIELD_REQUIRED:Nombre");
+
+            if (dto.PrecioVenta.HasValue && dto.PrecioVenta.Value < 0)
+                ThrowCode("FIELD_INVALID:PrecioVenta");
+
+            if (dto.PrecioCosto.HasValue && dto.PrecioCosto.Value < 0)
+                ThrowCode("FIELD_INVALID:PrecioCosto");
+
+            if (dto.Descuento.HasValue && (dto.Descuento.Value < 0 || dto.Descuento.Value > 100))
+                ThrowCode("FIELD_INVALID:Descuento");
+
+            if (dto.Peso.HasValue && dto.Peso.Value < 0) ThrowCode("FIELD_INVALID:Peso");
+            if (dto.Largo.HasValue && dto.Largo.Value < 0) ThrowCode("FIELD_INVALID:Largo");
+            if (dto.Alto.HasValue && dto.Alto.Value < 0) ThrowCode("FIELD_INVALID:Alto");
+            if (dto.Ancho.HasValue && dto.Ancho.Value < 0) ThrowCode("FIELD_INVALID:Ancho");
+
+            if (dto.UnidadAlmacenamientoID.HasValue && !await ExisteUnidadAsync(dto.UnidadAlmacenamientoID.Value))
+                ThrowCode("UNIDAD_NOT_FOUND_OR_INACTIVE");
+
             await using var cn = new SqlConnection(_cs);
             await cn.OpenAsync();
 
-            const string existSql = "SELECT IsActive FROM dbo.Producto WHERE ProductoID=@id;";
+            const string existSql = "SELECT 1 FROM dbo.Producto WHERE ProductoID=@id;";
             await using (var e = new SqlCommand(existSql, cn))
             {
                 e.Parameters.AddWithValue("@id", id);
                 var val = await e.ExecuteScalarAsync();
-                if (val is null) throw new Exception("Producto no encontrado");
+                if (val is null) throw new KeyNotFoundException();
             }
 
             if (!string.IsNullOrWhiteSpace(dto.SKU))
             {
-                const string skuDup = "SELECT 1 FROM dbo.Producto WHERE SKU=@sku AND ProductoID<>@id;";
+                const string skuDup = @"
+SELECT 1
+FROM dbo.Producto
+WHERE LTRIM(RTRIM(ISNULL(SKU,'')))=@sku
+  AND ProductoID<>@id;";
                 await using var s = new SqlCommand(skuDup, cn);
-                s.Parameters.AddWithValue("@sku", dto.SKU!);
+                s.Parameters.AddWithValue("@sku", dto.SKU);
                 s.Parameters.AddWithValue("@id", id);
                 var dup = await s.ExecuteScalarAsync();
-                if (dup != null) throw new Exception("SKU_DUPLICATE");
+                if (dup != null) ThrowCode("SKU_DUPLICATE");
             }
 
             const string updateSql = @"
-UPDATE dbo.Producto SET
+UPDATE dbo.Producto
+SET
     Nombre = @Nombre,
     Descripcion = @Descripcion,
     SKU = @SKU,
@@ -235,7 +374,8 @@ WHERE ProductoID = @Id;";
             cmd.Parameters.AddWithValue("@Ancho", DbNull(dto.Ancho));
             cmd.Parameters.AddWithValue("@Descuento", DbNull(dto.Descuento));
 
-            await cmd.ExecuteNonQueryAsync();
+            var rows = await cmd.ExecuteNonQueryAsync();
+            if (rows == 0) throw new KeyNotFoundException();
         }
 
         public async Task<bool> ExisteProductoAsync(int productoId)
@@ -280,13 +420,21 @@ WHERE ProductoID = @Id;";
 
         public async Task AsignarProductoBodegaAsync(int productoId, int bodegaId)
         {
+            if (!await ExisteProductoAsync(productoId))
+                ThrowCode("PRODUCTO_NOT_FOUND_OR_INACTIVE");
+
+            if (!await ExisteBodegaAsync(bodegaId))
+                ThrowCode("BODEGA_NOT_FOUND_OR_INACTIVE");
+
             await using var cn = new SqlConnection(_cs);
             await cn.OpenAsync();
 
             const string sql = @"
 IF NOT EXISTS (SELECT 1 FROM dbo.Inventario WHERE ProductoID=@p AND BodegaID=@b)
+BEGIN
     INSERT INTO dbo.Inventario(ProductoID,BodegaID,Cantidad,CantidadReservada,FechaUltimaActualizacion)
-    VALUES(@p,@b,0,0,SYSUTCDATETIME());";
+    VALUES(@p,@b,0,0,SYSUTCDATETIME());
+END";
 
             await using var cmd = new SqlCommand(sql, cn);
             cmd.Parameters.AddWithValue("@p", productoId);
@@ -299,9 +447,10 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Inventario WHERE ProductoID=@p AND BodegaID=@b)
             await using var cn = new SqlConnection(_cs);
             await cn.OpenAsync();
 
-            const string sql = @"SELECT CAST(ISNULL(Cantidad,0) AS DECIMAL(18,4))
-                                 FROM dbo.Inventario
-                                 WHERE ProductoID=@p AND BodegaID=@b";
+            const string sql = @"
+SELECT CAST(ISNULL(Cantidad,0) AS DECIMAL(18,4))
+FROM dbo.Inventario
+WHERE ProductoID=@p AND BodegaID=@b";
             await using var cmd = new SqlCommand(sql, cn);
             cmd.Parameters.AddWithValue("@p", productoId);
             cmd.Parameters.AddWithValue("@b", bodegaId);
@@ -313,10 +462,19 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Inventario WHERE ProductoID=@p AND BodegaID=@b)
         public async Task SetCantidadAbsolutaAsync(InventarioSetCantidadDto dto, int? userId)
         {
             if (dto is null) throw new ArgumentNullException(nameof(dto));
-            if (dto.NuevaCantidad < 0) throw new ArgumentOutOfRangeException(nameof(dto.NuevaCantidad));
+            if (dto.ProductoID <= 0) ThrowCode("PRODUCTO_ID_INVALIDO");
+            if (dto.BodegaID <= 0) ThrowCode("BODEGA_ID_INVALIDO");
+            if (dto.NuevaCantidad < 0) ThrowCode("INVALID_QTY");
+
+            if (!await ExisteProductoAsync(dto.ProductoID))
+                ThrowCode("PRODUCTO_NOT_FOUND_OR_INACTIVE");
+
+            if (!await ExisteBodegaAsync(dto.BodegaID))
+                ThrowCode("BODEGA_NOT_FOUND_OR_INACTIVE");
 
             var actual = await GetCantidadActualAsync(dto.ProductoID, dto.BodegaID);
             var delta = dto.NuevaCantidad - actual;
+
             if (delta == 0m) return;
 
             var tipo = delta > 0 ? "AjusteManualEntrada" : "AjusteManualSalida";
@@ -327,24 +485,42 @@ IF NOT EXISTS (SELECT 1 FROM dbo.Inventario WHERE ProductoID=@p AND BodegaID=@b)
                 BodegaID = dto.BodegaID,
                 TipoMovimiento = tipo,
                 Cantidad = Math.Abs(delta),
-                Motivo = dto.Motivo
+                Motivo = Clean(dto.Motivo)
             }, userId);
         }
 
-
         public async Task InactivarProductoYRetirarStockAsync(int productoId, int? userId)
         {
+            if (productoId <= 0) throw new KeyNotFoundException();
+
             await using var cn = new SqlConnection(_cs);
             await cn.OpenAsync();
             await using var tx = await cn.BeginTransactionAsync();
 
             try
             {
+                const string existsSql = @"
+SELECT IsActive
+FROM dbo.Producto
+WHERE ProductoID=@p;";
+                await using (var existsCmd = new SqlCommand(existsSql, cn, (SqlTransaction)tx))
+                {
+                    existsCmd.Parameters.AddWithValue("@p", productoId);
+                    var existsObj = await existsCmd.ExecuteScalarAsync();
+
+                    if (existsObj is null)
+                        throw new KeyNotFoundException();
+
+                    if (existsObj != DBNull.Value && !Convert.ToBoolean(existsObj))
+                        ThrowCode("PRODUCTO_NOT_FOUND_OR_INACTIVE");
+                }
+
                 const string selInv = @"
 SELECT BodegaID, (Cantidad - CantidadReservada) AS Disponible
 FROM dbo.Inventario
 WHERE ProductoID=@p AND (Cantidad - CantidadReservada) > 0;";
                 var retiros = new List<(int bode, decimal cant)>();
+
                 await using (var cmdSel = new SqlCommand(selInv, cn, (SqlTransaction)tx))
                 {
                     cmdSel.Parameters.AddWithValue("@p", productoId);
@@ -359,9 +535,9 @@ WHERE ProductoID=@p AND (Cantidad - CantidadReservada) > 0;";
                 {
                     const string upInv = @"
 UPDATE dbo.Inventario
-   SET Cantidad = Cantidad - @cant,
-       FechaUltimaActualizacion = SYSUTCDATETIME()
- WHERE ProductoID=@p AND BodegaID=@b;";
+SET Cantidad = Cantidad - @cant,
+    FechaUltimaActualizacion = SYSUTCDATETIME()
+WHERE ProductoID=@p AND BodegaID=@b;";
                     await using (var up = new SqlCommand(upInv, cn, (SqlTransaction)tx))
                     {
                         up.Parameters.AddWithValue("@cant", r.cant);
@@ -371,8 +547,14 @@ UPDATE dbo.Inventario
                     }
 
                     const string insMov = @"
-INSERT INTO dbo.MovimientoInventario(ProductoID,BodegaID,TipoMovimiento,Cantidad,ReferenciaTipo,Motivo,FechaMovimiento,UsuarioID)
-VALUES(@p,@b,'RetiroPorInactivacion',@c,NULL,'Inactivación de producto',SYSUTCDATETIME(),@u);";
+INSERT INTO dbo.MovimientoInventario
+(
+    ProductoID,BodegaID,TipoMovimiento,Cantidad,ReferenciaTipo,Motivo,FechaMovimiento,UsuarioID
+)
+VALUES
+(
+    @p,@b,'RetiroPorInactivacion',@c,NULL,'Inactivación de producto',SYSUTCDATETIME(),@u
+);";
                     await using (var mov = new SqlCommand(insMov, cn, (SqlTransaction)tx))
                     {
                         mov.Parameters.AddWithValue("@p", productoId);
@@ -385,12 +567,14 @@ VALUES(@p,@b,'RetiroPorInactivacion',@c,NULL,'Inactivación de producto',SYSUTCD
 
                 const string inactSql = @"
 UPDATE dbo.Producto
-   SET IsActive = 0, UpdatedAt = SYSUTCDATETIME()
- WHERE ProductoID = @p;";
+SET IsActive = 0,
+    UpdatedAt = SYSUTCDATETIME()
+WHERE ProductoID = @p;";
                 await using (var cmdInact = new SqlCommand(inactSql, cn, (SqlTransaction)tx))
                 {
                     cmdInact.Parameters.AddWithValue("@p", productoId);
-                    await cmdInact.ExecuteNonQueryAsync();
+                    var rows = await cmdInact.ExecuteNonQueryAsync();
+                    if (rows == 0) throw new KeyNotFoundException();
                 }
 
                 await tx.CommitAsync();
@@ -404,26 +588,41 @@ UPDATE dbo.Producto
 
         public async Task ActivarProductoAsync(int id)
         {
+            if (id <= 0) throw new KeyNotFoundException();
+
             await using var cn = new SqlConnection(_cs);
             await cn.OpenAsync();
 
-            const string sql = @"UPDATE dbo.Producto SET IsActive=1, UpdatedAt=SYSUTCDATETIME() WHERE ProductoID=@id;";
+            const string sql = @"
+UPDATE dbo.Producto
+SET IsActive=1,
+    UpdatedAt=SYSUTCDATETIME()
+WHERE ProductoID=@id;";
             await using var cmd = new SqlCommand(sql, cn);
             cmd.Parameters.AddWithValue("@id", id);
+
             var rows = await cmd.ExecuteNonQueryAsync();
             if (rows == 0) throw new KeyNotFoundException();
         }
 
         public async Task UpdatePrecioVentaAsync(int id, decimal precioVenta)
         {
+            if (precioVenta < 0) ThrowCode("FIELD_INVALID:PrecioVenta");
+
             await using var cn = new SqlConnection(_cs);
             await cn.OpenAsync();
 
-            const string sql = @"UPDATE dbo.Producto SET PrecioVenta=@p, UpdatedAt=SYSUTCDATETIME() WHERE ProductoID=@id;";
+            const string sql = @"
+UPDATE dbo.Producto
+SET PrecioVenta=@p,
+    UpdatedAt=SYSUTCDATETIME()
+WHERE ProductoID=@id;";
             await using var cmd = new SqlCommand(sql, cn);
             cmd.Parameters.AddWithValue("@id", id);
             cmd.Parameters.AddWithValue("@p", precioVenta);
-            await cmd.ExecuteNonQueryAsync();
+
+            var rows = await cmd.ExecuteNonQueryAsync();
+            if (rows == 0) throw new KeyNotFoundException();
         }
 
         public async Task<IReadOnlyList<ProductoMiniDto>> GetProductosMiniAsync(string estado = "activos")
@@ -432,7 +631,9 @@ UPDATE dbo.Producto
             await using var cn = new SqlConnection(_cs);
             await cn.OpenAsync();
 
-            string where = estado.ToLower() switch
+            estado = (estado ?? "activos").Trim().ToLowerInvariant();
+
+            string where = estado switch
             {
                 "inactivos" => "WHERE IsActive = 0",
                 "todos" => "",
@@ -460,6 +661,7 @@ ORDER BY Nombre;";
                     IsActive = Convert.ToBoolean(rd["IsActive"])
                 });
             }
+
             return list;
         }
 
@@ -467,7 +669,11 @@ ORDER BY Nombre;";
             IEnumerable<int> productoIds,
             CancellationToken ct = default)
         {
-            var ids = productoIds.Distinct().ToList();
+            var ids = productoIds
+                .Where(x => x > 0)
+                .Distinct()
+                .ToList();
+
             if (ids.Count == 0) return new();
 
             var rows = await (
@@ -500,6 +706,7 @@ ORDER BY Nombre;";
             {
                 CommandType = CommandType.StoredProcedure
             };
+
             cmd.Parameters.AddWithValue("@ProductoID", (object?)query.ProductoID ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@BodegaID", (object?)query.BodegaID ?? DBNull.Value);
 
@@ -520,9 +727,13 @@ ORDER BY Nombre;";
         }
 
         public async Task<(IReadOnlyList<InventarioMovimientoRowDto> Items, int Total)> GetHistorialAsync(
-    InventarioHistorialQueryDto query,
-    CancellationToken ct = default)
+            InventarioHistorialQueryDto query,
+            CancellationToken ct = default)
         {
+            if (query is null) throw new ArgumentNullException(nameof(query));
+            if (query.Desde.HasValue && query.Hasta.HasValue && query.Desde > query.Hasta)
+                ThrowCode("RANGO_FECHAS_INVALIDO");
+
             var items = new List<InventarioMovimientoRowDto>();
 
             await using var cn = new SqlConnection(_cs);
@@ -544,7 +755,7 @@ ORDER BY Nombre;";
             bool useTipoParam = false;
             if (!string.IsNullOrWhiteSpace(query.TipoMovimiento))
             {
-                var t = query.TipoMovimiento;
+                var t = query.TipoMovimiento.Trim();
 
                 if (t.Equals("Entrada", StringComparison.OrdinalIgnoreCase))
                 {
@@ -556,7 +767,7 @@ ORDER BY Nombre;";
                 }
                 else if (t.Equals("AjusteSalidaManual", StringComparison.OrdinalIgnoreCase))
                 {
-                    filters.Add("m.TipoMovimiento IN ('AjusteSalidaManual','AjusteManualEntrada','AjusteManualSalida')");
+                    filters.Add("m.TipoMovimiento IN ('AjusteSalidaManual','AjusteManualSalida')");
                 }
                 else
                 {
@@ -572,7 +783,7 @@ ORDER BY Nombre;";
                 if (q.ProductoID.HasValue) cmd.Parameters.AddWithValue("@ProductoID", q.ProductoID.Value);
                 if (q.BodegaID.HasValue) cmd.Parameters.AddWithValue("@BodegaID", q.BodegaID.Value);
                 if (useTipoParam && !string.IsNullOrWhiteSpace(q.TipoMovimiento))
-                    cmd.Parameters.AddWithValue("@TipoMovimiento", q.TipoMovimiento);
+                    cmd.Parameters.AddWithValue("@TipoMovimiento", q.TipoMovimiento.Trim());
                 if (q.UsuarioID.HasValue) cmd.Parameters.AddWithValue("@UsuarioID", q.UsuarioID.Value);
                 if (q.Desde.HasValue) cmd.Parameters.AddWithValue("@Desde", q.Desde.Value);
                 if (q.Hasta.HasValue) cmd.Parameters.AddWithValue("@Hasta", q.Hasta.Value);
@@ -611,10 +822,8 @@ WITH MovimientosFiltrados AS (
         m.UsuarioID,
         u.Nombre AS UsuarioNombre,
         CASE 
-            WHEN m.TipoMovimiento IN ('Entrada','AjustePositivo','AjusteManualEntrada') 
-                THEN m.Cantidad
-            WHEN m.TipoMovimiento IN ('Salida','AjusteSalidaManual','AjusteManualSalida','RetiroPorInactivacion') 
-                THEN -m.Cantidad
+            WHEN m.TipoMovimiento IN ('Entrada','AjustePositivo','AjusteManualEntrada') THEN m.Cantidad
+            WHEN m.TipoMovimiento IN ('Salida','AjusteSalidaManual','AjusteManualSalida','RetiroPorInactivacion') THEN -m.Cantidad
             ELSE 0
         END AS CantidadFirmada
     FROM dbo.MovimientoInventario m
@@ -697,12 +906,5 @@ OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY;";
 
             return (items, total);
         }
-
-
-    }
-
-    internal sealed class SqlExceptionBuilder : Exception
-    {
-        public SqlExceptionBuilder(string message) : base(message) { }
     }
 }

@@ -2,19 +2,18 @@ import React from "react";
 import FeatureCard from "../../../components/inventario/FeatureCard";
 import InventoryHeader from "../../../components/inventario/InventoryHeader";
 
-
 export default function InventarioHubPage() {
   return (
-    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-6">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
       <InventoryHeader />
 
-      <div className="mt-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
+      <div className="mt-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-3.5 text-sm leading-6 text-white/70 shadow-[0_10px_30px_rgba(0,0,0,.12)]">
         Accede rápidamente a los módulos de inventario.
       </div>
 
       <section
         aria-label="Accesos de inventario"
-        className="mt-6 grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-3"
+        className="mt-7 grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-3"
         role="list"
       >
         <FeatureCard
@@ -22,10 +21,11 @@ export default function InventarioHubPage() {
           desc="Alta y gestión de productos."
           href="/inventario/productos"
           cta="Ir a Productos"
+          color="magenta"
           icon={
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-emerald-400"
+              className="h-6 w-6"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -43,10 +43,11 @@ export default function InventarioHubPage() {
           desc="Centros de almacenamiento."
           href="/inventario/bodegas"
           cta="Ver Bodegas"
+          color="lima"
           icon={
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-emerald-400"
+              className="h-6 w-6"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -65,10 +66,11 @@ export default function InventarioHubPage() {
           desc="Editar producto y ver datos."
           href="/inventario/existencias"
           cta="Ver Existencias"
+          color="vino"
           icon={
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-emerald-400"
+              className="h-6 w-6"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"

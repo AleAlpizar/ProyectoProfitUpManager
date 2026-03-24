@@ -3,6 +3,20 @@
 import * as React from "react";
 import { useApi } from "./useApi";
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
+
+function isValidPositiveInteger(value: unknown): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    Number.isInteger(value) &&
+    value > 0
+  );
+}
+
 export function useInventarioAsignar() {
   const { post } = useApi();
   const [loading, setLoading] = React.useState(false);
@@ -12,11 +26,29 @@ export function useInventarioAsignar() {
     async (productoID: number, bodegaID: number) => {
       setLoading(true);
       setError(null);
+
       try {
-        await post<void>("/api/inventario/asignar-producto", { productoID, bodegaID });
+        if (!isValidPositiveInteger(productoID)) {
+          throw new Error("Debe seleccionar un producto válido.");
+        }
+
+        if (!isValidPositiveInteger(bodegaID)) {
+          throw new Error("Debe seleccionar una bodega válida.");
+        }
+
+        await post<void>("/api/inventario/asignar-producto", {
+          productoID,
+          bodegaID,
+        });
+
         return true;
-      } catch (e: any) {
-        setError(e?.message ?? "No se pudo asignar el producto a la bodega.");
+      } catch (e: unknown) {
+        setError(
+          getErrorMessage(
+            e,
+            "No se pudo asignar el producto a la bodega."
+          )
+        );
         return false;
       } finally {
         setLoading(false);

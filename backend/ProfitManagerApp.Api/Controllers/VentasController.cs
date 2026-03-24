@@ -503,10 +503,14 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
 
             db.Ventas.Add(venta);
 
+            var movimientosVenta = new List<MovimientoInventarioRow>();
+
             foreach (var req in requestedByPair)
             {
                 var inv = invRows[req.Key];
-                inv.Cantidad = Math.Round(inv.Cantidad - req.Value, 2, MidpointRounding.AwayFromZero);
+                var saldoNuevo = Math.Round(inv.Cantidad - req.Value, 2, MidpointRounding.AwayFromZero);
+
+                inv.Cantidad = saldoNuevo;
 
                 if (inv.Cantidad < 0)
                 {
@@ -516,7 +520,28 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
                         detail: "La operación produciría stock negativo.",
                         statusCode: 409);
                 }
+
+                movimientosVenta.Add(new MovimientoInventarioRow
+                {
+                    ProductoID = req.Key.ProductoID,
+                    BodegaID = req.Key.BodegaID,
+                    TipoMovimiento = "SalidaPorVenta",
+                    Cantidad = req.Value,
+                    Motivo = "Salida automática por venta.",
+                    ReferenciaTipo = "Venta",
+                    UsuarioID = createdBy,
+                    FechaMovimiento = DateTime.UtcNow
+                });
             }
+
+            await db.SaveChangesAsync(ct);
+
+            foreach (var mov in movimientosVenta)
+            {
+                mov.ReferenciaTipo = $"Venta #{venta.VentaID}";
+            }
+
+            db.MovimientosInventario.AddRange(movimientosVenta);
 
             await db.SaveChangesAsync(ct);
             await trx.CommitAsync(ct);
@@ -569,10 +594,17 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
             .Where(d => d.VentaID == id)
             .ToListAsync(ct);
 
+        int? currentUserId = null;
+        var sub = User.FindFirst("sub")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (int.TryParse(sub, out var uid))
+            currentUserId = uid;
+
         await using var trx = await db.Database.BeginTransactionAsync(ct);
 
         try
         {
+            var movimientosAnulacion = new List<MovimientoInventarioRow>();
+
             foreach (var det in detalles)
             {
                 if (!det.ProductoID.HasValue)
@@ -592,10 +624,25 @@ public class VentasController(AppDbContext db, AppDbContextIOld dbOld, ClienteHa
                         statusCode: 409);
                 }
 
-                inv.Cantidad = Math.Round(inv.Cantidad + det.Cantidad, 2, MidpointRounding.AwayFromZero);
+                var saldoNuevo = Math.Round(inv.Cantidad + det.Cantidad, 2, MidpointRounding.AwayFromZero);
+                inv.Cantidad = saldoNuevo;
+
+                movimientosAnulacion.Add(new MovimientoInventarioRow
+                {
+                    ProductoID = det.ProductoID.Value,
+                    BodegaID = det.BodegaID,
+                    TipoMovimiento = "EntradaPorAnulacionVenta",
+                    Cantidad = det.Cantidad,
+                    Motivo = $"Reversión de inventario por anulación de venta #{venta.VentaID}.",
+                    ReferenciaTipo = $"Anulación venta #{venta.VentaID}",
+                    UsuarioID = currentUserId,
+                    FechaMovimiento = DateTime.UtcNow
+                });
             }
 
             venta.Estado = EstadoVentaEnum.Anulada;
+
+            db.MovimientosInventario.AddRange(movimientosAnulacion);
 
             await db.SaveChangesAsync(ct);
             await trx.CommitAsync(ct);

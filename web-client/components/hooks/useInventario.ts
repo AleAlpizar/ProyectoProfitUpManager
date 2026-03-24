@@ -11,9 +11,31 @@ export type AsignarProductoBodegaRequest = {
 export type InventarioSetCantidadDto = {
   productoID: number;
   bodegaID: number;
-  nuevaCantidad: number; 
+  nuevaCantidad: number;
   motivo?: string | null;
 };
+
+type ApiMessageResponse = {
+  message?: string;
+};
+
+type ApiCantidadResponse = {
+  cantidad?: number;
+};
+
+function isValidPositiveInteger(value: unknown): value is number {
+  return (
+    typeof value === "number" &&
+    Number.isFinite(value) &&
+    Number.isInteger(value) &&
+    value > 0
+  );
+}
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) return error.message;
+  return fallback;
+}
 
 export function useInventario() {
   const { post, put, get } = useApi();
@@ -24,18 +46,29 @@ export function useInventario() {
     async (req: AsignarProductoBodegaRequest) => {
       setError(null);
       setLoading(true);
+
       try {
-        if (!req?.productoID || !req?.bodegaID) {
-          throw new Error("Debe seleccionar producto y bodega.");
+        if (!isValidPositiveInteger(req?.productoID)) {
+          throw new Error("Debe seleccionar un producto válido.");
         }
-        const res = await post<{ message: string }>(
-          "/api/inventario/asignar",
-          { productoID: req.productoID, bodegaID: req.bodegaID }
-        );
+
+        if (!isValidPositiveInteger(req?.bodegaID)) {
+          throw new Error("Debe seleccionar una bodega válida.");
+        }
+
+        const res = await post<ApiMessageResponse>("/api/inventario/asignar", {
+          productoID: req.productoID,
+          bodegaID: req.bodegaID,
+        });
+
         return { ok: true, data: res } as const;
-      } catch (e: any) {
-        setError(e?.message ?? "No se pudo asignar");
-        return { ok: false } as const;
+      } catch (e: unknown) {
+        const message = getErrorMessage(
+          e,
+          "No se pudo asignar el producto a la bodega."
+        );
+        setError(message);
+        return { ok: false, error: message } as const;
       } finally {
         setLoading(false);
       }
@@ -47,21 +80,45 @@ export function useInventario() {
     async (dto: InventarioSetCantidadDto) => {
       setError(null);
       setLoading(true);
+
       try {
-        if (!dto?.productoID || !dto?.bodegaID) {
-          throw new Error("Producto y bodega son obligatorios.");
+        if (!isValidPositiveInteger(dto?.productoID)) {
+          throw new Error("Producto inválido.");
         }
+
+        if (!isValidPositiveInteger(dto?.bodegaID)) {
+          throw new Error("Bodega inválida.");
+        }
+
+        if (
+          typeof dto?.nuevaCantidad !== "number" ||
+          !Number.isFinite(dto.nuevaCantidad)
+        ) {
+          throw new Error("La nueva cantidad no es válida.");
+        }
+
         if (dto.nuevaCantidad < 0) {
           throw new Error("La cantidad no puede ser negativa.");
         }
-        const res = await put<{ cantidad: number }>(
+
+        const payload: InventarioSetCantidadDto = {
+          ...dto,
+          motivo: dto.motivo?.trim() ? dto.motivo.trim() : null,
+        };
+
+        const res = await put<ApiCantidadResponse>(
           "/api/inventario/cantidad",
-          dto
+          payload
         );
+
         return { ok: true, data: res } as const;
-      } catch (e: any) {
-        setError(e?.message ?? "No se pudo actualizar la cantidad");
-        return { ok: false } as const;
+      } catch (e: unknown) {
+        const message = getErrorMessage(
+          e,
+          "No se pudo actualizar la cantidad."
+        );
+        setError(message);
+        return { ok: false, error: message } as const;
       } finally {
         setLoading(false);
       }
@@ -73,17 +130,33 @@ export function useInventario() {
     async (productoID?: number, bodegaID?: number) => {
       setError(null);
       setLoading(true);
+
       try {
         const qs = new URLSearchParams();
-        if (productoID) qs.set("productoID", String(productoID));
-        if (bodegaID) qs.set("bodegaID", String(bodegaID));
-        const res = await get<any[]>(
-          `/api/inventario/stock?${qs.toString()}`
-        );
-        return { ok: true, data: res } as const;
-      } catch (e: any) {
-        setError(e?.message ?? "No se pudo consultar stock");
-        return { ok: false } as const;
+
+        if (typeof productoID === "number" && Number.isFinite(productoID)) {
+          qs.set("productoID", String(productoID));
+        }
+
+        if (typeof bodegaID === "number" && Number.isFinite(bodegaID)) {
+          qs.set("bodegaID", String(bodegaID));
+        }
+
+        const query = qs.toString();
+        const url = query
+          ? `/api/inventario/stock?${query}`
+          : "/api/inventario/stock";
+
+        const res = await get<unknown[]>(url);
+
+        return {
+          ok: true,
+          data: Array.isArray(res) ? res : [],
+        } as const;
+      } catch (e: unknown) {
+        const message = getErrorMessage(e, "No se pudo consultar el stock.");
+        setError(message);
+        return { ok: false, error: message, data: [] } as const;
       } finally {
         setLoading(false);
       }

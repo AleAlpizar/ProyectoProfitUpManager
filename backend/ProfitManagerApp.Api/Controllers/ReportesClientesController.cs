@@ -29,6 +29,9 @@ namespace ProfitManagerApp.Api.Controllers
             [FromQuery] int? mesHasta,
             CancellationToken ct)
         {
+            if (!ValidateReportFilters(anio, clienteId, mesDesde, mesHasta))
+                return ValidationProblem(ModelState);
+
             var data = await _service.GetComprasMensualesAsync(
                 anio,
                 clienteId,
@@ -47,6 +50,7 @@ namespace ProfitManagerApp.Api.Controllers
 
             return Ok(dto);
         }
+
         [HttpGet("top")]
         public async Task<ActionResult<IEnumerable<ClienteTopDto>>> GetTopClientes(
             [FromQuery] int? anio,
@@ -54,6 +58,9 @@ namespace ProfitManagerApp.Api.Controllers
             [FromQuery] int? mesHasta,
             CancellationToken ct)
         {
+            if (!ValidateReportFilters(anio, null, mesDesde, mesHasta))
+                return ValidationProblem(ModelState);
+
             var data = await _service.GetTopClientesAsync(
                 anio,
                 mesDesde,
@@ -78,8 +85,12 @@ namespace ProfitManagerApp.Api.Controllers
             CancellationToken ct)
         {
             var mesesValor = meses.GetValueOrDefault(3);
-            if (mesesValor <= 0)
-                mesesValor = 3;
+
+            if (mesesValor < 1 || mesesValor > 60)
+            {
+                ModelState.AddModelError(nameof(meses), "El parámetro meses debe estar entre 1 y 60.");
+                return ValidationProblem(ModelState);
+            }
 
             var data = await _service.GetClientesInactivosAsync(mesesValor, ct);
 
@@ -102,10 +113,8 @@ namespace ProfitManagerApp.Api.Controllers
             [FromQuery] int? mesHasta,
             CancellationToken ct)
         {
-            if (clienteId <= 0)
-            {
-                return BadRequest("clienteId es requerido.");
-            }
+            if (!ValidateReportFilters(anio, clienteId, mesDesde, mesHasta))
+                return ValidationProblem(ModelState);
 
             var data = await _service.GetVentasClienteAsync(
                 clienteId,
@@ -125,6 +134,28 @@ namespace ProfitManagerApp.Api.Controllers
             ));
 
             return Ok(dto);
+        }
+
+        private bool ValidateReportFilters(int? anio, int? clienteId, int? mesDesde, int? mesHasta)
+        {
+            var currentYear = System.DateTime.UtcNow.Year + 1;
+
+            if (anio.HasValue && (anio.Value < 2000 || anio.Value > currentYear))
+                ModelState.AddModelError(nameof(anio), $"El año debe estar entre 2000 y {currentYear}.");
+
+            if (clienteId.HasValue && clienteId.Value <= 0)
+                ModelState.AddModelError(nameof(clienteId), "clienteId debe ser mayor a 0.");
+
+            if (mesDesde.HasValue && (mesDesde.Value < 1 || mesDesde.Value > 12))
+                ModelState.AddModelError(nameof(mesDesde), "mesDesde debe estar entre 1 y 12.");
+
+            if (mesHasta.HasValue && (mesHasta.Value < 1 || mesHasta.Value > 12))
+                ModelState.AddModelError(nameof(mesHasta), "mesHasta debe estar entre 1 y 12.");
+
+            if (mesDesde.HasValue && mesHasta.HasValue && mesDesde.Value > mesHasta.Value)
+                ModelState.AddModelError("rangoMeses", "mesDesde no puede ser mayor que mesHasta.");
+
+            return ModelState.IsValid;
         }
     }
 }

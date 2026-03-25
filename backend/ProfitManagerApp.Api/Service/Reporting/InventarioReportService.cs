@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using ProfitManagerApp.Api.Dtos;
+using ProfitManagerApp.Api.Enums;
 using ProfitManagerApp.Api.Infrastructure;
 using System;
 using System.Collections.Generic;
@@ -12,6 +13,7 @@ namespace ProfitManagerApp.Api.Service.Reporting
     public class InventarioReportService
     {
         private readonly AppDbContext _db;
+        private const decimal UMBRAL_STOCK_CRITICO = 3m;
 
         public InventarioReportService(AppDbContext db)
         {
@@ -26,6 +28,12 @@ namespace ProfitManagerApp.Api.Service.Reporting
             int[]? productosClaveIds,
             CancellationToken ct)
         {
+            if (bodegaId.HasValue && bodegaId.Value <= 0)
+                throw new ArgumentException("El parámetro bodegaId debe ser mayor que cero.", nameof(bodegaId));
+
+            if (productoId.HasValue && productoId.Value <= 0)
+                throw new ArgumentException("El parámetro productoId debe ser mayor que cero.", nameof(productoId));
+
             if (!fechaDesde.HasValue && !fechaHasta.HasValue)
             {
                 var today = DateTime.UtcNow.Date;
@@ -35,9 +43,12 @@ namespace ProfitManagerApp.Api.Service.Reporting
 
             fechaDesde = fechaDesde?.Date;
             fechaHasta = fechaHasta?.Date;
+
+            if (fechaDesde.HasValue && fechaHasta.HasValue && fechaDesde.Value > fechaHasta.Value)
+                throw new ArgumentException("La fecha desde no puede ser mayor que la fecha hasta.");
+
             var hastaExclusive = fechaHasta?.AddDays(1);
 
-            const decimal UMBRAL_STOCK_CRITICO = 3m;
             var invQuery = _db.Inventarios.AsNoTracking();
 
             if (bodegaId.HasValue)
@@ -48,8 +59,15 @@ namespace ProfitManagerApp.Api.Service.Reporting
 
             var inventarios = await invQuery.ToListAsync(ct);
 
-            var productoIds = inventarios.Select(i => i.ProductoID).Distinct().ToList();
-            var bodegaIds = inventarios.Select(i => i.BodegaID).Distinct().ToList();
+            var productoIds = inventarios
+                .Select(i => i.ProductoID)
+                .Distinct()
+                .ToList();
+
+            var bodegaIds = inventarios
+                .Select(i => i.BodegaID)
+                .Distinct()
+                .ToList();
 
             var productos = await _db.Productos
                 .AsNoTracking()
@@ -60,8 +78,15 @@ namespace ProfitManagerApp.Api.Service.Reporting
                 .Where(i => productos.ContainsKey(i.ProductoID))
                 .ToList();
 
-            productoIds = inventarios.Select(i => i.ProductoID).Distinct().ToList();
-            bodegaIds = inventarios.Select(i => i.BodegaID).Distinct().ToList();
+            productoIds = inventarios
+                .Select(i => i.ProductoID)
+                .Distinct()
+                .ToList();
+
+            bodegaIds = inventarios
+                .Select(i => i.BodegaID)
+                .Distinct()
+                .ToList();
 
             var bodegas = await _db.Bodegas
                 .AsNoTracking()
@@ -75,7 +100,8 @@ namespace ProfitManagerApp.Api.Service.Reporting
                     bodegas.TryGetValue(i.BodegaID, out var b);
 
                     var precioCosto = p?.PrecioCosto ?? 0m;
-                    var valorCosto = i.Cantidad * precioCosto;
+                    var cantidadReservada = 0m;
+                    var disponible = i.Cantidad;
 
                     return new StockActualRowDto
                     {
@@ -85,15 +111,16 @@ namespace ProfitManagerApp.Api.Service.Reporting
                         BodegaID = i.BodegaID,
                         NombreBodega = b?.Nombre ?? $"Bodega {i.BodegaID}",
                         Cantidad = i.Cantidad,
+                        CantidadReservada = cantidadReservada,
+                        Disponible = decimal.Round(disponible, 2),
                         PrecioCosto = precioCosto,
-                        ValorCosto = decimal.Round(valorCosto, 2)
+                        ValorCosto = decimal.Round(i.Cantidad * precioCosto, 2)
                     };
                 })
                 .OrderBy(r => r.NombreProducto)
                 .ThenBy(r => r.NombreBodega)
                 .ToList();
 
-           
             var stockAgrupadoPorProducto = stockActualRows
                 .GroupBy(r => r.ProductoID)
                 .Select(g => new
@@ -101,7 +128,7 @@ namespace ProfitManagerApp.Api.Service.Reporting
                     ProductoID = g.Key,
                     SKU = g.Select(x => x.SKU).FirstOrDefault() ?? string.Empty,
                     NombreProducto = g.Select(x => x.NombreProducto).FirstOrDefault() ?? "(Producto)",
-                    CantidadTotal = g.Sum(x => x.Cantidad)
+                    CantidadTotal = g.Sum(x => x.Disponible)
                 })
                 .ToList();
 
@@ -126,7 +153,7 @@ namespace ProfitManagerApp.Api.Service.Reporting
                 .Select(g =>
                 {
                     var nombreBodega = g.Select(x => x.NombreBodega).FirstOrDefault()
-                                        ?? $"Bodega {g.Key}";
+                        ?? $"Bodega {g.Key}";
 
                     decimal valorCosto = 0m;
                     decimal valorVenta = 0m;
@@ -138,18 +165,15 @@ namespace ProfitManagerApp.Api.Service.Reporting
                         var precioCosto = p?.PrecioCosto ?? 0m;
                         var precioVenta = p?.PrecioVenta ?? 0m;
                         var descuento = p?.Descuento ?? 0m;
-
                         var precioVentaConDesc = precioVenta * (1m - (descuento / 100m));
 
                         valorCosto += r.Cantidad * precioCosto;
                         valorVenta += r.Cantidad * precioVentaConDesc;
                     }
 
-                    var margen = valorVenta - valorCosto;
-
                     return new InventarioValorizadoRowDto
                     {
-                        ProductoID = 0, 
+                        ProductoID = 0,
                         SKU = string.Empty,
                         NombreProducto = "(Total bodega)",
                         BodegaID = g.Key,
@@ -160,17 +184,21 @@ namespace ProfitManagerApp.Api.Service.Reporting
                         Descuento = 0m,
                         ValorCosto = decimal.Round(valorCosto, 2),
                         ValorVenta = decimal.Round(valorVenta, 2),
-                        MargenPotencial = decimal.Round(margen, 2)
+                        MargenPotencial = decimal.Round(valorVenta - valorCosto, 2)
                     };
                 })
                 .OrderBy(v => v.NombreBodega)
                 .ToList();
 
             var ventasQuery = _db.Ventas.AsNoTracking();
+
             if (fechaDesde.HasValue)
                 ventasQuery = ventasQuery.Where(v => v.Fecha >= fechaDesde.Value);
+
             if (hastaExclusive.HasValue)
                 ventasQuery = ventasQuery.Where(v => v.Fecha < hastaExclusive.Value);
+
+            ventasQuery = ventasQuery.Where(v => v.Estado != EstadoVentaEnum.Anulada);
 
             var ventasPeriodo = await ventasQuery.ToListAsync(ct);
             var ventaIds = ventasPeriodo.Select(v => v.VentaID).ToList();
@@ -181,18 +209,20 @@ namespace ProfitManagerApp.Api.Service.Reporting
 
             if (productoId.HasValue)
                 ventaItemsQuery = ventaItemsQuery.Where(d => d.ProductoID == productoId.Value);
+
             if (bodegaId.HasValue)
                 ventaItemsQuery = ventaItemsQuery.Where(d => d.BodegaID == bodegaId.Value);
 
             var ventaItemsPeriodo = await ventaItemsQuery.ToListAsync(ct);
 
-           
             var movQuery = _db.MovimientosInventario.AsNoTracking();
 
             if (fechaDesde.HasValue)
                 movQuery = movQuery.Where(m => m.FechaMovimiento >= fechaDesde.Value);
+
             if (hastaExclusive.HasValue)
                 movQuery = movQuery.Where(m => m.FechaMovimiento < hastaExclusive.Value);
+
             if (bodegaId.HasValue)
                 movQuery = movQuery.Where(m => m.BodegaID == bodegaId.Value);
 
@@ -203,13 +233,13 @@ namespace ProfitManagerApp.Api.Service.Reporting
                 .OrderBy(m => m.FechaMovimiento)
                 .ThenBy(m => m.MovimientoID)
                 .ToListAsync(ct);
+
             var kardexProdIds = movimientos
                 .Select(m => m.ProductoID)
                 .Concat(
                     ventaItemsPeriodo
                         .Where(d => d.ProductoID.HasValue)
-                        .Select(d => d.ProductoID!.Value)
-                )
+                        .Select(d => d.ProductoID!.Value))
                 .Distinct()
                 .ToList();
 
@@ -255,7 +285,22 @@ namespace ProfitManagerApp.Api.Service.Reporting
                 });
             }
 
+            var existingSaleMovementKeys = new HashSet<string>(
+                movimientos
+                    .Where(m =>
+                        (!string.IsNullOrWhiteSpace(m.ReferenciaTipo) &&
+                         m.ReferenciaTipo.Trim().Equals("VENTA", StringComparison.OrdinalIgnoreCase))
+                        || (!string.IsNullOrWhiteSpace(m.TipoMovimiento) &&
+                            m.TipoMovimiento.Trim().StartsWith("Salida", StringComparison.OrdinalIgnoreCase)))
+                    .Select(m => BuildSyntheticVentaKey(
+                        m.ProductoID,
+                        m.BodegaID,
+                        m.FechaMovimiento.Date,
+                        m.Cantidad))
+            );
+
             long syntheticId = long.MaxValue / 2;
+
             foreach (var d in ventaItemsPeriodo)
             {
                 if (!d.ProductoID.HasValue)
@@ -265,13 +310,18 @@ namespace ProfitManagerApp.Api.Service.Reporting
                     continue;
 
                 var prodIdKdx = d.ProductoID.Value;
-                kardexProductos.TryGetValue(prodIdKdx, out var p);
                 var bodIdKdx = d.BodegaID;
+                var key = BuildSyntheticVentaKey(prodIdKdx, bodIdKdx, venta.Fecha.Date, d.Cantidad);
+
+                if (existingSaleMovementKeys.Contains(key))
+                    continue;
+
+                kardexProductos.TryGetValue(prodIdKdx, out var p);
                 kardexBodegas.TryGetValue(bodIdKdx, out var b);
 
                 kardexList.Add(new KardexMovimientoDto
                 {
-                    MovimientoID = syntheticId++, 
+                    MovimientoID = syntheticId++,
                     FechaMovimiento = venta.Fecha,
                     TipoMovimiento = "Salida (Venta)",
                     ProductoID = prodIdKdx,
@@ -291,47 +341,23 @@ namespace ProfitManagerApp.Api.Service.Reporting
                 .ThenBy(k => k.MovimientoID)
                 .ToList();
 
-           
-            var resumenDict = movimientos
-                .GroupBy(m => m.TipoMovimiento)
-                .ToDictionary(
-                    g => g.Key,
-                    g => new MovimientoResumenDto
-                    {
-                        TipoMovimiento = g.Key,
-                        CantidadMovimientos = g.Count(),
-                        CantidadTotal = g.Sum(x => x.Cantidad)
-                    });
-
-            var totalSalidasVenta = ventaItemsPeriodo.Sum(x => x.Cantidad);
-            var conteoMovimientosVenta = ventaItemsPeriodo.Count;
-
-            if (totalSalidasVenta > 0 || conteoMovimientosVenta > 0)
-            {
-                if (!resumenDict.TryGetValue("Salida", out var salidaDto))
+            var resumenMovimientos = kardex
+                .GroupBy(k => NormalizeMovementType(k.TipoMovimiento))
+                .Select(g => new MovimientoResumenDto
                 {
-                    salidaDto = new MovimientoResumenDto
-                    {
-                        TipoMovimiento = "Salida",
-                        CantidadMovimientos = 0,
-                        CantidadTotal = 0
-                    };
-                    resumenDict["Salida"] = salidaDto;
-                }
-
-                salidaDto.CantidadMovimientos += conteoMovimientosVenta;
-                salidaDto.CantidadTotal += totalSalidasVenta;
-            }
-
-            var resumenMovimientos = resumenDict.Values
+                    TipoMovimiento = g.Key,
+                    CantidadMovimientos = g.Count(),
+                    CantidadTotal = g.Sum(x => x.Cantidad)
+                })
                 .OrderByDescending(x => x.CantidadMovimientos)
+                .ThenBy(x => x.TipoMovimiento)
                 .ToList();
 
-            decimal diasPeriodo = 1;
+            decimal diasPeriodo = 1m;
             if (fechaDesde.HasValue && fechaHasta.HasValue)
             {
-                diasPeriodo = (decimal)(fechaHasta.Value - fechaDesde.Value).TotalDays;
-                if (diasPeriodo <= 0) diasPeriodo = 1;
+                diasPeriodo = (decimal)(fechaHasta.Value.Date - fechaDesde.Value.Date).TotalDays + 1m;
+                if (diasPeriodo <= 0) diasPeriodo = 1m;
             }
 
             var ventaPorProducto = ventaItemsPeriodo
@@ -339,23 +365,22 @@ namespace ProfitManagerApp.Api.Service.Reporting
                 .GroupBy(d => d.ProductoID!.Value)
                 .ToDictionary(
                     g => g.Key,
-                    g => g.Sum(x => x.Cantidad)
-                );
+                    g => g.Sum(x => x.Cantidad));
 
             var stockPorProducto = inventarios
                 .GroupBy(i => i.ProductoID)
                 .ToDictionary(
                     g => g.Key,
-                    g => g.Sum(x => x.Cantidad)
-                );
+                    g => g.Sum(x => x.Cantidad));
 
-            var productosTodos = await _db.Productos
+            var productosTodosQuery = _db.Productos
                 .AsNoTracking()
-                .ToListAsync(ct);
+                .Where(p => p.IsActive);
 
-            var productosActivos = productosTodos
-                .Where(p => p.IsActive)
-                .ToList();
+            if (productoId.HasValue)
+                productosTodosQuery = productosTodosQuery.Where(p => p.ProductoID == productoId.Value);
+
+            var productosActivos = await productosTodosQuery.ToListAsync(ct);
 
             var rotacion = new List<RotacionInventarioSimpleDto>();
 
@@ -365,9 +390,11 @@ namespace ProfitManagerApp.Api.Service.Reporting
                 var vendida = kv.Value;
                 stockPorProducto.TryGetValue(prodId, out var stockProd);
 
-                if (vendida <= 0 && stockProd <= 0) continue;
+                if (vendida <= 0 && stockProd <= 0)
+                    continue;
 
-                var prod = productosTodos.FirstOrDefault(p => p.ProductoID == prodId);
+                var prod = productosActivos.FirstOrDefault(p => p.ProductoID == prodId)
+                           ?? await _db.Productos.AsNoTracking().FirstOrDefaultAsync(p => p.ProductoID == prodId, ct);
 
                 var divisor = stockProd > 0 ? stockProd : 1m;
                 var rotValor = vendida / divisor;
@@ -394,6 +421,7 @@ namespace ProfitManagerApp.Api.Service.Reporting
 
             var productosSinMovimiento = productosActivos
                 .Where(p =>
+                    stockPorProducto.ContainsKey(p.ProductoID) &&
                     !productosConVentas.Contains(p.ProductoID) &&
                     !productosConMovimientos.Contains(p.ProductoID))
                 .OrderBy(p => p.Nombre)
@@ -407,29 +435,28 @@ namespace ProfitManagerApp.Api.Service.Reporting
                 })
                 .ToList();
 
-            var stockPorProductoGlobal = await _db.Inventarios
-                .AsNoTracking()
+            var stockPorProductoFiltrado = inventarios
                 .GroupBy(i => i.ProductoID)
-                .ToDictionaryAsync(
+                .ToDictionary(
                     g => g.Key,
-                    g => g.Sum(x => x.Cantidad),
-                    ct);
-
-            var cobertura = new List<CoberturaInventarioDto>();
+                    g => g.Sum(x => x.Cantidad));
 
             var consumoPromedioPorProducto = ventaPorProducto
                 .ToDictionary(
                     kvp => kvp.Key,
-                    kvp => kvp.Value / diasPeriodo
-                );
+                    kvp => kvp.Value / diasPeriodo);
+
+            var cobertura = new List<CoberturaInventarioDto>();
 
             foreach (var p in productosActivos)
             {
-                stockPorProductoGlobal.TryGetValue(p.ProductoID, out var stock);
-                decimal consumoDia = 0;
+                if (!stockPorProductoFiltrado.TryGetValue(p.ProductoID, out var stock))
+                    continue;
+
+                decimal consumoDia = 0m;
                 consumoPromedioPorProducto.TryGetValue(p.ProductoID, out consumoDia);
 
-                decimal diasCoberturaCalc = 0;
+                decimal diasCoberturaCalc = 0m;
                 if (consumoDia > 0 && stock > 0)
                     diasCoberturaCalc = stock / consumoDia;
 
@@ -446,7 +473,8 @@ namespace ProfitManagerApp.Api.Service.Reporting
 
             cobertura = cobertura
                 .Where(c => c.StockActual > 0)
-                .OrderBy(c => c.DiasCobertura)
+                .OrderBy(c => c.DiasCobertura == 0 ? decimal.MaxValue : c.DiasCobertura)
+                .ThenBy(c => c.NombreProducto)
                 .Take(200)
                 .ToList();
 
@@ -466,6 +494,24 @@ namespace ProfitManagerApp.Api.Service.Reporting
                 DisponibilidadProductosClave = disponibilidadProductosClave,
                 Cobertura = cobertura
             };
+        }
+
+        private static string NormalizeMovementType(string? tipoMovimiento)
+        {
+            var value = (tipoMovimiento ?? string.Empty).Trim();
+
+            if (value.StartsWith("Entrada", StringComparison.OrdinalIgnoreCase))
+                return "Entrada";
+
+            if (value.StartsWith("Salida", StringComparison.OrdinalIgnoreCase))
+                return "Salida";
+
+            return string.IsNullOrWhiteSpace(value) ? "Otro" : value;
+        }
+
+        private static string BuildSyntheticVentaKey(int productoId, int bodegaId, DateTime fecha, decimal cantidad)
+        {
+            return $"{productoId}|{bodegaId}|{fecha:yyyyMMdd}|{cantidad:0.####}";
         }
     }
 }

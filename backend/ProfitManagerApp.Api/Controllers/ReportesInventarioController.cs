@@ -10,7 +10,7 @@ namespace ProfitManagerApp.Api.Controllers
 {
     [ApiController]
     [Route("api/reportes/inventario")]
-    [AllowAnonymous]
+    [Authorize]
     public class ReportesInventarioController : ControllerBase
     {
         private readonly InventarioReportService _service;
@@ -21,7 +21,6 @@ namespace ProfitManagerApp.Api.Controllers
         }
 
         [HttpGet("dashboard")]
-        [AllowAnonymous]
         public async Task<ActionResult<InventarioDashboardDto>> GetDashboard(
             [FromQuery] DateTime? fechaDesde,
             [FromQuery] DateTime? fechaHasta,
@@ -30,15 +29,25 @@ namespace ProfitManagerApp.Api.Controllers
             [FromQuery] int[]? productosClaveIds,
             CancellationToken ct)
         {
-            var data = await _service.GetDashboardAsync(
-                fechaDesde,
-                fechaHasta,
-                bodegaId,
-                productoId,
-                productosClaveIds,
-                ct);
+            try
+            {
+                var data = await _service.GetDashboardAsync(
+                    fechaDesde,
+                    fechaHasta,
+                    bodegaId,
+                    productoId,
+                    productosClaveIds,
+                    ct);
 
-            return Ok(data);
+                return Ok(data);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new
+                {
+                    message = ex.Message
+                });
+            }
         }
     }
 }

@@ -1,20 +1,72 @@
-// @ts-nocheck
 "use client";
 
 import React from "react";
 import useSWR from "swr";
 import {
-  AreaChart,
-  Area,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
+  AreaChart as RechartsAreaChart,
+  Area as RechartsArea,
+  CartesianGrid as RechartsCartesianGrid,
+  ResponsiveContainer as RechartsResponsiveContainer,
+  Tooltip as RechartsTooltip,
+  XAxis as RechartsXAxis,
+  YAxis as RechartsYAxis,
 } from "recharts";
+
+const ResponsiveContainer = RechartsResponsiveContainer as any;
+const AreaChart = RechartsAreaChart as any;
+const Area = RechartsArea as any;
+const CartesianGrid = RechartsCartesianGrid as any;
+const Tooltip = RechartsTooltip as any;
+const XAxis = RechartsXAxis as any;
+const YAxis = RechartsYAxis as any;
 
 const ACCENT = "#b1005f";
 const ACCENT_SOFT = "#f472b6";
+
+type RangeKey = "30d" | "90d" | "year" | "all" | "custom";
+
+type ProductoOption = {
+  ProductoID?: number;
+  productoID?: number;
+  id?: number;
+  Nombre?: string;
+  nombre?: string;
+  SKU?: string;
+  Sku?: string;
+  sku?: string;
+};
+
+type BodegaOption = {
+  BodegaID?: number;
+  bodegaID?: number;
+  Id?: number;
+  id?: number;
+  Nombre?: string;
+  nombre?: string;
+};
+
+type DashboardResponse = {
+  fechaDesde?: string;
+  FechaDesde?: string;
+  fechaHasta?: string;
+  FechaHasta?: string;
+  stockActual?: any[];
+  StockActual?: any[];
+  stockCritico?: any[];
+  StockCritico?: any[];
+  valorizacion?: any[];
+  Valorizacion?: any[];
+  kardex?: any[];
+  Kardex?: any[];
+  resumenMovimientos?: any[];
+  ResumenMovimientos?: any[];
+  rotacion?: any[];
+  Rotacion?: any[];
+  productosSinMovimiento?: any[];
+  ProductosSinMovimiento?: any[];
+  cobertura?: any[];
+  Cobertura?: any[];
+};
 
 const formatCurrency = (n: number | null | undefined) =>
   Number(n ?? 0).toLocaleString("es-CR", {
@@ -37,13 +89,28 @@ const formatShortDate = (iso: string) => {
   });
 };
 
+const formatDateLocal = (date: Date) => {
+  const year = date.getFullYear();
+  const month = `${date.getMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 const pillClass = (active: boolean) =>
   [
-    "rounded-full px-3 py-1 text-xs border transition",
+    "rounded-full px-3.5 py-1.5 text-xs border transition-all duration-200",
     active
-      ? "bg-[#b1005f] border-[#f9a8d4] text-white shadow-sm"
-      : "border-white/10 text-slate-300 hover:bg-white/5",
+      ? "bg-[#b1005f] border-[#f9a8d4] text-white shadow-[0_8px_24px_rgba(177,0,95,0.28)]"
+      : "border-white/10 bg-white/[0.03] text-slate-300 hover:bg-white/[0.06] hover:border-white/20",
   ].join(" ");
+
+const panelClass =
+  "rounded-3xl border border-white/10 bg-[linear-gradient(180deg,rgba(15,23,42,0.78),rgba(2,6,23,0.92))] shadow-[0_22px_60px_rgba(0,0,0,0.32)] backdrop-blur-sm";
+
+const tableHeadClass =
+  "sticky top-0 bg-[#07111F]/95 backdrop-blur text-[11px] uppercase tracking-wide text-slate-400";
+
+const sectionTitleClass = "text-sm font-semibold tracking-wide text-slate-100";
 
 const apiBase =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:5151";
@@ -102,10 +169,6 @@ const fetcher = async (relativeUrl: string) => {
   });
 
   if (res.status === 401) {
-    console.warn(
-      `API no autorizada (401) en ${relativeUrl}. Revisa que estés logueado y que el backend reciba el token/cookie.`
-    );
-
     if (
       relativeUrl.startsWith("/api/productos/mini") ||
       relativeUrl.startsWith("/api/bodegas")
@@ -117,20 +180,20 @@ const fetcher = async (relativeUrl: string) => {
   }
 
   if (!res.ok) {
-    console.error(
-      "Error en fetch inventario dashboard",
-      res.status,
-      relativeUrl,
-      url
-    );
-    throw new Error(`HTTP_${res.status}`);
+    let message = `HTTP_${res.status}`;
+
+    try {
+      const errorBody = await res.json();
+      message = errorBody?.message || errorBody?.Message || message;
+    } catch {
+      // sin cuerpo json
+    }
+
+    throw new Error(message);
   }
 
-  const json = await res.json();
-  return json;
+  return res.json();
 };
-
-type RangeKey = "30d" | "90d" | "year" | "all" | "custom";
 
 export const InventarioDashboardFragment: React.FC = () => {
   const [range, setRange] = React.useState<RangeKey>("30d");
@@ -140,10 +203,11 @@ export const InventarioDashboardFragment: React.FC = () => {
     desde?: string;
     hasta?: string;
   } | null>(null);
+  const [rangeValidationMessage, setRangeValidationMessage] =
+    React.useState<string>("");
 
   const [selectedProductoId, setSelectedProductoId] =
     React.useState<string>("all");
-
   const [selectedBodegaId, setSelectedBodegaId] =
     React.useState<string>("all");
 
@@ -159,20 +223,13 @@ export const InventarioDashboardFragment: React.FC = () => {
     React.useState<"all" | "Entrada" | "Salida">("all");
   const [kardexDesde, setKardexDesde] = React.useState<string>("");
   const [kardexHasta, setKardexHasta] = React.useState<string>("");
+  const [kardexValidationMessage, setKardexValidationMessage] =
+    React.useState<string>("");
 
-  const {
-    data: productosMini,
-    error: productosError,
-    isLoading: productosLoading,
-  } = useSWR("/api/productos/mini?estado=activos", fetcher);
+  const { data: productosMini } = useSWR("/api/productos/mini?estado=activos", fetcher);
+  const { data: bodegasMini } = useSWR("/api/bodegas", fetcher);
 
-  const {
-    data: bodegasMini,
-    error: bodegasError,
-    isLoading: bodegasLoading,
-  } = useSWR("/api/bodegas", fetcher);
-
-  const bodegasList = React.useMemo(() => {
+  const bodegasList = React.useMemo<BodegaOption[]>(() => {
     if (!bodegasMini) return [];
     if (Array.isArray(bodegasMini)) return bodegasMini;
     if (Array.isArray(bodegasMini.items)) return bodegasMini.items;
@@ -182,7 +239,7 @@ export const InventarioDashboardFragment: React.FC = () => {
     return [];
   }, [bodegasMini]);
 
-  const productosList = React.useMemo(() => {
+  const productosList = React.useMemo<ProductoOption[]>(() => {
     if (!productosMini) return [];
     if (Array.isArray(productosMini)) return productosMini;
     if (Array.isArray(productosMini.items)) return productosMini.items;
@@ -214,13 +271,10 @@ export const InventarioDashboardFragment: React.FC = () => {
       } else if (range === "year") {
         to = today;
         from = new Date(today.getFullYear(), 0, 1);
-      } else {
-        from = undefined;
-        to = undefined;
       }
 
-      if (from) params.set("fechaDesde", from.toISOString().slice(0, 10));
-      if (to) params.set("fechaHasta", to.toISOString().slice(0, 10));
+      if (from) params.set("fechaDesde", formatDateLocal(from));
+      if (to) params.set("fechaHasta", formatDateLocal(to));
     }
 
     if (selectedProductoId !== "all") {
@@ -235,55 +289,23 @@ export const InventarioDashboardFragment: React.FC = () => {
     return `/api/reportes/inventario/dashboard${qs ? `?${qs}` : ""}`;
   }, [range, appliedCustom, selectedProductoId, selectedBodegaId]);
 
-  const { data, error, isLoading } = useSWR(apiUrl, fetcher);
+  const shouldFetchDashboard = !rangeValidationMessage;
+
+  const { data, error, isLoading } = useSWR<DashboardResponse>(
+    shouldFetchDashboard ? apiUrl : null,
+    fetcher
+  );
 
   const stockActual = data?.stockActual ?? data?.StockActual ?? [];
-
-  const productosCriticosRaw =
-    data?.stockCritico ??
-    data?.StockCritico ??
-    data?.productosStockCritico ??
-    data?.ProductosStockCritico ??
-    [];
-
-  const valorizacionRaw =
-    data?.valorizacion ??
-    data?.Valorizacion ??
-    data?.valorizacionInventario ??
-    data?.ValorizacionInventario ??
-    [];
-
+  const productosCriticosRaw = data?.stockCritico ?? data?.StockCritico ?? [];
+  const valorizacionRaw = data?.valorizacion ?? data?.Valorizacion ?? [];
   const kardex = data?.kardex ?? data?.Kardex ?? [];
-
   const movimientosPorTipoRaw =
-    data?.resumenMovimientos ??
-    data?.ResumenMovimientos ??
-    data?.movimientosPorTipo ??
-    data?.MovimientosPorTipo ??
-    [];
-
-  const rotacion =
-    data?.rotacion ??
-    data?.Rotacion ??
-    data?.rotacionInventario ??
-    data?.RotacionInventario ??
-    data?.rotacionInventarioPorProducto ??
-    data?.RotacionInventarioPorProducto ??
-    [];
-
+    data?.resumenMovimientos ?? data?.ResumenMovimientos ?? [];
+  const rotacion = data?.rotacion ?? data?.Rotacion ?? [];
   const productosSinMovimiento =
-    data?.productosSinMovimiento ??
-    data?.ProductosSinMovimiento ??
-    data?.productosSinMovimientoInventario ??
-    data?.ProductosSinMovimientoInventario ??
-    [];
-
-  const coberturaRaw =
-    data?.cobertura ??
-    data?.Cobertura ??
-    data?.coberturaInventario ??
-    data?.CoberturaInventario ??
-    [];
+    data?.productosSinMovimiento ?? data?.ProductosSinMovimiento ?? [];
+  const coberturaRaw = data?.cobertura ?? data?.Cobertura ?? [];
 
   const productosCriticosAgrupados = React.useMemo(() => {
     if (!Array.isArray(productosCriticosRaw)) return [];
@@ -361,6 +383,7 @@ export const InventarioDashboardFragment: React.FC = () => {
           v.valorCosto ??
           0
       );
+
       const valorVentaRow = Number(
         v.ValorVentaTotal ??
           v.valorVentaTotal ??
@@ -383,9 +406,8 @@ export const InventarioDashboardFragment: React.FC = () => {
       }
     });
 
-    return Array.from(map.values()).sort(
-      (a: any, b: any) =>
-        String(a.NombreBodega).localeCompare(String(b.NombreBodega))
+    return Array.from(map.values()).sort((a: any, b: any) =>
+      String(a.NombreBodega).localeCompare(String(b.NombreBodega))
     );
   }, [valorizacionRaw]);
 
@@ -406,7 +428,7 @@ export const InventarioDashboardFragment: React.FC = () => {
         m.CantidadTotal ?? m.cantidadTotal ?? m.Cantidad ?? m.cantidad ?? 0
       );
 
-      if (!isNaN(cantidad)) {
+      if (!Number.isNaN(cantidad)) {
         map.set(tipo, (map.get(tipo) ?? 0) + cantidad);
       }
     });
@@ -419,74 +441,42 @@ export const InventarioDashboardFragment: React.FC = () => {
   const coberturaAgrupada = React.useMemo(() => {
     if (!Array.isArray(coberturaRaw)) return [];
 
-    const map = new Map<
-      string,
-      {
-        ProductoID: number;
-        Nombre: string;
-        SKU: string;
-        stock: number;
-        ventaDiaria: number;
-      }
-    >();
-
-    coberturaRaw.forEach((c: any) => {
-      const prodId = c.ProductoID ?? c.productoID ?? c.id;
-      if (prodId == null) return;
-
-      const key = String(prodId);
-      const stock =
-        c.StockDisponible ??
-        c.stockDisponible ??
-        c.StockActual ??
-        c.stockActual ??
-        c.Stock ??
-        c.stock ??
-        0;
-
-      const ventaDia =
-        c.VentaDiariaPromedio ??
-        c.ventaDiariaPromedio ??
-        c.ConsumoPromedioDia ??
-        c.consumoPromedioDia ??
-        c.VentaDiaria ??
-        c.ventaDiaria ??
-        0;
-
-      const existing = map.get(key);
-      if (existing) {
-        existing.stock += Number(stock ?? 0);
-        existing.ventaDiaria += Number(ventaDia ?? 0);
-      } else {
-        map.set(key, {
-          ProductoID: prodId,
-          Nombre:
-            c.Nombre ??
-            c.nombre ??
-            c.NombreProducto ??
-            c.nombreProducto ??
-            "(Producto)",
-          SKU: c.Sku ?? c.SKU ?? c.sku ?? "",
-          stock: Number(stock ?? 0),
-          ventaDiaria: Number(ventaDia ?? 0),
-        });
-      }
-    });
-
-    const arr = Array.from(map.values()).map((row) => {
-      const diasCobertura =
-        row.ventaDiaria > 0 ? row.stock / row.ventaDiaria : 0;
-      return {
-        ...row,
-        diasCobertura,
-      };
-    });
-
-    return arr.sort((a, b) => a.diasCobertura - b.diasCobertura);
+    return coberturaRaw
+      .map((c: any) => ({
+        ProductoID: c.ProductoID ?? c.productoID ?? c.id,
+        Nombre:
+          c.Nombre ??
+          c.nombre ??
+          c.NombreProducto ??
+          c.nombreProducto ??
+          "(Producto)",
+        SKU: c.Sku ?? c.SKU ?? c.sku ?? "",
+        stock: Number(
+          c.StockDisponible ??
+            c.stockDisponible ??
+            c.StockActual ??
+            c.stockActual ??
+            c.Stock ??
+            c.stock ??
+            0
+        ),
+        ventaDiaria: Number(
+          c.VentaDiariaPromedio ??
+            c.ventaDiariaPromedio ??
+            c.ConsumoPromedioDia ??
+            c.consumoPromedioDia ??
+            c.VentaDiaria ??
+            c.ventaDiaria ??
+            0
+        ),
+        diasCobertura: Number(c.DiasCobertura ?? c.diasCobertura ?? 0),
+      }))
+      .sort((a: any, b: any) => a.diasCobertura - b.diasCobertura);
   }, [coberturaRaw]);
 
   const stockActualFiltrado = React.useMemo(() => {
     if (!Array.isArray(stockActual)) return [];
+
     return stockActual.filter((r: any) => {
       const prodId = String(
         r.ProductoID ?? r.productoID ?? r.Id ?? r.id ?? ""
@@ -498,15 +488,21 @@ export const InventarioDashboardFragment: React.FC = () => {
       if (stockProductoId !== "all" && prodId !== stockProductoId) {
         return false;
       }
+
       if (stockBodegaId !== "all" && bodId !== stockBodegaId) {
         return false;
       }
+
       return true;
     });
   }, [stockActual, stockProductoId, stockBodegaId]);
 
   const kardexFiltrado = React.useMemo(() => {
     if (!Array.isArray(kardex)) return [];
+
+    if (kardexDesde && kardexHasta && kardexDesde > kardexHasta) {
+      return [];
+    }
 
     const desde = kardexDesde || null;
     const hasta = kardexHasta || null;
@@ -518,6 +514,7 @@ export const InventarioDashboardFragment: React.FC = () => {
       if (kardexProductoId !== "all" && prodId !== kardexProductoId) {
         return false;
       }
+
       if (kardexBodegaId !== "all" && bodId !== kardexBodegaId) {
         return false;
       }
@@ -529,6 +526,7 @@ export const InventarioDashboardFragment: React.FC = () => {
       if (kardexTipo === "Entrada" && !t.startsWith("ent")) {
         return false;
       }
+
       if (kardexTipo === "Salida" && !t.startsWith("sal")) {
         return false;
       }
@@ -547,7 +545,7 @@ export const InventarioDashboardFragment: React.FC = () => {
         const date = new Date(rawFecha);
         if (Number.isNaN(date.getTime())) return false;
 
-        const ymd = date.toISOString().slice(0, 10);
+        const ymd = formatDateLocal(date);
 
         if (desde && ymd < desde) return false;
         if (hasta && ymd > hasta) return false;
@@ -564,36 +562,33 @@ export const InventarioDashboardFragment: React.FC = () => {
         m.fecha ??
         m.FechaMov ??
         m.fechaMov;
+
       const d = new Date(rawFecha);
       return Number.isNaN(d.getTime()) ? 0 : d.getTime();
     };
 
-    const getNombreProd = (m: any) =>
-      String(
-        m.NombreProducto ??
-          m.nombreProducto ??
-          m.Nombre ??
-          m.nombre ??
-          ""
-      );
-
-    const getTipo = (m: any) =>
-      String(
-        m.TipoMovimiento ?? m.tipoMovimiento ?? m.Tipo ?? m.tipo ?? ""
-      );
-
     filtrados.sort((a: any, b: any) => {
       const fa = getFechaTs(a);
       const fb = getFechaTs(b);
-      if (fa !== fb) return fb - fa; 
+      if (fa !== fb) return fb - fa;
 
-      const pa = getNombreProd(a);
-      const pb = getNombreProd(b);
+      const pa = String(
+        a.NombreProducto ?? a.nombreProducto ?? a.Nombre ?? a.nombre ?? ""
+      );
+      const pb = String(
+        b.NombreProducto ?? b.nombreProducto ?? b.Nombre ?? b.nombre ?? ""
+      );
+
       const cmpProd = pa.localeCompare(pb);
       if (cmpProd !== 0) return cmpProd;
 
-      const ta = getTipo(a);
-      const tb = getTipo(b);
+      const ta = String(
+        a.TipoMovimiento ?? a.tipoMovimiento ?? a.Tipo ?? a.tipo ?? ""
+      );
+      const tb = String(
+        b.TipoMovimiento ?? b.tipoMovimiento ?? b.Tipo ?? b.tipo ?? ""
+      );
+
       return ta.localeCompare(tb);
     });
 
@@ -607,139 +602,297 @@ export const InventarioDashboardFragment: React.FC = () => {
     kardexHasta,
   ]);
 
-  const totalValorCosto = valorizacionRaw.reduce(
-    (acc: number, x: any) =>
-      acc +
-      Number(
-        x.valorCostoTotal ??
-          x.ValorCostoTotal ??
-          x.valorCosto ??
-          x.ValorCosto ??
-          0
+  const totalValorCosto = React.useMemo(
+    () =>
+      valorizacionPorBodega.reduce(
+        (acc: number, x: any) => acc + Number(x.valorCosto ?? 0),
+        0
       ),
-    0
+    [valorizacionPorBodega]
   );
-  const totalValorVenta = valorizacionRaw.reduce(
-    (acc: number, x: any) =>
-      acc +
-      Number(
-        x.valorVentaTotal ??
-          x.ValorVentaTotal ??
-          x.valorVenta ??
-          x.ValorVenta ??
-          0
+
+  const totalValorVenta = React.useMemo(
+    () =>
+      valorizacionPorBodega.reduce(
+        (acc: number, x: any) => acc + Number(x.valorVenta ?? 0),
+        0
       ),
-    0
+    [valorizacionPorBodega]
   );
+
+  const totalProductosDistintos = React.useMemo(() => {
+    const ids = new Set(
+      stockActual
+        .map((x: any) => x.ProductoID ?? x.productoID)
+        .filter((x: any) => x != null)
+    );
+    return ids.size;
+  }, [stockActual]);
+
+  const handleApplyCustomRange = () => {
+    if (customDesde && customHasta && customDesde > customHasta) {
+      setRangeValidationMessage(
+        "La fecha desde no puede ser mayor que la fecha hasta."
+      );
+      return;
+    }
+
+    setRangeValidationMessage("");
+    setAppliedCustom({
+      desde: customDesde || undefined,
+      hasta: customHasta || undefined,
+    });
+    setRange("custom");
+  };
+
+  React.useEffect(() => {
+    if (kardexDesde && kardexHasta && kardexDesde > kardexHasta) {
+      setKardexValidationMessage(
+        "En Kardex, la fecha desde no puede ser mayor que la fecha hasta."
+      );
+      return;
+    }
+
+    setKardexValidationMessage("");
+  }, [kardexDesde, kardexHasta]);
+
+  if (rangeValidationMessage) {
+    return (
+      <div className="rounded-2xl border border-amber-500/40 bg-amber-500/5 p-4 text-sm text-amber-200 shadow-[0_16px_40px_rgba(0,0,0,0.25)]">
+        {rangeValidationMessage}
+      </div>
+    );
+  }
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-red-500/40 bg-red-500/5 p-4 text-sm text-red-200">
-        Ocurrió un error al cargar el reporte de inventario.
+      <div className="rounded-2xl border border-red-500/40 bg-red-500/5 p-4 text-sm text-red-200 shadow-[0_16px_40px_rgba(0,0,0,0.25)]">
+        Ocurrió un error al cargar el reporte de inventario: {error.message}
       </div>
     );
   }
 
   if (isLoading || !data) {
     return (
-      <div className="rounded-2xl border border-white/10 bg-[#05070A] p-8 text-sm text-slate-300">
+      <div className="rounded-3xl border border-white/10 bg-[#05070A] p-8 text-sm text-slate-300 shadow-[0_22px_60px_rgba(0,0,0,0.32)]">
         Cargando panel de inventario…
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="space-y-1">
-          <h1 className="text-xl font-semibold tracking-wide text-slate-50">
-            Panel de inventario
-          </h1>
-          {(data.fechaDesde ?? data.FechaDesde) &&
-            (data.fechaHasta ?? data.FechaHasta) && (
-              <p className="text-xs text-slate-400">
-                Rango:{" "}
-                {formatShortDate(data.fechaDesde ?? data.FechaDesde)} –{" "}
-                {formatShortDate(data.fechaHasta ?? data.FechaHasta)}
-              </p>
-            )}
-        </div>
+    <div className="space-y-7">
+      <div className={`${panelClass} p-5 md:p-6`}>
+        <div className="flex flex-wrap items-start justify-between gap-5">
+          <div className="space-y-2">
+            <div className="inline-flex items-center rounded-full border border-[#f472b6]/25 bg-[#b1005f]/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.18em] text-[#f9a8d4]">
+              Reportes · Inventario
+            </div>
 
-        <div className="flex flex-col items-end gap-3 md:flex-row md:items-center">
-          <div className="flex flex-wrap justify-end gap-1">
-            <button
-              type="button"
-              className={pillClass(range === "30d")}
-              onClick={() => setRange("30d")}
-            >
-              Últimos 30 días
-            </button>
-            <button
-              type="button"
-              className={pillClass(range === "90d")}
-              onClick={() => setRange("90d")}
-            >
-              Últimos 90 días
-            </button>
-            <button
-              type="button"
-              className={pillClass(range === "year")}
-              onClick={() => setRange("year")}
-            >
-              Este año
-            </button>
-            <button
-              type="button"
-              className={pillClass(range === "all")}
-              onClick={() => setRange("all")}
-            >
-              Todo
-            </button>
+            <div>
+              <h1 className="text-2xl font-semibold tracking-wide text-slate-50">
+                Panel de inventario
+              </h1>
+              <p className="mt-1 text-sm text-slate-400">
+                Vista general del stock, valorización, movimientos, rotación y
+                cobertura del inventario.
+              </p>
+            </div>
+
+            {(data.fechaDesde ?? data.FechaDesde) &&
+              (data.fechaHasta ?? data.FechaHasta) && (
+                <div className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-300">
+                  Rango:{" "}
+                  <span className="ml-1 font-medium text-slate-100">
+                    {formatShortDate(data.fechaDesde ?? data.FechaDesde ?? "")}
+                  </span>
+                  <span className="mx-1 text-slate-500">—</span>
+                  <span className="font-medium text-slate-100">
+                    {formatShortDate(data.fechaHasta ?? data.FechaHasta ?? "")}
+                  </span>
+                </div>
+              )}
           </div>
 
-          <div className="flex flex-col gap-2 text-[11px] text-slate-300 md:flex-row md:items-center md:gap-3">
-            <div className="flex items-center gap-2">
-              <span className="hidden md:inline">Rango específico:</span>
-              <input
-                type="date"
-                className="rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs text-slate-100"
-                value={customDesde}
-                onChange={(e) => setCustomDesde(e.target.value)}
-              />
-              <span>–</span>
-              <input
-                type="date"
-                className="rounded-lg border border-white/10 bg-black/30 px-2 py-1 text-xs text-slate-100"
-                value={customHasta}
-                onChange={(e) => setCustomHasta(e.target.value)}
-              />
+          <div className="flex flex-col gap-4 md:items-end">
+            <div className="flex flex-wrap justify-end gap-2">
               <button
                 type="button"
-                className="rounded-full bg-[#b1005f] px-3 py-1 text-xs font-medium text-white hover:bg-[#9b004f]"
+                className={pillClass(range === "30d")}
                 onClick={() => {
-                  setAppliedCustom({
-                    desde: customDesde || undefined,
-                    hasta: customHasta || undefined,
-                  });
-                  setRange("custom");
+                  setRangeValidationMessage("");
+                  setRange("30d");
                 }}
               >
-                Aplicar
+                Últimos 30 días
+              </button>
+              <button
+                type="button"
+                className={pillClass(range === "90d")}
+                onClick={() => {
+                  setRangeValidationMessage("");
+                  setRange("90d");
+                }}
+              >
+                Últimos 90 días
+              </button>
+              <button
+                type="button"
+                className={pillClass(range === "year")}
+                onClick={() => {
+                  setRangeValidationMessage("");
+                  setRange("year");
+                }}
+              >
+                Este año
+              </button>
+              <button
+                type="button"
+                className={pillClass(range === "all")}
+                onClick={() => {
+                  setRangeValidationMessage("");
+                  setRange("all");
+                }}
+              >
+                Todo
               </button>
             </div>
 
-            <div className="flex items-center gap-2">
-              <span>Producto:</span>
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <label className="mb-2 block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  Rango específico
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-slate-100 outline-none transition focus:border-[#f472b6]/50"
+                    value={customDesde}
+                    onChange={(e) => setCustomDesde(e.target.value)}
+                  />
+                  <span className="text-slate-500">–</span>
+                  <input
+                    type="date"
+                    className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-slate-100 outline-none transition focus:border-[#f472b6]/50"
+                    value={customHasta}
+                    onChange={(e) => setCustomHasta(e.target.value)}
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="mt-3 w-full rounded-xl bg-[#b1005f] px-3 py-2 text-xs font-semibold text-white shadow-[0_10px_28px_rgba(177,0,95,0.28)] transition hover:bg-[#990052]"
+                  onClick={handleApplyCustomRange}
+                >
+                  Aplicar rango
+                </button>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <label className="mb-2 block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  Producto
+                </label>
+                <select
+                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-slate-100 outline-none transition focus:border-[#f472b6]/50"
+                  value={selectedProductoId}
+                  onChange={(e) => setSelectedProductoId(e.target.value)}
+                >
+                  <option value="all">Todos</option>
+                  {productosList.map((p, idx) => {
+                    const id = p.ProductoID ?? p.productoID ?? p.id ?? idx;
+                    return (
+                      <option key={`prod-${id}-${idx}`} value={id}>
+                        {(p.Nombre ?? p.nombre ?? "(Producto)") +
+                          (p.SKU || p.Sku || p.sku
+                            ? ` · ${p.SKU ?? p.Sku ?? p.sku}`
+                            : "")}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                <label className="mb-2 block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  Bodega
+                </label>
+                <select
+                  className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-slate-100 outline-none transition focus:border-[#f472b6]/50"
+                  value={selectedBodegaId}
+                  onChange={(e) => setSelectedBodegaId(e.target.value)}
+                >
+                  <option value="all">Todas</option>
+                  {bodegasList.map((b, idx) => {
+                    const id = b.BodegaID ?? b.bodegaID ?? b.Id ?? b.id ?? idx;
+                    return (
+                      <option key={`bod-${id}-${idx}`} value={id}>
+                        {b.Nombre ?? b.nombre ?? "Bodega"}
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section className="grid gap-4 md:grid-cols-3">
+        <div className={`${panelClass} p-5`}>
+          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+            Productos distintos en stock
+          </p>
+          <p className="mt-3 text-3xl font-semibold text-slate-50">
+            {formatNumber(totalProductosDistintos)}
+          </p>
+          <div className="mt-4 h-px w-full bg-white/10" />
+          <p className="mt-3 text-xs text-slate-500">
+            Conteo de productos con existencia registrada.
+          </p>
+        </div>
+
+        <div className={`${panelClass} p-5`}>
+          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+            Valor de inventario (costo)
+          </p>
+          <p className="mt-3 text-3xl font-semibold" style={{ color: ACCENT_SOFT }}>
+            {formatCurrency(totalValorCosto)}
+          </p>
+          <div className="mt-4 h-px w-full bg-white/10" />
+          <p className="mt-3 text-xs text-slate-500">
+            Suma valorizada al costo de compra.
+          </p>
+        </div>
+
+        <div className={`${panelClass} p-5`}>
+          <p className="text-xs uppercase tracking-[0.18em] text-slate-400">
+            Valor de inventario (precio venta)
+          </p>
+          <p className="mt-3 text-3xl font-semibold text-emerald-400">
+            {formatCurrency(totalValorVenta)}
+          </p>
+          <div className="mt-4 h-px w-full bg-white/10" />
+          <p className="mt-3 text-xs text-slate-500">
+            Proyección basada en precio de venta actual.
+          </p>
+        </div>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-2">
+        <div className={`${panelClass} p-5`}>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className={sectionTitleClass}>Stock actual por producto y bodega</h2>
+
+            <div className="flex flex-wrap gap-2">
               <select
-                className="max-w-[220px] rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-xs text-slate-100"
-                value={selectedProductoId}
-                onChange={(e) => setSelectedProductoId(e.target.value)}
+                className="rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-slate-100 outline-none transition focus:border-[#f472b6]/50"
+                value={stockProductoId}
+                onChange={(e) => setStockProductoId(e.target.value)}
               >
-                <option value="all">Todos</option>
-                {productosList.map((p: any, idx: number) => {
+                <option value="all">Todos los productos</option>
+                {productosList.map((p, idx) => {
                   const id = p.ProductoID ?? p.productoID ?? p.id ?? idx;
                   return (
-                    <option key={`prod-${id}-${idx}`} value={id}>
+                    <option key={`stock-prod-${id}-${idx}`} value={id}>
                       {(p.Nombre ?? p.nombre ?? "(Producto)") +
                         (p.SKU || p.Sku || p.sku
                           ? ` · ${p.SKU ?? p.Sku ?? p.sku}`
@@ -748,20 +901,17 @@ export const InventarioDashboardFragment: React.FC = () => {
                   );
                 })}
               </select>
-            </div>
 
-            <div className="flex items-center gap-2">
-              <span>Bodega:</span>
               <select
-                className="max-w-[220px] rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-xs text-slate-100"
-                value={selectedBodegaId}
-                onChange={(e) => setSelectedBodegaId(e.target.value)}
+                className="rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-slate-100 outline-none transition focus:border-[#f472b6]/50"
+                value={stockBodegaId}
+                onChange={(e) => setStockBodegaId(e.target.value)}
               >
-                <option value="all">Todas</option>
-                {bodegasList.map((b: any, idx: number) => {
+                <option value="all">Todas las bodegas</option>
+                {bodegasList.map((b, idx) => {
                   const id = b.BodegaID ?? b.bodegaID ?? b.Id ?? b.id ?? idx;
                   return (
-                    <option key={`bod-${id}-${idx}`} value={id}>
+                    <option key={`stock-bod-${id}-${idx}`} value={id}>
                       {b.Nombre ?? b.nombre ?? "Bodega"}
                     </option>
                   );
@@ -769,127 +919,31 @@ export const InventarioDashboardFragment: React.FC = () => {
               </select>
             </div>
           </div>
-        </div>
-      </div>
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#111827] to-[#020617] p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-400">
-            Productos distintos en stock
-          </p>
-          <p className="mt-2 text-2xl font-semibold text-slate-50">
-            {formatNumber(
-              new Set(
-                stockActual.map(
-                  (x: any) => x.ProductoID ?? x.productoID
-                )
-              ).size
-            )}
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#111827] to-[#020617] p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-400">
-            Valor de inventario (costo)
-          </p>
-          <p
-            className="mt-2 text-2xl font-semibold"
-            style={{ color: ACCENT_SOFT }}
-          >
-            {formatCurrency(totalValorCosto)}
-          </p>
-        </div>
-
-        <div className="rounded-2xl border border-white/10 bg-gradient-to-br from-[#111827] to-[#020617] p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-400">
-            Valor de inventario (precio venta)
-          </p>
-          <p className="mt-2 text-2xl font-semibold text-emerald-400">
-            {formatCurrency(totalValorVenta)}
-          </p>
-        </div>
-      </section>
-
-      <section className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-[#050816] p-4">
-          <h2 className="mb-2 text-sm font-semibold text-slate-100">
-            Stock actual por producto y bodega
-          </h2>
-
-          <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-300">
-            <span className="mr-1">Filtros de la tabla:</span>
-            <select
-              className="max-w-[220px] rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-xs text-slate-100"
-              value={stockProductoId}
-              onChange={(e) => setStockProductoId(e.target.value)}
-            >
-              <option value="all">Todos los productos</option>
-              {productosList.map((p: any, idx: number) => {
-                const id = p.ProductoID ?? p.productoID ?? p.id ?? idx;
-                return (
-                  <option key={`stock-prod-${id}-${idx}`} value={id}>
-                    {(p.Nombre ?? p.nombre ?? "(Producto)") +
-                      (p.SKU || p.Sku || p.sku
-                        ? ` · ${p.SKU ?? p.Sku ?? p.sku}`
-                        : "")}
-                  </option>
-                );
-              })}
-            </select>
-
-            <select
-              className="max-w-[220px] rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-xs text-slate-100"
-              value={stockBodegaId}
-              onChange={(e) => setStockBodegaId(e.target.value)}
-            >
-              <option value="all">Todas las bodegas</option>
-              {bodegasList.map((b: any, idx: number) => {
-                const id = b.BodegaID ?? b.bodegaID ?? b.Id ?? b.id ?? idx;
-                return (
-                  <option key={`stock-bod-${id}-${idx}`} value={id}>
-                    {b.Nombre ?? b.nombre ?? "Bodega"}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
-
-          <div className="max-h-80 overflow-auto text-xs">
+          <div className="max-h-80 overflow-auto rounded-2xl border border-white/10 bg-black/10">
             {stockActualFiltrado.length === 0 ? (
-              <p className="text-slate-400">
+              <p className="p-4 text-sm text-slate-400">
                 No hay registros de inventario para los filtros seleccionados.
               </p>
             ) : (
               <table className="min-w-full border-collapse text-xs">
-                <thead className="sticky top-0 bg-[#020617]">
-                  <tr className="text-[11px] text-slate-400">
-                    <th className="px-2 py-1 text-left font-normal">
-                      Producto
-                    </th>
-                    <th className="px-2 py-1 text-left font-normal">SKU</th>
-                    <th className="px-2 py-1 text-left font-normal">
-                      Bodega
-                    </th>
-                    <th className="px-2 py-1 text-right font-normal">
-                      Existencia
-                    </th>
-                    <th className="px-2 py-1 text-right font-normal">
-                      Disponible
-                    </th>
-                    <th className="px-2 py-1 text-right font-normal">
-                      Valor costo
-                    </th>
+                <thead className={tableHeadClass}>
+                  <tr>
+                    <th className="px-3 py-3 text-left font-medium">Producto</th>
+                    <th className="px-3 py-3 text-left font-medium">SKU</th>
+                    <th className="px-3 py-3 text-left font-medium">Bodega</th>
+                    <th className="px-3 py-3 text-right font-medium">Existencia</th>
+                    <th className="px-3 py-3 text-right font-medium">Disponible</th>
+                    <th className="px-3 py-3 text-right font-medium">Valor costo</th>
                   </tr>
                 </thead>
                 <tbody>
                   {stockActualFiltrado.map((r: any, idx: number) => (
                     <tr
-                      key={`stock-${r.ProductoID ?? r.productoID}-${
-                        r.BodegaID ?? r.bodegaID
-                      }-${idx}`}
-                      className="border-t border-white/5"
+                      key={`stock-${r.ProductoID ?? r.productoID}-${r.BodegaID ?? r.bodegaID}-${idx}`}
+                      className="border-t border-white/5 transition hover:bg-white/[0.03]"
                     >
-                      <td className="px-2 py-1">
+                      <td className="px-3 py-3">
                         <span className="font-medium text-slate-100">
                           {r.NombreProducto ??
                             r.nombreProducto ??
@@ -898,17 +952,17 @@ export const InventarioDashboardFragment: React.FC = () => {
                             "(Producto)"}
                         </span>
                       </td>
-                      <td className="px-2 py-1 text-slate-300">
+                      <td className="px-3 py-3 text-slate-300">
                         {r.Sku ?? r.SKU ?? r.sku ?? "—"}
                       </td>
-                      <td className="px-2 py-1 text-slate-300">
+                      <td className="px-3 py-3 text-slate-300">
                         {r.NombreBodega ??
                           r.nombreBodega ??
                           r.Bodega ??
                           r.bodega ??
                           "—"}
                       </td>
-                      <td className="px-2 py-1 text-right text-slate-100">
+                      <td className="px-3 py-3 text-right text-slate-100">
                         {formatNumber(
                           r.Cantidad ??
                             r.cantidad ??
@@ -921,13 +975,13 @@ export const InventarioDashboardFragment: React.FC = () => {
                             0
                         )}
                       </td>
-                      <td className="px-2 py-1 text-right text-slate-100">
+                      <td className="px-3 py-3 text-right text-slate-100">
                         {formatNumber(
                           r.Disponible ??
                             r.disponible ??
                             r.StockDisponible ??
                             r.stockDisponible ??
-                            (r.Cantidad ??
+                            ((r.Cantidad ??
                               r.cantidad ??
                               r.Existencia ??
                               r.existencia ??
@@ -940,10 +994,10 @@ export const InventarioDashboardFragment: React.FC = () => {
                                 r.cantidadReservada ??
                                 r.Reservada ??
                                 r.reservada ??
-                                0)
+                                0))
                         )}
                       </td>
-                      <td className="px-2 py-1 text-right text-slate-100">
+                      <td className="px-3 py-3 text-right font-medium text-slate-100">
                         {formatCurrency(
                           r.ValorCosto ??
                             r.valorCosto ??
@@ -967,13 +1021,13 @@ export const InventarioDashboardFragment: React.FC = () => {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-[#050816] p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-100">
+        <div className={`${panelClass} p-5`}>
+          <h2 className={`mb-4 ${sectionTitleClass}`}>
             Productos sin stock / stock crítico
           </h2>
-          <div className="max-h-80 space-y-2 overflow-auto text-xs">
+          <div className="max-h-80 space-y-3 overflow-auto pr-1">
             {productosCriticosAgrupados.length === 0 ? (
-              <p className="text-slate-400">
+              <p className="text-sm text-slate-400">
                 No se detectaron productos sin stock o en nivel crítico.
               </p>
             ) : (
@@ -990,18 +1044,18 @@ export const InventarioDashboardFragment: React.FC = () => {
                 return (
                   <div
                     key={`${p.ProductoID}-${idx}`}
-                    className="flex items-center justify-between rounded-xl bg-red-500/5 px-3 py-2"
+                    className="flex items-center justify-between rounded-2xl border border-red-500/10 bg-red-500/[0.05] px-4 py-3 shadow-[0_8px_24px_rgba(0,0,0,0.16)]"
                   >
                     <div>
-                      <p className="text-xs font-medium text-slate-100">
+                      <p className="text-sm font-medium text-slate-100">
                         {p.Nombre ?? "(Producto)"}{" "}
                         {p.SKU && (
-                          <span className="text-[10px] text-slate-400">
+                          <span className="text-[11px] text-slate-400">
                             · {p.SKU}
                           </span>
                         )}
                       </p>
-                      <p className="text-[11px] text-slate-300">
+                      <p className="mt-1 text-[11px] text-slate-300">
                         Disponible:{" "}
                         <span className="font-semibold">
                           {formatNumber(disponible)}
@@ -1016,7 +1070,7 @@ export const InventarioDashboardFragment: React.FC = () => {
                         )}
                       </p>
                     </div>
-                    <span className="rounded-full bg-red-500/20 px-2 py-1 text-[10px] font-semibold text-red-200">
+                    <span className="rounded-full border border-red-400/20 bg-red-500/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-red-200">
                       {tipo}
                     </span>
                   </div>
@@ -1028,63 +1082,52 @@ export const InventarioDashboardFragment: React.FC = () => {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-[#050816] p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-100">
+        <div className={`${panelClass} p-5`}>
+          <h2 className={`mb-4 ${sectionTitleClass}`}>
             Valorización de inventario (por bodega)
           </h2>
-          <div className="max-h-72 space-y-2 overflow-auto text-xs">
+          <div className="max-h-72 space-y-3 overflow-auto pr-1">
             {valorizacionPorBodega.length === 0 ? (
-              <p className="text-slate-400">
+              <p className="text-sm text-slate-400">
                 No hay datos de valorización para el rango seleccionado.
               </p>
             ) : (
-              <>
-                {valorizacionPorBodega.map((v: any, idx: number) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2"
-                  >
-                    <div>
-                      <p className="text-xs font-medium text-slate-100">
-                        {v.NombreBodega ?? "Total"}
-                      </p>
-                      <p className="text-[11px] text-slate-400">
-                        Costo:{" "}
-                        <span className="font-semibold text-slate-100">
-                          {formatCurrency(v.valorCosto ?? 0)}
-                        </span>{" "}
-                        · Venta:{" "}
-                        <span className="font-semibold text-emerald-300">
-                          {formatCurrency(v.valorVenta ?? 0)}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </>
+              valorizacionPorBodega.map((v: any, idx: number) => (
+                <div
+                  key={idx}
+                  className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 transition hover:bg-white/[0.06]"
+                >
+                  <p className="text-sm font-medium text-slate-100">
+                    {v.NombreBodega ?? "Total"}
+                  </p>
+                  <p className="mt-1 text-[11px] text-slate-400">
+                    Costo:{" "}
+                    <span className="font-semibold text-slate-100">
+                      {formatCurrency(v.valorCosto ?? 0)}
+                    </span>{" "}
+                    · Venta:{" "}
+                    <span className="font-semibold text-emerald-300">
+                      {formatCurrency(v.valorVenta ?? 0)}
+                    </span>
+                  </p>
+                </div>
+              ))
             )}
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-[#050816] p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-100">
+        <div className={`${panelClass} p-5`}>
+          <h2 className={`mb-4 ${sectionTitleClass}`}>
             Resumen de movimientos por tipo
           </h2>
-          <div className="h-64">
+          <div className="h-64 rounded-2xl border border-white/10 bg-black/10 p-3">
             {resumenMovimientosChart.length === 0 ? (
               <p className="text-xs text-slate-400">
                 No hay movimientos de inventario en el periodo.
               </p>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={resumenMovimientosChart.map((m: any) => ({
-                    tipo: m.tipo ?? "Otro",
-                    cantidad: Number(
-                      m.cantidad ?? m.Cantidad ?? m.cantidadTotal ?? 0
-                    ),
-                  }))}
-                >
+                <AreaChart data={resumenMovimientosChart}>
                   <CartesianGrid
                     strokeDasharray="3 3"
                     stroke="#4B5563"
@@ -1104,11 +1147,14 @@ export const InventarioDashboardFragment: React.FC = () => {
                   />
                   <Tooltip
                     cursor={{ fill: "rgba(15,23,42,0.6)" }}
-                    content={({ active, payload }) => {
+                    content={({ active, payload }: any) => {
                       if (!active || !payload || !payload.length) return null;
-                      const item = payload[0].payload as any;
+
+                      const item = payload[0]?.payload as any;
+                      if (!item) return null;
+
                       return (
-                        <div className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-700 shadow-xl">
+                        <div className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-700 shadow-2xl">
                           <div className="font-semibold">
                             {item.tipo ?? "Movimiento"}
                           </div>
@@ -1137,115 +1183,132 @@ export const InventarioDashboardFragment: React.FC = () => {
       </section>
 
       <section className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-[#050816] p-4">
-          <h2 className="mb-2 text-sm font-semibold text-slate-100">
-            Kardex / historial de movimientos
-          </h2>
+        <div className={`${panelClass} p-5`}>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h2 className={sectionTitleClass}>Kardex / historial de movimientos</h2>
 
-          <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-300">
-            <span className="mr-1">Filtros del historial:</span>
-
-            <select
-              className="max-w-[220px] rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-xs text-slate-100"
-              value={kardexProductoId}
-              onChange={(e) => setKardexProductoId(e.target.value)}
-            >
-              <option value="all">Todos los productos</option>
-              {productosList.map((p: any, idx: number) => {
-                const id = p.ProductoID ?? p.productoID ?? p.id ?? idx;
-                return (
-                  <option key={`kdx-prod-${id}-${idx}`} value={id}>
-                    {(p.Nombre ?? p.nombre ?? "(Producto)") +
-                      (p.SKU || p.Sku || p.sku
-                        ? ` · ${p.SKU ?? p.Sku ?? p.sku}`
-                        : "")}
-                  </option>
-                );
-              })}
-            </select>
-
-            <select
-              className="max-w-[220px] rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-xs text-slate-100"
-              value={kardexBodegaId}
-              onChange={(e) => setKardexBodegaId(e.target.value)}
-            >
-              <option value="all">Todas las bodegas</option>
-              {bodegasList.map((b: any, idx: number) => {
-                const id = b.BodegaID ?? b.bodegaID ?? b.Id ?? b.id ?? idx;
-                return (
-                  <option key={`kdx-bod-${id}-${idx}`} value={id}>
-                    {b.Nombre ?? b.nombre ?? "Bodega"}
-                  </option>
-                );
-              })}
-            </select>
-
-            <select
-              className="rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-xs text-slate-100"
-              value={kardexTipo}
-              onChange={(e) =>
-                setKardexTipo(e.target.value as "all" | "Entrada" | "Salida")
-              }
-            >
-              <option value="all">Todos los tipos</option>
-              <option value="Entrada">Entradas</option>
-              <option value="Salida">Salidas</option>
-            </select>
-          </div>
-
-          <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-300">
-            <span>Fecha:</span>
-            <input
-              type="date"
-              className="rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-xs text-slate-100"
-              value={kardexDesde}
-              onChange={(e) => setKardexDesde(e.target.value)}
-            />
-            <span>–</span>
-            <input
-              type="date"
-              className="rounded-lg border border-white/10 bg-black/40 px-2 py-1 text-xs text-slate-100"
-              value={kardexHasta}
-              onChange={(e) => setKardexHasta(e.target.value)}
-            />
-            {(kardexDesde || kardexHasta) && (
-              <button
-                type="button"
-                className="rounded-full border border-white/15 bg-transparent px-3 py-1 text-xs text-slate-200 hover:bg-white/5"
-                onClick={() => {
-                  setKardexDesde("");
-                  setKardexHasta("");
-                }}
+            <div className="flex flex-wrap gap-2">
+              <select
+                className="rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-slate-100 outline-none transition focus:border-[#f472b6]/50"
+                value={kardexProductoId}
+                onChange={(e) => setKardexProductoId(e.target.value)}
               >
-                Limpiar fecha
-              </button>
-            )}
+                <option value="all">Todos los productos</option>
+                {productosList.map((p, idx) => {
+                  const id = p.ProductoID ?? p.productoID ?? p.id ?? idx;
+                  return (
+                    <option key={`kdx-prod-${id}-${idx}`} value={id}>
+                      {(p.Nombre ?? p.nombre ?? "(Producto)") +
+                        (p.SKU || p.Sku || p.sku
+                          ? ` · ${p.SKU ?? p.Sku ?? p.sku}`
+                          : "")}
+                    </option>
+                  );
+                })}
+              </select>
+
+              <select
+                className="rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-slate-100 outline-none transition focus:border-[#f472b6]/50"
+                value={kardexBodegaId}
+                onChange={(e) => setKardexBodegaId(e.target.value)}
+              >
+                <option value="all">Todas las bodegas</option>
+                {bodegasList.map((b, idx) => {
+                  const id = b.BodegaID ?? b.bodegaID ?? b.Id ?? b.id ?? idx;
+                  return (
+                    <option key={`kdx-bod-${id}-${idx}`} value={id}>
+                      {b.Nombre ?? b.nombre ?? "Bodega"}
+                    </option>
+                  );
+                })}
+              </select>
+
+              <select
+                className="rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-slate-100 outline-none transition focus:border-[#f472b6]/50"
+                value={kardexTipo}
+                onChange={(e) =>
+                  setKardexTipo(e.target.value as "all" | "Entrada" | "Salida")
+                }
+              >
+                <option value="all">Todos los tipos</option>
+                <option value="Entrada">Entradas</option>
+                <option value="Salida">Salidas</option>
+              </select>
+            </div>
           </div>
 
-          <div className="max-h-80 overflow-auto text-xs">
+          <div className="mb-4 grid gap-3 md:grid-cols-[1fr_auto_1fr_auto] md:items-end">
+            <div>
+              <label className="mb-2 block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                Fecha desde
+              </label>
+              <input
+                type="date"
+                className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-slate-100 outline-none transition focus:border-[#f472b6]/50"
+                value={kardexDesde}
+                onChange={(e) => setKardexDesde(e.target.value)}
+              />
+            </div>
+
+            <div className="hidden text-center text-slate-500 md:block">—</div>
+
+            <div>
+              <label className="mb-2 block text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                Fecha hasta
+              </label>
+              <input
+                type="date"
+                className="w-full rounded-xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-slate-100 outline-none transition focus:border-[#f472b6]/50"
+                value={kardexHasta}
+                onChange={(e) => setKardexHasta(e.target.value)}
+              />
+            </div>
+
+            <div>
+              {(kardexDesde || kardexHasta) && (
+                <button
+                  type="button"
+                  className="w-full rounded-xl border border-white/15 bg-white/[0.03] px-3 py-2 text-xs font-medium text-slate-200 transition hover:bg-white/[0.06]"
+                  onClick={() => {
+                    setKardexDesde("");
+                    setKardexHasta("");
+                  }}
+                >
+                  Limpiar fecha
+                </button>
+              )}
+            </div>
+          </div>
+
+          {kardexValidationMessage && (
+            <div className="mb-4 rounded-2xl border border-amber-500/30 bg-amber-500/5 px-4 py-3 text-xs text-amber-200">
+              {kardexValidationMessage}
+            </div>
+          )}
+
+          <div className="max-h-80 overflow-auto rounded-2xl border border-white/10 bg-black/10">
             {kardexFiltrado.length === 0 ? (
-              <p className="text-slate-400">
+              <p className="p-4 text-sm text-slate-400">
                 No hay movimientos registrados para los filtros seleccionados.
               </p>
             ) : (
               <table className="min-w-full border-collapse text-xs">
-                <thead className="sticky top-0 bg-[#020617]">
-                  <tr className="text-[11px] text-slate-400">
-                    <th className="px-2 py-1 text-left font-normal">Fecha</th>
-                    <th className="px-2 py-1 text-left font-normal">
-                      Producto
-                    </th>
-                    <th className="px-2 py-1 text-left font-normal">Bodega</th>
-                    <th className="px-2 py-1 text-left font-normal">Tipo</th>
-                    <th className="px-2 py-1 text-right font-normal">
-                      Cantidad
-                    </th>
+                <thead className={tableHeadClass}>
+                  <tr>
+                    <th className="px-3 py-3 text-left font-medium">Fecha</th>
+                    <th className="px-3 py-3 text-left font-medium">Producto</th>
+                    <th className="px-3 py-3 text-left font-medium">Bodega</th>
+                    <th className="px-3 py-3 text-left font-medium">Tipo</th>
+                    <th className="px-3 py-3 text-right font-medium">Cantidad</th>
                   </tr>
                 </thead>
                 <tbody>
                   {kardexFiltrado.map((m: any, idx: number) => (
-                    <tr key={idx} className="border-t border-white/5">
-                      <td className="px-2 py-1 text-slate-300">
+                    <tr
+                      key={idx}
+                      className="border-t border-white/5 transition hover:bg-white/[0.03]"
+                    >
+                      <td className="px-3 py-3 text-slate-300">
                         {formatShortDate(
                           m.FechaMovimiento ??
                             m.fechaMovimiento ??
@@ -1255,7 +1318,7 @@ export const InventarioDashboardFragment: React.FC = () => {
                             m.fechaMov
                         )}
                       </td>
-                      <td className="px-2 py-1">
+                      <td className="px-3 py-3">
                         <span className="font-medium text-slate-100">
                           {m.NombreProducto ??
                             m.nombreProducto ??
@@ -1269,21 +1332,21 @@ export const InventarioDashboardFragment: React.FC = () => {
                           </span>
                         )}
                       </td>
-                      <td className="px-2 py-1 text-slate-300">
+                      <td className="px-3 py-3 text-slate-300">
                         {m.NombreBodega ??
                           m.nombreBodega ??
                           m.Bodega ??
                           m.bodega ??
                           "—"}
                       </td>
-                      <td className="px-2 py-1 text-slate-300">
+                      <td className="px-3 py-3 text-slate-300">
                         {m.TipoMovimiento ??
                           m.tipoMovimiento ??
                           m.Tipo ??
                           m.tipo ??
                           "—"}
                       </td>
-                      <td className="px-2 py-1 text-right text-slate-100">
+                      <td className="px-3 py-3 text-right font-medium text-slate-100">
                         {formatNumber(m.Cantidad ?? m.cantidad ?? 0)}
                       </td>
                     </tr>
@@ -1294,35 +1357,35 @@ export const InventarioDashboardFragment: React.FC = () => {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/10 bg-[#050816] p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-100">
+        <div className={`${panelClass} p-5`}>
+          <h2 className={`mb-4 ${sectionTitleClass}`}>
             Rotación de inventario por producto
           </h2>
-          <div className="max-h-80 space-y-2 overflow-auto text-xs">
+          <div className="max-h-80 space-y-3 overflow-auto pr-1">
             {rotacion.length === 0 ? (
-              <p className="text-slate-400">
+              <p className="text-sm text-slate-400">
                 No hay datos de rotación de inventario para el periodo.
               </p>
             ) : (
               rotacion.map((r: any, idx: number) => (
                 <div
                   key={`${r.ProductoID ?? r.productoID}-${idx}`}
-                  className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2"
+                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 transition hover:bg-white/[0.06]"
                 >
                   <div>
-                    <p className="text-xs font-medium text-slate-100">
+                    <p className="text-sm font-medium text-slate-100">
                       {r.Nombre ??
                         r.nombre ??
                         r.NombreProducto ??
                         r.nombreProducto ??
                         "(Producto)"}{" "}
                       {(r.Sku || r.SKU || r.sku) && (
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[11px] text-slate-400">
                           · {r.Sku ?? r.SKU ?? r.sku}
                         </span>
                       )}
                     </p>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="mt-1 text-[11px] text-slate-400">
                       Vendido:{" "}
                       <span className="font-semibold text-slate-100">
                         {formatNumber(
@@ -1346,9 +1409,11 @@ export const InventarioDashboardFragment: React.FC = () => {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-[11px] text-slate-400">Rotación</p>
+                    <p className="text-[11px] uppercase tracking-wide text-slate-500">
+                      Rotación
+                    </p>
                     <p
-                      className="text-xs font-semibold"
+                      className="mt-1 text-sm font-semibold"
                       style={{ color: ACCENT_SOFT }}
                     >
                       {Number(
@@ -1367,14 +1432,15 @@ export const InventarioDashboardFragment: React.FC = () => {
           </div>
         </div>
       </section>
+
       <section className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-[#050816] p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-100">
+        <div className={`${panelClass} p-5`}>
+          <h2 className={`mb-4 ${sectionTitleClass}`}>
             Productos sin movimiento (inventario)
           </h2>
-          <div className="max-h-80 space-y-2 overflow-auto text-xs">
+          <div className="max-h-80 space-y-3 overflow-auto pr-1">
             {productosSinMovimiento.length === 0 ? (
-              <p className="text-slate-400">
+              <p className="text-sm text-slate-400">
                 Todos los productos activos tienen algún movimiento en el
                 periodo.
               </p>
@@ -1382,88 +1448,88 @@ export const InventarioDashboardFragment: React.FC = () => {
               productosSinMovimiento.map((p: any, idx: number) => (
                 <div
                   key={`${p.ProductoID ?? p.productoID}-${idx}`}
-                  className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2"
+                  className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 transition hover:bg-white/[0.06]"
                 >
-                  <div>
-                    <p className="text-xs font-medium text-slate-100">
-                      {p.Nombre ??
-                        p.nombre ??
-                        p.NombreProducto ??
-                        p.nombreProducto ??
-                        "(Producto)"}{" "}
-                      {(p.Sku || p.SKU || p.sku) && (
-                        <span className="text-[10px] text-slate-400">
-                          · {p.Sku ?? p.SKU ?? p.sku}
-                        </span>
+                  <p className="text-sm font-medium text-slate-100">
+                    {p.Nombre ??
+                      p.nombre ??
+                      p.NombreProducto ??
+                      p.nombreProducto ??
+                      "(Producto)"}{" "}
+                    {(p.Sku || p.SKU || p.sku) && (
+                      <span className="text-[11px] text-slate-400">
+                        · {p.Sku ?? p.SKU ?? p.sku}
+                      </span>
+                    )}
+                  </p>
+                  {(p.CreatedAt ||
+                    p.createdAt ||
+                    p.FechaCreacion ||
+                    p.fechaCreacion) && (
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      Creado:{" "}
+                      {formatShortDate(
+                        p.CreatedAt ??
+                          p.createdAt ??
+                          p.FechaCreacion ??
+                          p.fechaCreacion
                       )}
                     </p>
-                    {(p.CreatedAt ||
-                      p.createdAt ||
-                      p.FechaCreacion ||
-                      p.fechaCreacion) && (
-                      <p className="text-[11px] text-slate-400">
-                        Creado:{" "}
-                        {formatShortDate(
-                          p.CreatedAt ??
-                            p.createdAt ??
-                            p.FechaCreacion ??
-                            p.fechaCreacion
-                        )}
-                      </p>
-                    )}
-                  </div>
+                  )}
                 </div>
               ))
             )}
           </div>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-[#050816] p-4">
-          <h2 className="mb-3 text-sm font-semibold text-slate-100">
+
+        <div className={`${panelClass} p-5`}>
+          <h2 className={`mb-4 ${sectionTitleClass}`}>
             Cobertura de inventario (días estimados)
           </h2>
-          <div className="max-h-80 overflow-auto text-xs">
+          <div className="max-h-80 overflow-auto rounded-2xl border border-white/10 bg-black/10">
             {coberturaAgrupada.length === 0 ? (
-              <p className="text-slate-400">
+              <p className="p-4 text-sm text-slate-400">
                 No hay información de ventas suficiente para calcular cobertura
                 de inventario.
               </p>
             ) : (
               <table className="min-w-full border-collapse text-xs">
-                <thead className="sticky top-0 bg-[#020617]">
-                  <tr className="text-[11px] text-slate-400">
-                    <th className="px-2 py-1 text-left font-normal">
-                      Producto
+                <thead className={tableHeadClass}>
+                  <tr>
+                    <th className="px-3 py-3 text-left font-medium">Producto</th>
+                    <th className="px-3 py-3 text-left font-medium">SKU</th>
+                    <th className="px-3 py-3 text-right font-medium">
+                      Stock disponible
                     </th>
-                    <th className="px-2 py-1 text-left font-normal">SKU</th>
-                    <th className="px-2 py-1 text-right font-normal">
-                      Stock disponible (todas bodegas)
+                    <th className="px-3 py-3 text-right font-medium">
+                      Venta diaria prom.
                     </th>
-                    <th className="px-2 py-1 text-right font-normal">
-                      Venta diaria prom. (total)
-                    </th>
-                    <th className="px-2 py-1 text-right font-normal">
+                    <th className="px-3 py-3 text-right font-medium">
                       Cobertura (días)
                     </th>
                   </tr>
                 </thead>
                 <tbody>
                   {coberturaAgrupada.map((c: any, idx: number) => (
-                    <tr key={idx} className="border-t border-white/5">
-                      <td className="px-2 py-1">
+                    <tr
+                      key={idx}
+                      className="border-t border-white/5 transition hover:bg-white/[0.03]"
+                    >
+                      <td className="px-3 py-3">
                         <span className="font-medium text-slate-100">
                           {c.Nombre ?? "(Producto)"}
                         </span>
                       </td>
-                      <td className="px-2 py-1 text-slate-300">
+                      <td className="px-3 py-3 text-slate-300">
                         {c.SKU ?? "—"}
                       </td>
-                      <td className="px-2 py-1 text-right text-slate-100">
+                      <td className="px-3 py-3 text-right text-slate-100">
                         {formatNumber(c.stock ?? 0)}
                       </td>
-                      <td className="px-2 py-1 text-right text-slate-100">
+                      <td className="px-3 py-3 text-right text-slate-100">
                         {formatNumber(c.ventaDiaria ?? 0)}
                       </td>
-                      <td className="px-2 py-1 text-right">
+                      <td className="px-3 py-3 text-right">
                         <span
                           className="font-semibold"
                           style={{ color: ACCENT_SOFT }}

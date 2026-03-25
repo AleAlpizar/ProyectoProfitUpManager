@@ -11,6 +11,8 @@ namespace ProfitManagerApp.Api.Dtos
         public int BodegaID { get; set; }
         public string NombreBodega { get; set; } = string.Empty;
         public decimal Cantidad { get; set; }
+        public decimal CantidadReservada { get; set; }
+        public decimal Disponible { get; set; }
         public decimal PrecioCosto { get; set; }
         public decimal ValorCosto { get; set; }
     }

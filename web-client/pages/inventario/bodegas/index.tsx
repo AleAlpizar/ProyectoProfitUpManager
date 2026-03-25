@@ -5,21 +5,14 @@ import { createPortal } from "react-dom";
 import { useBodegaDelete } from "@/hooks/useBodegaDelete";
 import { useBodegaActivate } from "@/hooks/useBodegaActivate";
 import { useApi } from "@/components/hooks/useApi";
+import type { BodegaDto } from "@/components/hooks/useBodegas";
 
 import SectionHeader from "@/components/SectionHeader";
 import BodegasCards from "@/components/bodegas/BodegasCards";
 import BodegaForm from "@/components/bodegas/BodegaForm";
 
 const WINE = "#A30862";
-
-export type BodegaDto = {
-  bodegaID: number;
-  codigo?: string | null;
-  nombre: string;
-  direccion?: string | null;
-  contacto?: string | null;
-  isActive: boolean | number;
-};
+const MAX_MOTIVO = 250;
 
 type ConfirmState =
   | { open: false }
@@ -29,6 +22,8 @@ type ConfirmState =
       id: number;
       nombre: string;
     };
+
+type EditingState = Partial<BodegaDto> | null;
 
 type ProductoMini = {
   productoID: number;
@@ -60,6 +55,21 @@ const tipoMovimientoOptions: { value: TipoMovimiento; label: string }[] = [
   { value: "ajuste", label: "Ajuste directo de existencia" },
 ];
 
+function getErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message?.trim()) return error.message.trim();
+  return fallback;
+}
+
+function normalizeBodega(row: BodegaDto): BodegaDto {
+  return {
+    ...row,
+    codigo: row.codigo ?? null,
+    direccion: row.direccion ?? null,
+    contacto: row.contacto ?? null,
+    isActive: typeof row.isActive === "number" ? row.isActive === 1 : !!row.isActive,
+  };
+}
+
 function ProductSelect({
   value,
   onChange,
@@ -79,20 +89,30 @@ function ProductSelect({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let active = true;
+
     (async () => {
       setLoading(true);
       setError(null);
+
       try {
         const rows = await call<ProductoMini[]>("/api/productos/mini?estado=activos", {
           method: "GET",
         });
+
+        if (!active) return;
         setItems((rows ?? []).filter((p) => p.isActive ?? true));
-      } catch {
-        setError("No se pudieron cargar los productos.");
+      } catch (e: unknown) {
+        if (!active) return;
+        setError(getErrorMessage(e, "No se pudieron cargar los productos."));
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     })();
+
+    return () => {
+      active = false;
+    };
   }, [call]);
 
   return (
@@ -123,7 +143,7 @@ function ProductSelect({
             "w-full appearance-none rounded-xl border px-3 py-2 text-sm outline-none transition",
             "border-white/10 bg-white/5 text-white",
             "focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40",
-            "disabled:opacity-60 disabled:cursor-not-allowed",
+            "disabled:cursor-not-allowed disabled:opacity-60",
           ].join(" ")}
         >
           <option value="">{loading ? "Cargando…" : "— Seleccionar —"}</option>
@@ -165,85 +185,10 @@ export default function BodegasPage() {
   const [estado, setEstado] = useState<EstadoFiltro>("activos");
   const [q, setQ] = useState("");
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const page = await call<{ items: BodegaDto[]; total: number }>(
-        `/api/bodegas?soloActivas=false&page=1&pageSize=1000`,
-        { method: "GET" }
-      );
-      const items = (page as any)?.items ?? page ?? [];
-      setRows(
-        items.map((b: any) => ({
-          ...b,
-          isActive: typeof b.isActive === "number" ? b.isActive === 1 : !!b.isActive,
-        }))
-      );
-    } catch {
-      setError("Error al cargar bodegas.");
-    } finally {
-      setLoading(false);
-    }
-  }, [call]);
-
-  useEffect(() => {
-    load().catch(() => {});
-  }, [load]);
-
-  const filtered = useMemo(() => {
-    const term = q.trim().toLowerCase();
-    return rows
-      .filter((b) => {
-        if (estado === "activos") return !!b.isActive;
-        if (estado === "inactivos") return !b.isActive;
-        return true;
-      })
-      .filter((b) => {
-        if (!term) return true;
-        return (
-          (b.codigo ?? "").toLowerCase().includes(term) ||
-          (b.nombre ?? "").toLowerCase().includes(term) ||
-          (b.direccion ?? "").toLowerCase().includes(term)
-        );
-      });
-  }, [rows, q, estado]);
-
   const [toast, setToast] = useState<{ kind: "ok" | "err" | "warn"; msg: string } | null>(null);
   const [confirm, setConfirm] = useState<ConfirmState>({ open: false });
-  const askInactivate = (b: BodegaDto) =>
-    setConfirm({ open: true, kind: "inactivate", id: b.bodegaID, nombre: b.nombre ?? "" });
-  const askActivate = (b: BodegaDto) =>
-    setConfirm({ open: true, kind: "activate", id: b.bodegaID, nombre: b.nombre ?? "" });
-
-  const runConfirm = async () => {
-    if (!confirm.open) return;
-    try {
-      if (confirm.kind === "inactivate") {
-        const ok = await inactivate(confirm.id);
-        if (!ok) throw new Error();
-        setToast({ kind: "ok", msg: `Bodega “${confirm.nombre}” inactivada.` });
-      } else {
-        const ok = await activate(confirm.id);
-        if (!ok) throw new Error();
-        setToast({ kind: "ok", msg: `Bodega “${confirm.nombre}” activada.` });
-      }
-      setConfirm({ open: false });
-      await load();
-    } catch {
-      setToast({
-        kind: "err",
-        msg: confirm.kind === "inactivate" ? "No se pudo inactivar." : "No se pudo activar.",
-      });
-    }
-  };
-
-  const [editing, setEditing] = useState<BodegaDto | null>(null);
-  const onSaved = async () => {
-    setEditing(null);
-    await load();
-    setToast({ kind: "ok", msg: "Bodega guardada correctamente." });
-  };
+  const [confirmBusy, setConfirmBusy] = useState(false);
+  const [editing, setEditing] = useState<EditingState>(null);
 
   const [stockModal, setStockModal] = useState<{
     open: boolean;
@@ -273,12 +218,104 @@ export default function BodegasPage() {
 
   const [confirmMovOpen, setConfirmMovOpen] = useState(false);
 
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const page = await call<{ items?: BodegaDto[]; total?: number } | BodegaDto[]>(
+        "/api/bodegas?soloActivas=false&page=1&pageSize=1000",
+        { method: "GET" }
+      );
+
+      const items = Array.isArray(page) ? page : page?.items ?? [];
+      setRows(items.map(normalizeBodega));
+    } catch (e: unknown) {
+      setRows([]);
+      setError(getErrorMessage(e, "Error al cargar bodegas."));
+    } finally {
+      setLoading(false);
+    }
+  }, [call]);
+
+  useEffect(() => {
+    load().catch(() => {});
+  }, [load]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), 4500);
+    return () => window.clearTimeout(timer);
+  }, [toast]);
+
+  const filtered = useMemo(() => {
+    const term = q.trim().toLowerCase();
+
+    return rows
+      .filter((b) => {
+        if (estado === "activos") return !!b.isActive;
+        if (estado === "inactivos") return !b.isActive;
+        return true;
+      })
+      .filter((b) => {
+        if (!term) return true;
+        return (
+          (b.codigo ?? "").toLowerCase().includes(term) ||
+          (b.nombre ?? "").toLowerCase().includes(term) ||
+          (b.direccion ?? "").toLowerCase().includes(term) ||
+          (b.contacto ?? "").toLowerCase().includes(term)
+        );
+      });
+  }, [rows, q, estado]);
+
+  const askInactivate = (b: BodegaDto) =>
+    setConfirm({ open: true, kind: "inactivate", id: b.bodegaID, nombre: b.nombre ?? "" });
+
+  const askActivate = (b: BodegaDto) =>
+    setConfirm({ open: true, kind: "activate", id: b.bodegaID, nombre: b.nombre ?? "" });
+
+  const runConfirm = async () => {
+    if (!confirm.open || confirmBusy) return;
+
+    setConfirmBusy(true);
+    try {
+      if (confirm.kind === "inactivate") {
+        const ok = await inactivate(confirm.id);
+        if (!ok) throw new Error("No se pudo inactivar.");
+        setToast({ kind: "ok", msg: `Bodega “${confirm.nombre}” inactivada correctamente.` });
+      } else {
+        const ok = await activate(confirm.id);
+        if (!ok) throw new Error("No se pudo activar.");
+        setToast({ kind: "ok", msg: `Bodega “${confirm.nombre}” activada correctamente.` });
+      }
+
+      setConfirm({ open: false });
+      await load();
+    } catch (e: unknown) {
+      setToast({
+        kind: "err",
+        msg:
+          confirm.kind === "inactivate"
+            ? getErrorMessage(e, "No se pudo inactivar la bodega.")
+            : getErrorMessage(e, "No se pudo activar la bodega."),
+      });
+    } finally {
+      setConfirmBusy(false);
+    }
+  };
+
+  const onSaved = async (_bodega: BodegaDto) => {
+    setEditing(null);
+    await load();
+    setToast({ kind: "ok", msg: "Bodega guardada correctamente." });
+  };
+
   const selectedProduct = useMemo(
     () => stockModal.rows.find((r) => r.productoID === mov.productoID),
     [stockModal.rows, mov.productoID]
   );
 
-  const resetMovimiento = () => {
+  const resetMovimiento = useCallback(() => {
     setMov({
       productoID: "",
       tipo: "",
@@ -289,20 +326,28 @@ export default function BodegasPage() {
       error: null,
     });
     setConfirmMovOpen(false);
-  };
+  }, []);
 
-  const openStockFor = async (b: BodegaDto) => {
+  const openStockFor = useCallback(async (b: BodegaDto) => {
     setStockModal({ open: true, bodega: b, loading: true, error: null, rows: [] });
     resetMovimiento();
 
     try {
-      const minis = await call<ProductoMini[]>(`/api/productos/mini?estado=activos`, {
+      const minis = await call<ProductoMini[]>("/api/productos/mini?estado=activos", {
         method: "GET",
       });
-      const ids = (minis ?? []).map((p) => p.productoID);
+
+      const activeProducts = (minis ?? []).filter((p) => p.isActive ?? true);
+      const ids = activeProducts.map((p) => p.productoID);
+
+      if (ids.length === 0) {
+        setStockModal((mod) => ({ ...mod, loading: false, rows: [] }));
+        return;
+      }
 
       const query = new URLSearchParams();
       ids.forEach((id) => query.append("ProductoIds", String(id)));
+
       const disp = await call<ProductoDisponibilidadDto[]>(
         `/api/inventario/disponibilidad-por-productos?${query.toString()}`,
         { method: "GET" }
@@ -314,7 +359,7 @@ export default function BodegasPage() {
         byBodega.set(p.id, bRow ? (bRow.cantidad ?? 0) : 0);
       });
 
-      const rowsMap: StockRow[] = (minis ?? []).map((p) => ({
+      const rowsMap: StockRow[] = activeProducts.map((p) => ({
         productoID: p.productoID,
         producto: p.nombre,
         sku: p.sku ?? null,
@@ -323,26 +368,28 @@ export default function BodegasPage() {
       }));
 
       setStockModal((mod) => ({ ...mod, loading: false, rows: rowsMap }));
-    } catch (e: any) {
+    } catch (e: unknown) {
       setStockModal((mod) => ({
         ...mod,
         loading: false,
-        error: e?.message ?? "No se pudo cargar existencias.",
+        error: getErrorMessage(e, "No se pudo cargar existencias."),
       }));
     }
-  };
+  }, [call, resetMovimiento]);
 
-  const closeStock = () => {
+  const closeStock = useCallback(() => {
     setStockModal({ open: false, bodega: null, loading: false, error: null, rows: [] });
     resetMovimiento();
-  };
+  }, [resetMovimiento]);
 
   const canConfirmMovimiento = useMemo(() => {
     if (!mov.productoID || !mov.tipo) return false;
+
     if (mov.tipo === "ajuste") {
-      return mov.nuevaExistencia >= 0;
+      return Number.isFinite(mov.nuevaExistencia) && mov.nuevaExistencia >= 0;
     }
-    return mov.cantidad > 0;
+
+    return Number.isFinite(mov.cantidad) && mov.cantidad > 0;
   }, [mov]);
 
   const confirmMovimientoLabel = useMemo(() => {
@@ -353,20 +400,30 @@ export default function BodegasPage() {
   }, [mov.tipo]);
 
   const onSubmitMovimiento = async () => {
-    if (!stockModal.open || !stockModal.bodega) return;
+    if (!stockModal.open || !stockModal.bodega || mov.saving) return;
+
     setMov((s) => ({ ...s, saving: true, error: null }));
 
     try {
       const productoID = Number(mov.productoID || 0);
-      if (!productoID) throw new Error("Selecciona un producto.");
-      if (!mov.tipo) throw new Error("Selecciona el tipo de movimiento.");
+      if (!Number.isInteger(productoID) || productoID <= 0) {
+        throw new Error("Selecciona un producto válido.");
+      }
+
+      if (!mov.tipo) {
+        throw new Error("Selecciona el tipo de movimiento.");
+      }
+
+      if (mov.motivo.trim().length > MAX_MOTIVO) {
+        throw new Error(`El motivo no puede superar los ${MAX_MOTIVO} caracteres.`);
+      }
 
       if (mov.tipo === "ajuste") {
-        if (mov.nuevaExistencia < 0) {
+        if (!Number.isFinite(mov.nuevaExistencia) || mov.nuevaExistencia < 0) {
           throw new Error("La nueva existencia no puede ser negativa.");
         }
       } else {
-        if (mov.cantidad <= 0) {
+        if (!Number.isFinite(mov.cantidad) || mov.cantidad <= 0) {
           throw new Error("La cantidad a mover debe ser mayor a 0.");
         }
       }
@@ -375,7 +432,8 @@ export default function BodegasPage() {
         `/api/inventario/cantidad?productoID=${productoID}&bodegaID=${stockModal.bodega.bodegaID}`,
         { method: "GET" }
       );
-      const actual = cur?.cantidad ?? 0;
+
+      const actual = Number(cur?.cantidad ?? 0);
 
       let nuevaCantidad: number;
       if (mov.tipo === "entrada") {
@@ -389,18 +447,18 @@ export default function BodegasPage() {
         nuevaCantidad = mov.nuevaExistencia;
       }
 
-      await post<void>(`/api/inventario/cantidad/set`, {
+      await post<void>("/api/inventario/cantidad/set", {
         productoID,
         bodegaID: stockModal.bodega.bodegaID,
         nuevaCantidad,
-        motivo: mov.motivo?.trim() || null,
+        motivo: mov.motivo.trim() || null,
       });
 
       await openStockFor(stockModal.bodega);
       setToast({ kind: "ok", msg: "Movimiento de inventario registrado correctamente." });
       resetMovimiento();
-    } catch (e: any) {
-      const msg = e?.message ?? "No se pudo registrar el movimiento.";
+    } catch (e: unknown) {
+      const msg = getErrorMessage(e, "No se pudo registrar el movimiento.");
       setMov((s) => ({ ...s, saving: false, error: msg }));
       setToast({ kind: "err", msg });
       return;
@@ -413,12 +471,12 @@ export default function BodegasPage() {
     typeof document !== "undefined" && stockModal.open && stockModal.bodega
       ? createPortal(
           <div
-            className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center px-4 py-8"
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 px-4 py-8 backdrop-blur-sm"
             onMouseDown={(e) => {
-              if (e.target === e.currentTarget) closeStock();
+              if (e.target === e.currentTarget && !mov.saving) closeStock();
             }}
           >
-            <div className="w-full max-w-5xl rounded-2xl border border-white/10 bg-[#121618] text-white shadow-2xl flex flex-col max-h-[calc(100vh-4rem)] overflow-hidden">
+            <div className="flex max-h-[calc(100vh-4rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-white/10 bg-[#121618] text-white shadow-2xl">
               <div
                 className="flex items-center justify-between px-5 py-3"
                 style={{
@@ -436,9 +494,11 @@ export default function BodegasPage() {
                   </p>
                 </div>
                 <button
+                  type="button"
                   onClick={closeStock}
                   className="rounded-full px-2 text-white/80 hover:bg-white/10"
                   aria-label="Cerrar"
+                  disabled={mov.saving}
                 >
                   ×
                 </button>
@@ -455,7 +515,7 @@ export default function BodegasPage() {
                   </div>
                 ) : (
                   <>
-                    <div className="rounded-xl border border-white/10 max-h-[320px] overflow-auto">
+                    <div className="max-h-[320px] overflow-auto rounded-xl border border-white/10">
                       <table className="min-w-full border-separate border-spacing-0">
                         <thead>
                           <tr className="bg-[#1C2224] text-left text-xs uppercase tracking-wide text-white/70">
@@ -475,7 +535,7 @@ export default function BodegasPage() {
                           ) : (
                             stockModal.rows.map((r, i) => (
                               <tr
-                                key={`${r.productoID}-${i}`}
+                                key={r.productoID}
                                 className={i % 2 === 0 ? "bg-white/[.02]" : "bg-transparent"}
                               >
                                 <td className="px-4 py-2.5 text-sm text-white">{r.producto}</td>
@@ -504,7 +564,7 @@ export default function BodegasPage() {
                         <div className="md:col-span-1">
                           <ProductSelect
                             value={mov.productoID}
-                            onChange={(v) => setMov((s) => ({ ...s, productoID: v }))}
+                            onChange={(v) => setMov((s) => ({ ...s, productoID: v, error: null }))}
                             label="Producto *"
                             required
                             disabled={mov.saving}
@@ -528,7 +588,7 @@ export default function BodegasPage() {
                                 }))
                               }
                               disabled={mov.saving}
-                              className="dark-native-select w-full appearance-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40 disabled:opacity-60"
+                              className="dark-native-select w-full appearance-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40 disabled:cursor-not-allowed disabled:opacity-60"
                             >
                               <option value="">— Seleccionar —</option>
                               {tipoMovimientoOptions.map((opt) => (
@@ -559,11 +619,13 @@ export default function BodegasPage() {
                             step="0.01"
                             value={mov.tipo === "ajuste" ? mov.nuevaExistencia : mov.cantidad}
                             onChange={(e) => {
-                              const val = Number(e.target.value);
+                              const raw = e.target.value;
+                              const val = raw === "" ? 0 : Number(raw);
+
                               setMov((s) =>
                                 s.tipo === "ajuste"
-                                  ? { ...s, nuevaExistencia: val }
-                                  : { ...s, cantidad: val }
+                                  ? { ...s, nuevaExistencia: val, error: null }
+                                  : { ...s, cantidad: val, error: null }
                               );
                             }}
                             className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40"
@@ -577,11 +639,17 @@ export default function BodegasPage() {
                         <label className="mb-1 block text-xs text-white/70">Motivo</label>
                         <input
                           value={mov.motivo}
-                          onChange={(e) => setMov((s) => ({ ...s, motivo: e.target.value }))}
+                          onChange={(e) =>
+                            setMov((s) => ({ ...s, motivo: e.target.value, error: null }))
+                          }
                           className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-[#A30862]/40"
                           placeholder="Conteo físico, merma, etc."
                           disabled={mov.saving}
+                          maxLength={MAX_MOTIVO}
                         />
+                        <div className="mt-1 text-right text-[11px] text-white/45">
+                          {mov.motivo.length}/{MAX_MOTIVO}
+                        </div>
                       </div>
 
                       {mov.error && (
@@ -592,9 +660,10 @@ export default function BodegasPage() {
 
                       <div className="mt-4 flex justify-end">
                         <button
+                          type="button"
                           onClick={() => setConfirmMovOpen(true)}
                           disabled={mov.saving || !canConfirmMovimiento}
-                          className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                          className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
                           style={{ backgroundColor: WINE }}
                         >
                           {mov.saving ? "Guardando…" : confirmMovimientoLabel}
@@ -607,14 +676,16 @@ export default function BodegasPage() {
             </div>
 
             {confirmMovOpen && (
-              <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+              <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
                 <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#121618] p-5 text-white shadow-2xl">
                   <div className="flex items-center justify-between">
                     <h4 className="text-lg font-semibold">Guardar cambios</h4>
                     <button
+                      type="button"
                       className="rounded-full px-2 text-white/80 hover:bg-white/10"
                       aria-label="Cerrar"
                       onClick={() => setConfirmMovOpen(false)}
+                      disabled={mov.saving}
                     >
                       ×
                     </button>
@@ -625,8 +696,7 @@ export default function BodegasPage() {
                     {selectedProduct ? (
                       <>
                         {" "}
-                        del producto{" "}
-                        <span className="font-semibold">{selectedProduct.producto}</span>?
+                        del producto <span className="font-semibold">{selectedProduct.producto}</span>?
                       </>
                     ) : (
                       "?"
@@ -635,18 +705,22 @@ export default function BodegasPage() {
 
                   <div className="mt-6 flex justify-end gap-2">
                     <button
+                      type="button"
                       onClick={() => setConfirmMovOpen(false)}
-                      className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
+                      className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+                      disabled={mov.saving}
                     >
                       Cancelar
                     </button>
                     <button
+                      type="button"
                       onClick={async () => {
                         setConfirmMovOpen(false);
                         await onSubmitMovimiento();
                       }}
-                      className="rounded-xl px-4 py-2 text-sm font-semibold text-white"
+                      className="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
                       style={{ backgroundColor: WINE }}
+                      disabled={mov.saving}
                     >
                       Sí, guardar
                     </button>
@@ -659,7 +733,6 @@ export default function BodegasPage() {
         )
       : null;
 
-
   return (
     <div className="mx-auto max-w-6xl p-4 md:p-6">
       <SectionHeader title="Bodegas" subtitle={`Total: ${rows.length}`} />
@@ -669,8 +742,8 @@ export default function BodegasPage() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Buscar por código, nombre o dirección"
-            className="w-full rounded-xl border border-white/10 bg-white/5 pl-10 pr-3 py-2.5 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/20 focus:ring-2 focus:ring-white/20"
+            placeholder="Buscar por código, nombre, dirección o contacto"
+            className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-10 pr-3 text-sm text-white outline-none placeholder:text-white/40 focus:border-white/20 focus:ring-2 focus:ring-white/20"
           />
           <svg
             className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/50"
@@ -700,14 +773,17 @@ export default function BodegasPage() {
         </div>
 
         <button
-          onClick={load}
-          className="rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10"
+          type="button"
+          onClick={() => load()}
+          disabled={loading}
+          className="rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Refrescar
+          {loading ? "Refrescando…" : "Refrescar"}
         </button>
 
         <button
-          onClick={() => setEditing({} as BodegaDto)}
+          type="button"
+          onClick={() => setEditing({})}
           className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition"
           style={{ backgroundColor: WINE }}
         >
@@ -725,6 +801,7 @@ export default function BodegasPage() {
               ? "border border-amber-400/30 bg-amber-400/10 text-amber-200"
               : "border border-rose-400/30 bg-rose-400/10 text-rose-200",
           ].join(" ")}
+          role="status"
         >
           {toast.msg}
         </div>
@@ -735,6 +812,7 @@ export default function BodegasPage() {
           {inactError || actError}
         </div>
       )}
+
       {error && (
         <div className="mb-3 rounded-xl border border-rose-400/30 bg-rose-400/10 px-4 py-2 text-sm text-rose-200">
           {error}
@@ -761,7 +839,7 @@ export default function BodegasPage() {
 
       {editing && (
         <div
-          className="fixed inset-0 z-[60] grid place-items-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-[60] grid place-items-center bg-black/60 p-4 backdrop-blur-sm"
           onMouseDown={(e) => {
             if (e.target === e.currentTarget) setEditing(null);
           }}
@@ -772,6 +850,7 @@ export default function BodegasPage() {
                 {editing?.bodegaID ? "Editar bodega" : "Nueva bodega"}
               </h3>
               <button
+                type="button"
                 className="rounded-full px-2 text-white/80 hover:bg-white/10"
                 aria-label="Cerrar"
                 onClick={() => setEditing(null)}
@@ -780,14 +859,18 @@ export default function BodegasPage() {
               </button>
             </div>
             <div className="p-5">
-              <BodegaForm initial={editing} onSaved={onSaved} onClose={() => setEditing(null)} />
+              <BodegaForm
+                initial={editing}
+                onSaved={onSaved}
+                onClose={() => setEditing(null)}
+              />
             </div>
           </div>
         </div>
       )}
 
       {confirm.open && (
-        <div className="fixed inset-0 z-[70] grid place-items-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-[70] grid place-items-center bg-black/60 p-4 backdrop-blur-sm">
           <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#121618] p-5 text-white shadow-2xl">
             <h4 className="text-lg font-semibold">
               {confirm.kind === "inactivate" ? "Inactivar bodega" : "Reactivar bodega"}
@@ -798,17 +881,21 @@ export default function BodegasPage() {
             </p>
             <div className="mt-5 flex justify-end gap-2">
               <button
+                type="button"
                 onClick={() => setConfirm({ open: false })}
-                className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
+                disabled={confirmBusy}
+                className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Cancelar
               </button>
               <button
+                type="button"
                 onClick={runConfirm}
-                className="rounded-xl px-4 py-2 text-sm font-semibold text-white"
+                disabled={confirmBusy}
+                className="rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
                 style={{ backgroundColor: WINE }}
               >
-                Confirmar
+                {confirmBusy ? "Procesando…" : "Confirmar"}
               </button>
             </div>
           </div>

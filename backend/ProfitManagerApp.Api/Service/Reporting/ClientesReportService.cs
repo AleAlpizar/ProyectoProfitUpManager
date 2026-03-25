@@ -68,7 +68,7 @@ namespace ProfitManagerApp.Api.Service.Reporting
             int? mesHasta,
             CancellationToken ct)
         {
-            var normalizedYear = anio.HasValue ? NormalizeYear(anio) : null;
+            int? normalizedYear = anio.HasValue ? NormalizeYear(anio) : null;
             ValidateMonthRange(mesDesde, mesHasta);
 
             var query =
@@ -147,7 +147,7 @@ namespace ProfitManagerApp.Api.Service.Reporting
             if (clienteId <= 0)
                 throw new ArgumentOutOfRangeException(nameof(clienteId), "El clienteId debe ser mayor a 0.");
 
-            var normalizedYear = anio.HasValue ? NormalizeYear(anio) : null;
+            var normalizedYear = anio.HasValue ? (int?)NormalizeYear(anio) : null;
             ValidateMonthRange(mesDesde, mesHasta);
 
             var query =

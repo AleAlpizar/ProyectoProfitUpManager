@@ -10,6 +10,7 @@ namespace ProfitManagerApp.Api.Service.Reporting
     public class VentasReportService
     {
         private readonly AppDbContext _db;
+        private const decimal UmbralStockBajo = 3m;
 
         public VentasReportService(AppDbContext db)
         {
@@ -67,7 +68,7 @@ namespace ProfitManagerApp.Api.Service.Reporting
                     {
                         Fecha = g.Key,
                         CantidadVentas = count,
-                        MontoTotal = sum,
+                        MontoTotal = Math.Round(sum, 2, MidpointRounding.AwayFromZero),
                         TicketPromedio = ticket
                     };
                 })
@@ -75,7 +76,8 @@ namespace ProfitManagerApp.Api.Service.Reporting
 
             var porMes = ventasList
                 .GroupBy(v => new { v.Fecha.Year, v.Fecha.Month })
-                .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
+                .OrderBy(g => g.Key.Year)
+                .ThenBy(g => g.Key.Month)
                 .Select(g =>
                 {
                     var count = g.Count();
@@ -89,16 +91,18 @@ namespace ProfitManagerApp.Api.Service.Reporting
                         Anio = g.Key.Year,
                         Mes = g.Key.Month,
                         CantidadVentas = count,
-                        MontoTotal = sum,
+                        MontoTotal = Math.Round(sum, 2, MidpointRounding.AwayFromZero),
                         TicketPromedio = ticket
                     };
                 })
                 .ToList();
 
-            var detallesList = await _db.VentaDetalles
-                .AsNoTracking()
-                .Where(d => ventaIds.Contains(d.VentaID))
-                .ToListAsync(ct);
+            var detallesList = ventaIds.Count == 0
+                ? new List<VentaItemRow>()
+                : await _db.VentaDetalles
+                    .AsNoTracking()
+                    .Where(d => ventaIds.Contains(d.VentaID))
+                    .ToListAsync(ct);
 
             var productosIds = detallesList
                 .Where(d => d.ProductoID.HasValue)
@@ -111,41 +115,43 @@ namespace ProfitManagerApp.Api.Service.Reporting
                 .Distinct()
                 .ToList();
 
-            var productos = await _db.Productos
-                .AsNoTracking()
-                .Where(p => productosIds.Contains(p.ProductoID))
-                .ToDictionaryAsync(p => p.ProductoID, ct);
+            var productos = productosIds.Count == 0
+                ? new Dictionary<int, ProductoRow>()
+                : await _db.Productos
+                    .AsNoTracking()
+                    .Where(p => productosIds.Contains(p.ProductoID))
+                    .ToDictionaryAsync(p => p.ProductoID, ct);
 
-            var bodegas = await _db.Bodegas
-                .AsNoTracking()
-                .Where(b => bodegasIds.Contains(b.BodegaID))
-                .ToDictionaryAsync(b => b.BodegaID, ct);
+            var bodegas = bodegasIds.Count == 0
+                ? new Dictionary<int, BodegaRow>()
+                : await _db.Bodegas
+                    .AsNoTracking()
+                    .Where(b => bodegasIds.Contains(b.BodegaID))
+                    .ToDictionaryAsync(b => b.BodegaID, ct);
 
             var topProductos = detallesList
                 .Where(d => d.ProductoID.HasValue)
                 .GroupBy(d => d.ProductoID!.Value)
                 .Select(g =>
                 {
-                    var prodId = g.Key;
-                    productos.TryGetValue(prodId, out var prod);
+                    var productoId = g.Key;
+                    productos.TryGetValue(productoId, out var prod);
 
                     var cantidad = g.Sum(x => x.Cantidad);
                     var monto = g.Sum(x => x.Cantidad * x.PrecioUnitario);
 
-                    var costoUnit = 0m;
-                    var margen = g.Sum(x => (x.PrecioUnitario - costoUnit) * x.Cantidad);
-
                     return new VentasTopProductoDto
                     {
-                        ProductoID = prodId,
+                        ProductoID = productoId,
                         Sku = prod?.Sku ?? string.Empty,
                         Nombre = prod?.Nombre ?? "(Producto)",
                         CantidadVendida = cantidad,
-                        MontoVendido = decimal.Round(monto, 2, MidpointRounding.AwayFromZero),
-                        MargenBruto = decimal.Round(margen, 2, MidpointRounding.AwayFromZero)
+                        MontoVendido = Math.Round(monto, 2, MidpointRounding.AwayFromZero),
+                        MargenBruto = 0m
                     };
                 })
                 .OrderByDescending(x => x.MontoVendido)
+                .ThenByDescending(x => x.CantidadVendida)
                 .Take(20)
                 .ToList();
 
@@ -154,7 +160,12 @@ namespace ProfitManagerApp.Api.Service.Reporting
                 .Where(p => p.IsActive)
                 .ToListAsync(ct);
 
+            var productosActivosIds = productosActivos
+                .Select(p => p.ProductoID)
+                .ToList();
+
             var productosConVentaSet = new HashSet<int>(productosIds);
+
             var productosSinMovimiento = productosActivos
                 .Where(p => !productosConVentaSet.Contains(p.ProductoID))
                 .OrderBy(p => p.Nombre)
@@ -171,24 +182,27 @@ namespace ProfitManagerApp.Api.Service.Reporting
                 .GroupBy(d => d.BodegaID)
                 .Select(g =>
                 {
-                    bodegas.TryGetValue(g.Key, out var bod);
+                    bodegas.TryGetValue(g.Key, out var bodega);
                     var monto = g.Sum(x => x.Cantidad * x.PrecioUnitario);
 
                     return new VentasPorBodegaDto
                     {
                         BodegaID = g.Key,
-                        NombreBodega = bod?.Nombre ?? $"Bodega {g.Key}",
+                        NombreBodega = bodega?.Nombre ?? $"Bodega {g.Key}",
                         CantidadVendida = g.Sum(x => x.Cantidad),
                         MontoVendido = Math.Round(monto, 2, MidpointRounding.AwayFromZero)
                     };
                 })
                 .OrderByDescending(x => x.MontoVendido)
+                .ThenByDescending(x => x.CantidadVendida)
                 .ToList();
 
-            var inventarios = await _db.Inventarios
-                .AsNoTracking()
-                .Where(i => productosActivos.Select(p => p.ProductoID).Contains(i.ProductoID))
-                .ToListAsync(ct);
+            var inventarios = productosActivosIds.Count == 0
+                ? new List<InventarioRow>()
+                : await _db.Inventarios
+                    .AsNoTracking()
+                    .Where(i => productosActivosIds.Contains(i.ProductoID))
+                    .ToListAsync(ct);
 
             var stockPorProducto = inventarios
                 .GroupBy(i => i.ProductoID)
@@ -212,9 +226,10 @@ namespace ProfitManagerApp.Api.Service.Reporting
                 cantVendidaPorProducto.TryGetValue(prod.ProductoID, out var vendida);
                 stockPorProducto.TryGetValue(prod.ProductoID, out var stock);
 
-                if (vendida <= 0 && stock <= 0) continue;
+                if (vendida <= 0m && stock <= 0m)
+                    continue;
 
-                var divisor = stock > 0 ? stock : 1m;
+                var divisor = stock > 0m ? stock : 1m;
                 var indice = vendida / divisor;
 
                 rotacionInventario.Add(new RotacionInventarioDto
@@ -230,10 +245,9 @@ namespace ProfitManagerApp.Api.Service.Reporting
 
             rotacionInventario = rotacionInventario
                 .OrderByDescending(x => x.IndiceRotacion)
+                .ThenByDescending(x => x.CantidadVendida)
                 .Take(50)
                 .ToList();
-
-            const decimal UMBRAL_STOCK_BAJO = 3m;
 
             var posiblesIssues = new List<VentaStockIssueDto>();
 
@@ -242,13 +256,13 @@ namespace ProfitManagerApp.Api.Service.Reporting
                 cantVendidaPorProducto.TryGetValue(prod.ProductoID, out var vendido);
                 stockPorProducto.TryGetValue(prod.ProductoID, out var stockTotal);
 
-                if (vendido <= 0)
+                if (vendido <= 0m)
                     continue;
 
-                if (stockTotal > UMBRAL_STOCK_BAJO)
+                if (stockTotal > UmbralStockBajo)
                     continue;
 
-                var criticidad = vendido / (stockTotal <= 0 ? 1 : stockTotal);
+                var criticidad = vendido / (stockTotal <= 0m ? 1m : stockTotal);
 
                 posiblesIssues.Add(new VentaStockIssueDto
                 {
@@ -264,6 +278,7 @@ namespace ProfitManagerApp.Api.Service.Reporting
 
             posiblesIssues = posiblesIssues
                 .OrderByDescending(x => x.IndiceCriticidad)
+                .ThenByDescending(x => x.CantidadVendidaPeriodo)
                 .Take(50)
                 .ToList();
 
@@ -272,6 +287,7 @@ namespace ProfitManagerApp.Api.Service.Reporting
 
             if (fechaDesde.HasValue)
                 anulacionesQuery = anulacionesQuery.Where(a => a.FechaAnulacion >= fechaDesde.Value);
+
             if (hastaExclusive.HasValue)
                 anulacionesQuery = anulacionesQuery.Where(a => a.FechaAnulacion < hastaExclusive.Value);
 
@@ -282,10 +298,12 @@ namespace ProfitManagerApp.Api.Service.Reporting
                 .Distinct()
                 .ToList();
 
-            var ventasAnuladas = await _db.Ventas
-                .AsNoTracking()
-                .Where(v => ventaIdsAnuladas.Contains(v.VentaID))
-                .ToDictionaryAsync(v => v.VentaID, ct);
+            var ventasAnuladas = ventaIdsAnuladas.Count == 0
+                ? new Dictionary<int, VentaRow>()
+                : await _db.Ventas
+                    .AsNoTracking()
+                    .Where(v => ventaIdsAnuladas.Contains(v.VentaID))
+                    .ToDictionaryAsync(v => v.VentaID, ct);
 
             var anulacionesPorUsuario = anulacionesList
                 .Where(a => a.UsuarioID.HasValue)
@@ -293,11 +311,9 @@ namespace ProfitManagerApp.Api.Service.Reporting
                 .Select(g =>
                 {
                     var totalAnulado = g.Sum(a =>
-                    {
-                        return ventasAnuladas.TryGetValue(a.VentaID, out var v)
-                            ? v.Total
-                            : 0m;
-                    });
+                        ventasAnuladas.TryGetValue(a.VentaID, out var venta)
+                            ? venta.Total
+                            : 0m);
 
                     return new AnulacionPorUsuarioDto
                     {
@@ -307,12 +323,14 @@ namespace ProfitManagerApp.Api.Service.Reporting
                     };
                 })
                 .OrderByDescending(x => x.CantidadAnulaciones)
+                .ThenByDescending(x => x.MontoTotalAnulado)
                 .ToList();
 
             var anulacionesDetalle = anulacionesList
                 .Select(a =>
                 {
-                    ventasAnuladas.TryGetValue(a.VentaID, out var v);
+                    ventasAnuladas.TryGetValue(a.VentaID, out var venta);
+
                     return new VentaAnulacionDetalleDto
                     {
                         AnulacionID = a.AnulacionID,
@@ -320,7 +338,7 @@ namespace ProfitManagerApp.Api.Service.Reporting
                         FechaAnulacion = a.FechaAnulacion,
                         Motivo = a.Motivo,
                         UsuarioID = a.UsuarioID,
-                        TotalVenta = v?.Total ?? 0m
+                        TotalVenta = venta?.Total ?? 0m
                     };
                 })
                 .OrderByDescending(x => x.FechaAnulacion)

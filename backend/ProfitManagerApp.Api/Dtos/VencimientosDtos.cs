@@ -8,7 +8,7 @@
         public string? Referencia { get; set; }
         public DateTime? FechaEmision { get; set; }
         public DateTime FechaVencimiento { get; set; }
-        public int NotificarDiasAntes { get; set; } = 7;
+        public int? NotificarDiasAntes { get; set; }
         public bool IsActive { get; set; } = true;
     }
 
@@ -22,7 +22,7 @@
         public string? Referencia { get; set; }
         public DateTime? FechaEmision { get; set; }
         public DateTime FechaVencimiento { get; set; }
-        public int NotificarDiasAntes { get; set; }
+        public int? NotificarDiasAntes { get; set; }
         public int DaysToDue { get; set; }
         public string Estado { get; set; } = "VIGENTE";
     }
@@ -37,7 +37,7 @@
         public string? Referencia { get; set; }
         public DateTime? FechaEmision { get; set; }
         public DateTime FechaVencimiento { get; set; }
-        public int NotificarDiasAntes { get; set; }
+        public int? NotificarDiasAntes { get; set; }
         public bool IsActive { get; set; }
     }
 
@@ -56,7 +56,7 @@
         public string TipoNombre { get; set; } = "";
         public string? Referencia { get; set; }
         public DateTime FechaVencimiento { get; set; }
-        public int NotificarDiasAntes { get; set; }
+        public int? NotificarDiasAntes { get; set; }
         public int DaysToDue { get; set; }
         public string Estado { get; set; } = "VIGENTE";
     }
@@ -68,7 +68,7 @@
         public string TipoNombre { get; set; } = "";
         public string? Referencia { get; set; }
         public DateTime FechaVencimiento { get; set; }
-        public int NotificarDiasAntes { get; set; }
+        public int? NotificarDiasAntes { get; set; }
         public int DaysToDue { get; set; }
         public string Estado { get; set; } = "VIGENTE";
 
@@ -76,5 +76,4 @@
         public string? UsuarioNombre { get; set; }
         public string? UsuarioCorreo { get; set; }
     }
-
 }

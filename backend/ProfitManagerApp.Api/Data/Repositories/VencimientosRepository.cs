@@ -9,6 +9,7 @@ namespace ProfitManagerApp.Data
     public sealed class VencimientosRepository : IVencimientosRepository
     {
         private readonly string _cs;
+
         public VencimientosRepository(IConfiguration cfg)
         {
             _cs = cfg.GetConnectionString("Default")
@@ -17,10 +18,7 @@ namespace ProfitManagerApp.Data
 
         public async Task<int> CreateAsync(VencimientoUpdateDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.Titulo))
-                throw new ArgumentException("El título es obligatorio.");
-            if (dto.FechaVencimiento == default)
-                throw new ArgumentException("La fecha de vencimiento es obligatoria.");
+            ValidateDto(dto);
 
             const string sqlCheckTipo = @"
 SELECT COUNT(1)
@@ -30,19 +28,22 @@ WHERE TipoDocumentoVencimientoID = @Tipo AND IsActive = 1;";
             const string sqlInsert = @"
 INSERT INTO dbo.DocumentoVencimiento
     (Titulo, Descripcion, TipoDocumentoVencimientoID, Referencia, FechaEmision,
-     FechaVencimiento, NotificarDiasAntes, IsActive, CreatedAt)
+     FechaVencimiento, NotificarDiasAntes, IsActive, CreatedAt, UpdatedAt)
 VALUES
     (@Titulo, @Descripcion, @TipoDocumentoVencimientoID, @Referencia, @FechaEmision,
-     @FechaVencimiento, @NotificarDiasAntes, @IsActive, SYSUTCDATETIME());
+     @FechaVencimiento, @NotificarDiasAntes, @IsActive, SYSUTCDATETIME(), SYSUTCDATETIME());
 SELECT CAST(SCOPE_IDENTITY() AS int);";
+
+            var clean = NormalizeDto(dto);
 
             await using var cn = new SqlConnection(_cs);
             await cn.OpenAsync();
 
-            using var tx = await cn.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+            await using var tx = await cn.BeginTransactionAsync(IsolationLevel.ReadCommitted);
 
             var tipoOk = await cn.ExecuteScalarAsync<int>(sqlCheckTipo,
-                new { Tipo = dto.TipoDocumentoVencimientoID }, tx);
+                new { Tipo = clean.TipoDocumentoVencimientoID }, tx);
+
             if (tipoOk == 0)
             {
                 await tx.RollbackAsync();
@@ -51,14 +52,14 @@ SELECT CAST(SCOPE_IDENTITY() AS int);";
 
             var newId = await cn.ExecuteScalarAsync<int>(sqlInsert, new
             {
-                dto.Titulo,
-                dto.Descripcion,
-                dto.TipoDocumentoVencimientoID,
-                dto.Referencia,
-                dto.FechaEmision,
-                dto.FechaVencimiento,
-                dto.NotificarDiasAntes,
-                dto.IsActive
+                clean.Titulo,
+                clean.Descripcion,
+                clean.TipoDocumentoVencimientoID,
+                clean.Referencia,
+                clean.FechaEmision,
+                clean.FechaVencimiento,
+                clean.NotificarDiasAntes,
+                clean.IsActive
             }, tx);
 
             await tx.CommitAsync();
@@ -90,10 +91,7 @@ WHERE dv.DocumentoVencimientoID = @id;";
 
         public async Task UpdateAsync(int id, VencimientoUpdateDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.Titulo))
-                throw new ArgumentException("El título es obligatorio.");
-            if (dto.FechaVencimiento == default)
-                throw new ArgumentException("La fecha de vencimiento es obligatoria.");
+            ValidateDto(dto);
 
             const string sqlCheckTipo = @"
 SELECT COUNT(1)
@@ -109,32 +107,39 @@ SET Titulo = @Titulo,
     FechaEmision = @FechaEmision,
     FechaVencimiento = @FechaVencimiento,
     NotificarDiasAntes = @NotificarDiasAntes,
-    IsActive = @IsActive
+    IsActive = @IsActive,
+    UpdatedAt = SYSUTCDATETIME()
 WHERE DocumentoVencimientoID = @Id;";
+
+            var clean = NormalizeDto(dto);
 
             await using var cn = new SqlConnection(_cs);
             await cn.OpenAsync();
 
-            using var tx = await cn.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+            await using var tx = await cn.BeginTransactionAsync(IsolationLevel.ReadCommitted);
 
-            var tipoOk = await cn.ExecuteScalarAsync<int>(sqlCheckTipo, new { Tipo = dto.TipoDocumentoVencimientoID }, tx);
+            var tipoOk = await cn.ExecuteScalarAsync<int>(
+                sqlCheckTipo,
+                new { Tipo = clean.TipoDocumentoVencimientoID },
+                tx);
+
             if (tipoOk == 0)
             {
                 await tx.RollbackAsync();
-                throw new ArgumentException("Tipo de documento inválido.");
+                throw new ArgumentException("Tipo de documento inválido o inactivo.");
             }
 
             var rows = await cn.ExecuteAsync(sqlUpdate, new
             {
                 Id = id,
-                dto.Titulo,
-                dto.Descripcion,
-                dto.TipoDocumentoVencimientoID,
-                dto.Referencia,
-                dto.FechaEmision,
-                dto.FechaVencimiento,
-                dto.NotificarDiasAntes,
-                dto.IsActive
+                clean.Titulo,
+                clean.Descripcion,
+                clean.TipoDocumentoVencimientoID,
+                clean.Referencia,
+                clean.FechaEmision,
+                clean.FechaVencimiento,
+                clean.NotificarDiasAntes,
+                clean.IsActive
             }, tx);
 
             if (rows == 0)
@@ -167,8 +172,8 @@ WITH base AS (
   FROM dbo.DocumentoVencimiento dv
   JOIN dbo.TipoDocumentoVencimiento tdv ON tdv.TipoDocumentoVencimientoID = dv.TipoDocumentoVencimientoID
   WHERE dv.IsActive = 1
-    AND (@Desde IS NULL OR dv.FechaVencimiento >= @Desde)
-    AND (@Hasta IS NULL  OR dv.FechaVencimiento <  @Hasta)
+    AND (@Desde IS NULL OR CAST(dv.FechaVencimiento AS DATE) >= CAST(@Desde AS DATE))
+    AND (@Hasta IS NULL OR CAST(dv.FechaVencimiento AS DATE) < DATEADD(DAY, 1, CAST(@Hasta AS DATE)))
 ),
 calc AS (
   SELECT *,
@@ -202,6 +207,7 @@ ORDER BY FechaVencimiento ASC, Titulo ASC;";
                 Hasta = (object?)hasta ?? DBNull.Value,
                 SoloPendientes = soloPendientes ? 1 : 0
             });
+
             return rows.ToList();
         }
 
@@ -304,6 +310,45 @@ ORDER BY dv.FechaVencimiento ASC, dv.Titulo ASC;";
             await using var cn = new SqlConnection(_cs);
             var rows = await cn.QueryAsync<VencimientoEmailAlertDto>(sql, new { UmbralDefault = umbralDefault });
             return rows.ToList();
+        }
+
+        private static void ValidateDto(VencimientoUpdateDto dto)
+        {
+            if (dto is null)
+                throw new ArgumentException("El cuerpo de la solicitud es obligatorio.");
+
+            if (string.IsNullOrWhiteSpace(dto.Titulo))
+                throw new ArgumentException("El título es obligatorio.");
+
+            if (dto.Titulo.Trim().Length < 3)
+                throw new ArgumentException("El título debe tener al menos 3 caracteres.");
+
+            if (dto.TipoDocumentoVencimientoID <= 0)
+                throw new ArgumentException("Debe seleccionar un tipo de documento válido.");
+
+            if (dto.FechaVencimiento == default)
+                throw new ArgumentException("La fecha de vencimiento es obligatoria.");
+
+            if (dto.FechaEmision.HasValue && dto.FechaEmision.Value.Date > dto.FechaVencimiento.Date)
+                throw new ArgumentException("La fecha de emisión no puede ser mayor que la fecha de vencimiento.");
+
+            if (dto.NotificarDiasAntes.HasValue && (dto.NotificarDiasAntes.Value < 0 || dto.NotificarDiasAntes.Value > 365))
+                throw new ArgumentException("Los días de notificación deben estar entre 0 y 365.");
+        }
+
+        private static VencimientoUpdateDto NormalizeDto(VencimientoUpdateDto dto)
+        {
+            return new VencimientoUpdateDto
+            {
+                Titulo = dto.Titulo.Trim(),
+                Descripcion = string.IsNullOrWhiteSpace(dto.Descripcion) ? null : dto.Descripcion.Trim(),
+                TipoDocumentoVencimientoID = dto.TipoDocumentoVencimientoID,
+                Referencia = string.IsNullOrWhiteSpace(dto.Referencia) ? null : dto.Referencia.Trim(),
+                FechaEmision = dto.FechaEmision,
+                FechaVencimiento = dto.FechaVencimiento,
+                NotificarDiasAntes = dto.NotificarDiasAntes,
+                IsActive = dto.IsActive
+            };
         }
     }
 }

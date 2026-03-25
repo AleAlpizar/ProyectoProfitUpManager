@@ -9,7 +9,7 @@ const WINE = "#A30862";
 type Props = {
   open: boolean;
   onClose: () => void;
-  onSaved?: () => void;
+  onSaved?: (message?: string) => void;
   initial?:
     | {
         documentoVencimientoID?: number;
@@ -17,7 +17,7 @@ type Props = {
         fechaISO?: string;
         tipoDocumentoID?: number;
         descripcion?: string | null;
-        notificarDiasAntes?: number;
+        notificarDiasAntes?: number | null;
       }
     | null;
 };
@@ -27,6 +27,29 @@ type TipoRow = {
   nombre: string;
   isActive: boolean;
 };
+
+type VencimientoDetalleResponse = {
+  documentoVencimientoID: number;
+  titulo: string;
+  descripcion?: string | null;
+  tipoDocumentoVencimientoID: number;
+  tipoNombre: string;
+  referencia?: string | null;
+  fechaEmision?: string | null;
+  fechaVencimiento: string;
+  notificarDiasAntes?: number | null;
+  isActive: boolean;
+};
+
+function getApiErrorMessage(e: any, fallback: string) {
+  return (
+    e?.response?.data?.detail ||
+    e?.response?.data?.title ||
+    e?.detail ||
+    e?.message ||
+    fallback
+  );
+}
 
 export default function VencimientoFormModal({
   open,
@@ -46,7 +69,9 @@ export default function VencimientoFormModal({
     initial?.descripcion ?? ""
   );
   const [notificar, setNotificar] = React.useState<number | "">(
-    initial?.notificarDiasAntes ?? ""
+    typeof initial?.notificarDiasAntes === "number"
+      ? initial.notificarDiasAntes
+      : ""
   );
 
   const [tipos, setTipos] = React.useState<TipoRow[]>([]);
@@ -77,11 +102,18 @@ export default function VencimientoFormModal({
     setFechaISO(initial?.fechaISO ?? "");
     setTipoID(initial?.tipoDocumentoID ?? "");
     setDescripcion(initial?.descripcion ?? "");
-    setNotificar(initial?.notificarDiasAntes ?? "");
+    setNotificar(
+      typeof initial?.notificarDiasAntes === "number"
+        ? initial.notificarDiasAntes
+        : ""
+    );
+    setError(null);
   }, [initial, open]);
 
   React.useEffect(() => {
-    if (open) setTimeout(() => inputRef.current?.focus(), 80);
+    if (!open) return;
+    const id = window.setTimeout(() => inputRef.current?.focus(), 80);
+    return () => window.clearTimeout(id);
   }, [open]);
 
   const loadTipos = React.useCallback(async () => {
@@ -111,22 +143,11 @@ export default function VencimientoFormModal({
 
     setLoadingDetalle(true);
     setError(null);
-    try {
-      const d = await get<{
-        documentoVencimientoID: number;
-        titulo: string;
-        descripcion?: string | null;
-        tipoDocumentoVencimientoID: number;
-        tipoNombre: string;
-        referencia?: string | null;
-        fechaEmision?: string | null;
-        fechaVencimiento: string;
-        notificarDiasAntes: number;
-        isActive: boolean;
-      }>(VENC_API.get(id));
 
-      const toISO = (x?: string | null) =>
-        x ? String(x).slice(0, 10) : "";
+    try {
+      const d = await get<VencimientoDetalleResponse>(VENC_API.get(id));
+
+      const toISO = (x?: string | null) => (x ? String(x).slice(0, 10) : "");
 
       setTitulo(d?.titulo ?? "");
       setFechaISO(toISO(d?.fechaVencimiento));
@@ -138,7 +159,7 @@ export default function VencimientoFormModal({
           : ""
       );
     } catch (e: any) {
-      setError(e?.message ?? "No se pudo cargar el detalle.");
+      setError(getApiErrorMessage(e, "No se pudo cargar el detalle."));
     } finally {
       setLoadingDetalle(false);
     }
@@ -158,21 +179,24 @@ export default function VencimientoFormModal({
     }
   }, [open, loadTipos, loadDetalleIfNeeded]);
 
-  const titleOk = titulo.trim().length >= 3;
+  const trimmedTitle = titulo.trim();
+  const titleOk = trimmedTitle.length >= 3;
   const dateOk = /^\d{4}-\d{2}-\d{2}$/.test(fechaISO);
-  const tipoOk = typeof tipoID === "number";
+  const tipoOk = typeof tipoID === "number" && tipoID > 0;
   const notiOk =
     notificar === "" ||
     (typeof notificar === "number" &&
+      Number.isInteger(notificar) &&
       notificar >= 0 &&
       notificar <= 365);
-  const canSave = titleOk && dateOk && tipoOk && notiOk && !loadingDetalle;
+
+  const canSave =
+    titleOk && dateOk && tipoOk && notiOk && !loadingDetalle && !loadingTipos;
 
   const handleSave = async () => {
     if (!canSave || apiLoading) return;
-    setError(null);
 
-    const trimmedTitle = titulo.trim();
+    setError(null);
 
     const ok = await confirm({
       title: isEdit
@@ -199,29 +223,29 @@ export default function VencimientoFormModal({
         fechaVencimiento: fechaISO,
         tipoDocumentoVencimientoID: tipoID as number,
       };
-      if (descripcion?.trim())
-        payload.descripcion = descripcion.trim();
-      if (notificar !== "")
-        payload.notificarDiasAntes = Number(notificar);
+
+      if (descripcion.trim()) payload.descripcion = descripcion.trim();
+      if (notificar !== "") payload.notificarDiasAntes = Number(notificar);
 
       if (isEdit && initial?.documentoVencimientoID) {
-        await put<void>(
+        await put<{ message?: string }>(
           VENC_API.update(initial.documentoVencimientoID),
           payload
         );
+        onSaved?.("Vencimiento actualizado correctamente.");
       } else {
-        await post<void>(VENC_API.create, payload);
+        await post<{ message?: string; documentoVencimientoID?: number }>(
+          VENC_API.create,
+          payload
+        );
+        onSaved?.("Vencimiento registrado correctamente.");
       }
-      onSaved?.();
-      onClose();
     } catch (e: any) {
-      setError(e?.message ?? "No se pudo guardar el vencimiento.");
+      setError(getApiErrorMessage(e, "No se pudo guardar el vencimiento."));
     }
   };
 
-  const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (
-    e
-  ) => {
+  const onKeyDown: React.KeyboardEventHandler<HTMLDivElement> = (e) => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       handleSave();
@@ -235,7 +259,7 @@ export default function VencimientoFormModal({
 
   return (
     <div
-      className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/70 p-4 backdrop-blur-[2px]"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -244,16 +268,23 @@ export default function VencimientoFormModal({
       onKeyDown={onKeyDown}
     >
       <div
-        className="w-full max-w-lg rounded-2xl border border-white/10 bg-[#0B0E10] p-5 text-white shadow-[0_8px_30px_rgba(0,0,0,.35)]"
+        className="w-full max-w-xl rounded-3xl border border-white/10 bg-[#0B0E10] p-6 text-white shadow-[0_18px_60px_rgba(0,0,0,.45)]"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">
-            {isEdit ? "Editar vencimiento" : "Registrar vencimiento"}
-          </h2>
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">
+              {isEdit ? "Editar vencimiento" : "Registrar vencimiento"}
+            </h2>
+            <p className="mt-1 text-sm text-white/55">
+              Completa la información del documento y su fecha de vencimiento.
+            </p>
+          </div>
+
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-full px-2 text-white/80 hover:bg-white/10"
+            className="rounded-full px-2.5 py-1 text-white/80 transition hover:bg-white/10"
             aria-label="Cerrar"
           >
             ×
@@ -262,7 +293,7 @@ export default function VencimientoFormModal({
 
         {(error || loadingDetalle) && (
           <div
-            className={`mb-3 rounded-xl border px-3 py-2 text-sm ${
+            className={`mb-4 rounded-2xl border px-4 py-3 text-sm ${
               loadingDetalle
                 ? "border-white/15 bg-white/5 text-white/80"
                 : "border-rose-400/30 bg-rose-400/10 text-rose-200"
@@ -280,97 +311,86 @@ export default function VencimientoFormModal({
               value={titulo}
               onChange={(e) => setTitulo(e.target.value)}
               placeholder="Ej. Licencia de funcionamiento"
-              className={
-                inputCls +
-                (titleOk ? "" : " ring-1 ring-rose-400/30")
-              }
+              className={inputCls + (titleOk ? "" : " ring-1 ring-rose-400/30")}
               aria-invalid={!titleOk}
               aria-describedby="help-titulo"
+              maxLength={150}
             />
             {!titleOk && (
-              <p
-                id="help-titulo"
-                className="mt-1 text-xs text-rose-300"
-              >
+              <p id="help-titulo" className="mt-1.5 text-xs text-rose-300">
                 Mínimo 3 caracteres.
               </p>
             )}
           </div>
 
-          <div>
-            <Label>Fecha de vencimiento</Label>
-            <input
-              type="date"
-              value={fechaISO}
-              onChange={(e) => setFechaISO(e.target.value)}
-              className={
-                inputCls +
-                (dateOk ? "" : " ring-1 ring-rose-400/30")
-              }
-              aria-invalid={!dateOk}
-              aria-describedby="help-fecha"
-            />
-            {!dateOk && (
-              <p
-                id="help-fecha"
-                className="mt-1 text-xs text-rose-300"
-              >
-                Formato inválido (YYYY-MM-DD).
-              </p>
-            )}
-          </div>
-
-          <div>
-            <Label>Tipo</Label>
-            <div className="relative">
-              <select
-                value={tipoID === "" ? "" : String(tipoID)}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setTipoID(v === "" ? "" : Number(v));
-                }}
-                className={`${inputCls} dark-select appearance-none pr-9 ${
-                  tipoOk ? "" : " ring-1 ring-rose-400/30"
-                }`}
-                aria-invalid={!tipoOk}
-              >
-                <option value="">— Seleccionar —</option>
-                {tipos.map((t) => (
-                  <option
-                    key={t.tipoDocumentoVencimientoID}
-                    value={String(t.tipoDocumentoVencimientoID)}
-                  >
-                    {t.nombre}
-                  </option>
-                ))}
-              </select>
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/60">
-                ▾
-              </span>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <Label>Fecha de vencimiento</Label>
+              <input
+                type="date"
+                value={fechaISO}
+                onChange={(e) => setFechaISO(e.target.value)}
+                className={inputCls + (dateOk ? "" : " ring-1 ring-rose-400/30")}
+                aria-invalid={!dateOk}
+                aria-describedby="help-fecha"
+              />
+              {!dateOk && (
+                <p id="help-fecha" className="mt-1.5 text-xs text-rose-300">
+                  Debes seleccionar una fecha válida.
+                </p>
+              )}
             </div>
-            {loadingTipos && (
-              <div className="mt-1 text-xs text-white/60">
-                Cargando tipos…
+
+            <div>
+              <Label>Tipo</Label>
+              <div className="relative">
+                <select
+                  value={tipoID === "" ? "" : String(tipoID)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setTipoID(v === "" ? "" : Number(v));
+                  }}
+                  className={`${inputCls} dark-select appearance-none pr-9 ${
+                    tipoOk ? "" : " ring-1 ring-rose-400/30"
+                  }`}
+                  aria-invalid={!tipoOk}
+                >
+                  <option value="">— Seleccionar —</option>
+                  {tipos.map((t) => (
+                    <option
+                      key={t.tipoDocumentoVencimientoID}
+                      value={String(t.tipoDocumentoVencimientoID)}
+                    >
+                      {t.nombre}
+                    </option>
+                  ))}
+                </select>
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/60">
+                  ▾
+                </span>
               </div>
-            )}
-            {!loadingTipos && tipos.length === 0 && (
-              <div className="mt-1 text-xs text_WHITE/60">
-                No hay tipos disponibles.
-              </div>
-            )}
+              {loadingTipos && (
+                <div className="mt-1.5 text-xs text-white/60">Cargando tipos…</div>
+              )}
+              {!loadingTipos && tipos.length === 0 && (
+                <div className="mt-1.5 text-xs text-white/60">
+                  No hay tipos disponibles.
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
             <Label>
-              Descripción{" "}
-              <span className="text-white/40">(opcional)</span>
+              Descripción <span className="text-white/40">(opcional)</span>
             </Label>
             <textarea
               value={descripcion}
               onChange={(e) => setDescripcion(e.target.value)}
               placeholder="Notas adicionales, número de documento, etc."
-              rows={3}
+              rows={4}
               className={`${inputCls} resize-y`}
+              maxLength={1000}
             />
           </div>
 
@@ -386,32 +406,30 @@ export default function VencimientoFormModal({
               value={notificar}
               onChange={(e) => {
                 const v = e.target.value;
-                if (v === "") return setNotificar("");
+                if (v === "") {
+                  setNotificar("");
+                  return;
+                }
+
                 const n = Number(v);
                 if (!Number.isNaN(n)) setNotificar(n);
               }}
-              className={
-                inputCls +
-                (notiOk ? "" : " ring-1 ring-rose-400/30")
-              }
+              className={inputCls + (notiOk ? "" : " ring-1 ring-rose-400/30")}
               aria-invalid={!notiOk}
               aria-describedby="help-notificar"
             />
-            <p
-              id="help-notificar"
-              className="mt-1 text-xs text-white/60"
-            >
-              Define cuándo pasa a “Próximo”. Si lo dejas vacío, se usa
-              el umbral por defecto.
+            <p id="help-notificar" className="mt-1.5 text-xs leading-relaxed text-white/60">
+              Define cuándo pasa a “Próximo”. Si lo dejas vacío, se usa el
+              umbral por defecto.
             </p>
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end gap-2">
+        <div className="mt-7 flex justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm hover:bg-white/10"
+            className="rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm transition hover:bg-white/10"
           >
             Cancelar
           </button>
@@ -419,7 +437,7 @@ export default function VencimientoFormModal({
             type="button"
             disabled={!canSave || apiLoading}
             onClick={handleSave}
-            className="rounded-xl px-4 py-2 text-sm font-semibold text_WHITE disabled:opacity-60"
+            className="rounded-xl px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition disabled:opacity-60"
             style={{ backgroundColor: WINE }}
             title="Ctrl/⌘ + Enter para guardar"
           >
@@ -432,17 +450,17 @@ export default function VencimientoFormModal({
 }
 
 const inputCls =
-  "w-full rounded-xl border border_WHITE/10 bg_WHITE/5 px-3 py-2 text-sm text_WHITE outline-none transition " +
-  "focus:border_WHITE/20 focus:ring-2 focus:ring_WHITE/20 placeholder:text_WHITE/40";
+  "w-full rounded-2xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white outline-none transition " +
+  "focus:border-white/20 focus:ring-2 focus:ring-white/15 placeholder:text-white/35";
 
-const Label: React.FC<
-  React.PropsWithChildren<{ className?: string }>
-> = ({ className = "", children }) => (
+const Label: React.FC<React.PropsWithChildren<{ className?: string }>> = ({
+  className = "",
+  children,
+}) => (
   <label
-    className={[
-      "mb-1 block text-xs font-medium text_WHITE/70",
-      className,
-    ].join(" ")}
+    className={["mb-1.5 block text-xs font-medium uppercase tracking-wide text-white/65", className].join(
+      " "
+    )}
   >
     {children}
   </label>

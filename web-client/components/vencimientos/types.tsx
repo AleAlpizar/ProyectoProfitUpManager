@@ -5,8 +5,8 @@ export type AlertRowDto = {
   titulo: string;
   tipoNombre: string;
   referencia?: string | null;
-  fechaVencimiento: string; 
-  notificarDiasAntes: number;
+  fechaVencimiento: string;
+  notificarDiasAntes?: number | null;
   daysToDue: number;
   estado: EstadoVto;
 };
@@ -18,9 +18,9 @@ export type VencimientoDetalleDto = {
   tipoDocumentoVencimientoID: number;
   tipoNombre: string;
   referencia?: string | null;
-  fechaEmision?: string | null;      
-  fechaVencimiento: string;         
-  notificarDiasAntes: number;
+  fechaEmision?: string | null;
+  fechaVencimiento: string;
+  notificarDiasAntes?: number | null;
   isActive: boolean;
 };
 
@@ -30,8 +30,8 @@ export type VencimientoUpdateDto = {
   tipoDocumentoVencimientoID: number;
   referencia?: string | null;
   fechaEmision?: string | null;
-  fechaVencimiento: string; 
-  notificarDiasAntes: number;
+  fechaVencimiento: string;
+  notificarDiasAntes?: number | null;
   isActive: boolean;
 };
 

@@ -43,7 +43,7 @@ export default function CalendarMonth({ onEdit, onCreate }: Props) {
     soloPendientes, setSoloPendientes,
     tipo, setTipo,
     reload,
-  } = useCalendar(true); 
+  } = useCalendar(true);
 
   React.useEffect(() => {
     const style = document.createElement("style");
@@ -107,39 +107,43 @@ export default function CalendarMonth({ onEdit, onCreate }: Props) {
   }, []);
 
   return (
-    <div className="rounded-2xl border border-white/10 bg-[#121618] text-white">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-        <div className="flex items-center gap-2">
+    <div className="overflow-hidden rounded-3xl border border-white/10 bg-[#121618] text-white shadow-[0_14px_40px_rgba(0,0,0,.18)]">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 bg-white/[0.03] px-4 py-4">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={prevMonth}
-            className="rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-sm hover:bg-white/10 focus:outline-none focus:ring-2"
+            className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm transition hover:bg-white/10 focus:outline-none focus:ring-2"
             style={{ boxShadow: "none" }}
             aria-label="Mes anterior"
             title="Mes anterior"
           >
             ←
           </button>
-          <div className="rounded-xl border border-white/10 px-3 py-1.5 text-sm font-semibold">
+
+          <div className="rounded-xl border border-white/10 bg-white/[0.03] px-4 py-2 text-sm font-semibold capitalize shadow-sm">
             {monthLabel}
           </div>
+
           <button
             onClick={nextMonth}
-            className="rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-sm hover:bg-white/10 focus:outline-none focus:ring-2"
+            className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm transition hover:bg-white/10 focus:outline-none focus:ring-2"
             aria-label="Mes siguiente"
             title="Mes siguiente"
           >
             →
           </button>
+
           <button
             onClick={setToday}
-            className="ml-2 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-sm hover:bg-white/10 focus:outline-none focus:ring-2"
+            className="ml-1 rounded-xl border border-white/15 bg-white/5 px-3.5 py-2 text-sm transition hover:bg-white/10 focus:outline-none focus:ring-2"
             style={{ borderColor: `${WINE}66` }}
           >
             Hoy
           </button>
+
           <button
             onClick={reload}
-            className="ml-2 rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-sm hover:bg-white/10 focus:outline-none focus:ring-2"
+            className="rounded-xl border border-white/15 bg-white/5 px-3.5 py-2 text-sm transition hover:bg-white/10 focus:outline-none focus:ring-2"
             style={{ borderColor: `${WINE}66` }}
           >
             Refrescar
@@ -147,16 +151,16 @@ export default function CalendarMonth({ onEdit, onCreate }: Props) {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <label className="inline-flex items-center gap-2 text-sm text-white/80" title="Muestra solo próximos/vencidos">
+          <label className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-white/80" title="Muestra solo próximos/vencidos">
             <input type="checkbox" checked={soloPendientes} onChange={(e) => (setSoloPendientes(e.target.checked))} />
-            <span>Solo pendientes (próximos / vencidos)</span>
+            <span>Solo pendientes</span>
           </label>
 
           <div className="relative">
             <select
               value={tipo}
               onChange={(e) => setTipo(e.target.value)}
-              className="dark-select appearance-none rounded-xl border border-white/10 bg-[#0f1214] px-3 py-2 pr-9 text-sm text-white outline-none focus:border-[#A30862]/40 focus:ring-2 focus:ring-[#A30862]/40"
+              className="dark-select appearance-none rounded-xl border border-white/10 bg-[#0f1214] px-3 py-2.5 pr-9 text-sm text-white outline-none focus:border-[#A30862]/40 focus:ring-2 focus:ring-[#A30862]/40"
               title="Filtrar por tipo"
             >
               <option value="" className="text-black">Todos los tipos</option>
@@ -169,17 +173,17 @@ export default function CalendarMonth({ onEdit, onCreate }: Props) {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 overflow-x-auto px-4 py-3">
+      <div className="flex items-center gap-2 overflow-x-auto border-b border-white/10 px-4 py-3">
         <TipoPill label="Todos" active={!tipo} onClick={() => setTipo("")} />
         {tipos.map(t => (
           <TipoPill key={t} label={t} active={tipo === t} onClick={() => setTipo(t)} />
         ))}
       </div>
 
-      <div className="px-4 pb-4">
-        <div className="grid grid-cols-7 gap-2 pt-2 text-xs text-white/60">
+      <div className="px-4 pb-4 pt-3">
+        <div className="grid grid-cols-7 gap-2 pb-2 text-[11px] font-medium uppercase tracking-wide text-white/45">
           {["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"].map(d => (
-            <div key={d} className="px-2">{d}</div>
+            <div key={d} className="px-2 py-1">{d}</div>
           ))}
         </div>
 
@@ -195,41 +199,46 @@ export default function CalendarMonth({ onEdit, onCreate }: Props) {
               <div
                 key={key}
                 className={classNames(
-                  "group relative min-h-[108px] rounded-xl border p-2 text-left transition",
-                  isThisMonth ? "bg-white/5 border-white/10" : "bg-transparent border-white/5 text-white/40",
-                  "hover:bg-white/10 hover:border-white/15"
+                  "group relative min-h-[118px] rounded-2xl border p-2.5 text-left transition",
+                  isThisMonth
+                    ? "border-white/10 bg-white/[0.04]"
+                    : "border-white/5 bg-transparent text-white/35",
+                  "hover:border-white/15 hover:bg-white/[0.07]"
                 )}
               >
-                <div className="mb-1 flex items-center justify-between">
+                <div className="mb-2 flex items-center justify-between">
                   <button
                     type="button"
                     onClick={() => openDay(d)}
-                    className="text-left text-xs"
+                    className="text-left text-xs font-medium"
                     title="Ver vencimientos del día"
                   >
                     {d.getDate()}
                   </button>
 
-                  <button
-                    onClick={() => onCreate(iso)}
-                    className="invisible rounded-md border border-white/15 bg-white/10 px-2 py-0.5 text-xs text-white/90 transition group-hover:visible hover:bg-white/20"
-                    title="Registrar aquí"
-                    style={{ borderColor: `${WINE}66` }}
-                  >
-                    +
-                  </button>
-
-                  {isToday && (
-                    <span className="ml-2 rounded-full bg-white/20 px-2 py-0.5 text-[10px] text-white/90">Hoy</span>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {isToday && (
+                      <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] text-white/90">
+                        Hoy
+                      </span>
+                    )}
+                    <button
+                      onClick={() => onCreate(iso)}
+                      className="invisible rounded-md border border-white/15 bg-white/10 px-2 py-0.5 text-xs text-white/90 transition group-hover:visible hover:bg-white/20"
+                      title="Registrar aquí"
+                      style={{ borderColor: `${WINE}66` }}
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1.5">
                   {items.slice(0,3).map(ev => (
                     <button
                       key={ev.documentoVencimientoID}
                       onClick={() => onEdit(ev.documentoVencimientoID)}
-                      className={classNames("truncate rounded-md px-2 py-1 text-[11px] ring-1 text-left", chipClasses(ev.estado))}
+                      className={classNames("truncate rounded-lg px-2.5 py-1.5 text-[11px] ring-1 text-left transition", chipClasses(ev.estado))}
                       title={`${ev.titulo} • ${ev.tipoNombre} • ${ev.fechaVencimiento.slice(0,10)}${ev.descripcion ? " • " + ev.descripcion : ""}`}
                     >
                       {ev.titulo}
@@ -238,7 +247,7 @@ export default function CalendarMonth({ onEdit, onCreate }: Props) {
                   {items.length > 3 && (
                     <button
                       onClick={() => openDay(d)}
-                      className="text-left text-[11px] text-white/70 hover:underline"
+                      className="text-left text-[11px] font-medium text-white/70 hover:text-white hover:underline"
                       title="Ver todos"
                     >
                       +{items.length - 3} más
@@ -251,12 +260,13 @@ export default function CalendarMonth({ onEdit, onCreate }: Props) {
         </div>
 
         {loading && (
-          <div className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">
+          <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">
             Cargando calendario…
           </div>
         )}
+
         {error && (
-          <div className="mt-4 rounded-xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-200">
+          <div className="mt-4 rounded-2xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-200">
             {error}
           </div>
         )}
@@ -264,17 +274,23 @@ export default function CalendarMonth({ onEdit, onCreate }: Props) {
 
       {dayOpen.open && (
         <div
-          className="fixed inset-0 z-[1200] flex items-end bg-black/60"
+          className="fixed inset-0 z-[1200] flex items-end bg-black/65 backdrop-blur-[2px]"
           onMouseDown={(e) => { if (e.target === e.currentTarget) closeDay(); }}
         >
-          <div className="w-full rounded-t-2xl border border-white/10 bg-[#0f1214] p-4 text-white shadow-2xl max-h-[85vh] overflow-auto">
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-              <div className="text-sm font-semibold">
-                {dayOpen.date?.toLocaleDateString(undefined, { weekday: "long", year:"numeric", month:"long", day:"numeric" })}
+          <div className="max-h-[85vh] w-full overflow-auto rounded-t-3xl border border-white/10 bg-[#0f1214] p-5 text-white shadow-2xl">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold capitalize">
+                  {dayOpen.date?.toLocaleDateString(undefined, { weekday: "long", year:"numeric", month:"long", day:"numeric" })}
+                </div>
+                <div className="mt-1 text-xs text-white/55">
+                  Revisa o registra documentos para esta fecha.
+                </div>
               </div>
+
               <div className="flex items-center gap-2">
                 <button
-                  className="rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-xs hover:bg-white/10"
+                  className="rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-xs transition hover:bg-white/10"
                   onClick={() => {
                     if (!dayOpen.date) return;
                     onCreate(toLocalISO(dayOpen.date));
@@ -285,7 +301,7 @@ export default function CalendarMonth({ onEdit, onCreate }: Props) {
                   Registrar aquí
                 </button>
                 <button
-                  className="rounded-full px-2 text-white/80 hover:bg-white/10"
+                  className="rounded-full px-2 text-white/80 transition hover:bg-white/10"
                   onClick={closeDay}
                   aria-label="Cerrar"
                 >
@@ -295,32 +311,38 @@ export default function CalendarMonth({ onEdit, onCreate }: Props) {
             </div>
 
             {(!dayOpen.items || dayOpen.items.length === 0) ? (
-              <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
                 Sin vencimientos este día.
               </div>
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-y-2.5">
                 {dayOpen.items!.map(ev => (
-                  <li key={`${ev.documentoVencimientoID}-${ev.titulo}`} className="flex items-start justify-between gap-3 rounded-xl border border-white/10 bg-white/5 p-3">
+                  <li
+                    key={`${ev.documentoVencimientoID}-${ev.titulo}`}
+                    className="flex items-start justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4 transition hover:bg-white/[0.06]"
+                  >
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-medium">{ev.titulo}</div>
-                      <div className="truncate text-xs text-white/70">{ev.tipoNombre} • {ev.fechaVencimiento.slice(0,10)}</div>
+                      <div className="truncate text-sm font-semibold">{ev.titulo}</div>
+                      <div className="mt-1 truncate text-xs text-white/65">
+                        {ev.tipoNombre} • {ev.fechaVencimiento.slice(0,10)}
+                      </div>
                       {ev.descripcion && (
                         <div
-                          className="mt-1 text-xs text-white/80 whitespace-pre-wrap break-words"
+                          className="mt-2 whitespace-pre-wrap break-words text-xs leading-relaxed text-white/80"
                           style={{ overflowWrap: "anywhere", wordBreak: "break-word" }}
                         >
                           {ev.descripcion}
                         </div>
                       )}
                     </div>
+
                     <div className="flex items-center gap-2">
-                      <span className={classNames("rounded-full px-2 py-0.5 text-[11px] ring-1", chipClasses(ev.estado))}>
+                      <span className={classNames("rounded-full px-2.5 py-1 text-[11px] ring-1", chipClasses(ev.estado))}>
                         {labelEstado(ev.estado)}
                       </span>
                       <button
                         onClick={() => onEdit(ev.documentoVencimientoID)}
-                        className="rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-xs hover:bg-white/10"
+                        className="rounded-xl border border-white/15 bg-white/5 px-3 py-1.5 text-xs transition hover:bg-white/10"
                         style={{ borderColor: `${WINE}66` }}
                       >
                         Editar
@@ -343,7 +365,7 @@ function TipoPill({ label, active, onClick }: { label: string; active: boolean; 
       type="button"
       onClick={onClick}
       className={classNames(
-        "whitespace-nowrap rounded-full px-3 py-1 text-xs ring-1 transition",
+        "whitespace-nowrap rounded-full px-3 py-1.5 text-xs ring-1 transition",
         active
           ? "text-white"
           : "text-white/80 hover:bg-white/10",

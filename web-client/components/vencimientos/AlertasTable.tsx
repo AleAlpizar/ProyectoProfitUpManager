@@ -14,11 +14,23 @@ import { useConfirm } from "@/components/modals/ConfirmProvider";
 
 function useDebounced<T>(value: T, ms = 350) {
   const [debounced, setDebounced] = React.useState(value);
+
   React.useEffect(() => {
     const id = setTimeout(() => setDebounced(value), ms);
     return () => clearTimeout(id);
   }, [value, ms]);
+
   return debounced;
+}
+
+function getApiErrorMessage(e: any, fallback: string) {
+  return (
+    e?.response?.data?.detail ||
+    e?.response?.data?.title ||
+    e?.detail ||
+    e?.message ||
+    fallback
+  );
 }
 
 type Props = {
@@ -55,6 +67,7 @@ export default function AlertasTable({ onEdit }: Props) {
 
   const [busyRow, setBusyRow] = React.useState<number | null>(null);
   const [actionError, setActionError] = React.useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = React.useState<string | null>(null);
 
   const [preview, setPreview] = React.useState<{
     open: boolean;
@@ -76,6 +89,12 @@ export default function AlertasTable({ onEdit }: Props) {
       document.head.removeChild(style);
     };
   }, []);
+
+  React.useEffect(() => {
+    if (!actionSuccess) return;
+    const id = window.setTimeout(() => setActionSuccess(null), 4000);
+    return () => window.clearTimeout(id);
+  }, [actionSuccess]);
 
   const tipos = React.useMemo(() => {
     const set = new Set<string>();
@@ -105,9 +124,7 @@ export default function AlertasTable({ onEdit }: Props) {
       .filter(
         (r) =>
           !qDocDebounced ||
-          r.titulo
-            .toLowerCase()
-            .includes(qDocDebounced.trim().toLowerCase())
+          r.titulo.toLowerCase().includes(qDocDebounced.trim().toLowerCase())
       )
       .filter((r) => !qFecha || fmtISO(r.fechaVencimiento) === qFecha)
       .filter((r) => !qTipo || r.tipoNombre === qTipo)
@@ -126,10 +143,7 @@ export default function AlertasTable({ onEdit }: Props) {
         case "faltan":
           return (a.daysToDue - b.daysToDue) * dir;
         default:
-          return (
-            a.fechaVencimiento.localeCompare(b.fechaVencimiento) *
-            dir
-          );
+          return a.fechaVencimiento.localeCompare(b.fechaVencimiento) * dir;
       }
     };
 
@@ -143,6 +157,7 @@ export default function AlertasTable({ onEdit }: Props) {
       PROXIMO: 0,
       VENCIDO: 0,
     } as Record<"total" | EstadoVto, number>;
+
     data.forEach((r) => (base[r.estado] += 1));
     return base;
   }, [data]);
@@ -156,6 +171,7 @@ export default function AlertasTable({ onEdit }: Props) {
       "Tipo",
       "Referencia",
     ].join(",");
+
     const lines = rows.map((r) =>
       [
         safeCsv(r.titulo),
@@ -166,6 +182,7 @@ export default function AlertasTable({ onEdit }: Props) {
         safeCsv(r.referencia ?? ""),
       ].join(",")
     );
+
     const csv = [header, ...lines].join("\n");
     const blob = new Blob([csv], {
       type: "text/csv;charset=utf-8",
@@ -185,7 +202,8 @@ export default function AlertasTable({ onEdit }: Props) {
       title: "Eliminar vencimiento",
       message: (
         <>
-          ¿Eliminar el vencimiento <b>{titulo}</b>?<br />
+          ¿Eliminar el vencimiento <b>{titulo}</b>?
+          <br />
           Esta acción no se puede deshacer.
         </>
       ),
@@ -193,15 +211,19 @@ export default function AlertasTable({ onEdit }: Props) {
       cancelText: "Cancelar",
       tone: "danger",
     });
+
     if (!ok) return;
 
     setActionError(null);
+    setActionSuccess(null);
     setBusyRow(id);
+
     try {
       await del<void>(VENC_API.delete(id));
       await reload();
+      setActionSuccess("Vencimiento eliminado correctamente.");
     } catch (e: any) {
-      setActionError(e?.message ?? "No se pudo eliminar.");
+      setActionError(getApiErrorMessage(e, "No se pudo eliminar."));
     } finally {
       setBusyRow(null);
     }
@@ -221,34 +243,37 @@ export default function AlertasTable({ onEdit }: Props) {
       cancelText: "Cancelar",
       tone: "brand",
     });
+
     if (!ok) return;
 
     setActionError(null);
+    setActionSuccess(null);
     setBusyRow(id);
+
     try {
-      const detalle = await get<VencimientoDetalleDto>(
-        VENC_API.get(id)
-      );
-      if (!detalle)
-        throw new Error("No se encontró el documento.");
+      const detalle = await get<VencimientoDetalleDto>(VENC_API.get(id));
+      if (!detalle) throw new Error("No se encontró el documento.");
 
       const payload: VencimientoUpdateDto = {
         titulo: detalle.titulo,
         descripcion: detalle.descripcion ?? null,
-        tipoDocumentoVencimientoID:
-          detalle.tipoDocumentoVencimientoID,
+        tipoDocumentoVencimientoID: detalle.tipoDocumentoVencimientoID,
         referencia: detalle.referencia ?? null,
         fechaEmision: detalle.fechaEmision ?? null,
         fechaVencimiento: detalle.fechaVencimiento,
-        notificarDiasAntes: detalle.notificarDiasAntes,
+        notificarDiasAntes:
+          typeof detalle.notificarDiasAntes === "number"
+            ? detalle.notificarDiasAntes
+            : null,
         isActive: false,
       };
 
       await put<void>(VENC_API.update(id), payload);
       await reload();
+      setActionSuccess("Vencimiento marcado como hecho correctamente.");
     } catch (e: any) {
       setActionError(
-        e?.message ?? "No se pudo marcar como hecha."
+        getApiErrorMessage(e, "No se pudo marcar como hecha.")
       );
     } finally {
       setBusyRow(null);
@@ -262,10 +287,9 @@ export default function AlertasTable({ onEdit }: Props) {
       item: null,
       error: null,
     });
+
     try {
-      const detalle = await get<VencimientoDetalleDto>(
-        VENC_API.get(id)
-      );
+      const detalle = await get<VencimientoDetalleDto>(VENC_API.get(id));
       setPreview({
         open: true,
         loading: false,
@@ -277,20 +301,25 @@ export default function AlertasTable({ onEdit }: Props) {
         open: true,
         loading: false,
         item: null,
-        error: e?.message ?? "No se pudo cargar el detalle.",
+        error: getApiErrorMessage(e, "No se pudo cargar el detalle."),
       });
     }
   };
+
   const closePreview = () => setPreview({ open: false });
 
   return (
     <>
-      <section className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-semibold text-white/90">
-            Filtros
-          </h2>
-          <div className="flex items-center gap-2 text-xs text-white/60">
+      <section className="mb-6 rounded-3xl border border-white/10 bg-white/[0.04] p-5 shadow-[0_10px_30px_rgba(0,0,0,.12)]">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-white/95">Filtros</h2>
+            <p className="mt-1 text-xs text-white/50">
+              Filtra, ordena y exporta las alertas de vencimiento.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 text-xs text-white/60">
             <span>Total: {counts.total}</span>
             <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/20 px-2 py-0.5 text-emerald-300 ring-1 ring-emerald-400/30">
               Vigente {counts.VIGENTE}
@@ -304,14 +333,14 @@ export default function AlertasTable({ onEdit }: Props) {
           </div>
         </div>
 
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <Label>Documento</Label>
             <input
               value={qDoc}
               onChange={(e) => setQDoc(e.target.value)}
               placeholder="Ej: Permiso sanitario"
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/20 focus:ring-2 focus:ring-white/20"
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus:border-white/20 focus:ring-2 focus:ring-white/15"
             />
           </div>
 
@@ -321,7 +350,7 @@ export default function AlertasTable({ onEdit }: Props) {
               type="date"
               value={qFecha}
               onChange={(e) => setQFecha(e.target.value)}
-              className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-white/20 focus:ring-2 focus:ring-white/20"
+              className="w-full rounded-2xl border border-white/10 bg-white/5 px-3.5 py-2.5 text-sm text-white outline-none focus:border-white/20 focus:ring-2 focus:ring-white/15"
             />
           </div>
 
@@ -331,18 +360,14 @@ export default function AlertasTable({ onEdit }: Props) {
               <select
                 value={qTipo}
                 onChange={(e) => setQTipo(e.target.value)}
-                className="dark-select w-full appearance-none rounded-xl border border-white/10 bg-white/5 px-3 py-2 pr-9 text-sm text-white outline-none focus:border-[#A30862]/40 focus:ring-2 focus:ring-[#A30862]/40"
+                className="dark-select w-full appearance-none rounded-2xl border border-white/10 bg-white/5 px-3.5 py-2.5 pr-9 text-sm text-white outline-none focus:border-[#A30862]/40 focus:ring-2 focus:ring-[#A30862]/40"
                 title="Filtrar por tipo"
               >
                 <option value="" className="text-black">
                   Todos
                 </option>
                 {Array.from(tipos).map((t) => (
-                  <option
-                    key={t}
-                    value={t}
-                    className="text-black"
-                  >
+                  <option key={t} value={t} className="text-black">
                     {t}
                   </option>
                 ))}
@@ -362,7 +387,7 @@ export default function AlertasTable({ onEdit }: Props) {
                   type="button"
                   onClick={() => setQEstado(e.key)}
                   className={[
-                    "rounded-full px-3 py-1 text-xs ring-1 transition",
+                    "rounded-full px-3 py-1.5 text-xs ring-1 transition",
                     e.key === ""
                       ? "bg-white/5 text-white/80 ring-white/15 hover:bg-white/10"
                       : e.key === "VIGENTE"
@@ -380,12 +405,8 @@ export default function AlertasTable({ onEdit }: Props) {
           </div>
         </div>
 
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <TipoPill
-            label="Todos"
-            active={!qTipo}
-            onClick={() => setQTipo("")}
-          />
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <TipoPill label="Todos" active={!qTipo} onClick={() => setQTipo("")} />
           {tipos.map((t) => (
             <TipoPill
               key={t}
@@ -396,48 +417,35 @@ export default function AlertasTable({ onEdit }: Props) {
           ))}
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <div className="flex items-center gap-1 text-xs">
-            <span className="text-white/70">Vence en:</span>
-            <button
-              onClick={() => setRango("")}
-              className={chipCls(rango === "")}
-              title="Sin filtro"
-            >
+        <div className="mt-5 flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1 text-xs">
+            <span className="mr-1 text-white/65">Vence en:</span>
+            <button onClick={() => setRango("")} className={chipCls(rango === "")}>
               Todos
             </button>
-            <button
-              onClick={() => setRango("hoy")}
-              className={chipCls(rango === "hoy")}
-            >
+            <button onClick={() => setRango("hoy")} className={chipCls(rango === "hoy")}>
               Hoy
             </button>
-            <button
-              onClick={() => setRango("7")}
-              className={chipCls(rango === "7")}
-            >
+            <button onClick={() => setRango("7")} className={chipCls(rango === "7")}>
               ≤ 7 días
             </button>
-            <button
-              onClick={() => setRango("30")}
-              className={chipCls(rango === "30")}
-            >
+            <button onClick={() => setRango("30")} className={chipCls(rango === "30")}>
               ≤ 30 días
             </button>
           </div>
 
-          <div className="ml-auto flex gap-2">
+          <div className="ml-auto flex flex-wrap gap-2">
             <button
               type="button"
               onClick={reload}
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20"
+              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20"
               style={{ borderColor: `${WINE}66` }}
             >
               Refrescar
             </button>
             <button
               type="button"
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/90 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20"
+              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white/90 transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20"
               onClick={() => {
                 setQDoc("");
                 setQFecha("");
@@ -451,7 +459,7 @@ export default function AlertasTable({ onEdit }: Props) {
             <button
               type="button"
               onClick={exportCsv}
-              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20"
+              className="inline-flex items-center justify-center rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20"
               title="Exportar resultados a CSV"
               style={{ borderColor: `${WINE}66` }}
             >
@@ -461,18 +469,25 @@ export default function AlertasTable({ onEdit }: Props) {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-white/10 bg-white/5">
-        <div className="sticky top-0 z-10 border-b border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/90 backdrop-blur">
+      <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.04] shadow-[0_10px_30px_rgba(0,0,0,.12)]">
+        <div className="sticky top-0 z-10 border-b border-white/10 bg-white/[0.05] px-5 py-4 text-sm font-semibold text-white/95 backdrop-blur">
           Alertas de vencimiento
         </div>
 
+        {actionSuccess && (
+          <div className="mx-5 mt-4 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
+            {actionSuccess}
+          </div>
+        )}
+
         {actionError && (
-          <div className="mx-4 mt-3 rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-200">
+          <div className="mx-5 mt-4 rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
             {actionError}
           </div>
         )}
+
         {error && (
-          <div className="mx-4 mt-3 rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-sm text-rose-200">
+          <div className="mx-5 mt-4 rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-sm text-rose-200">
             {error}
           </div>
         )}
@@ -480,7 +495,7 @@ export default function AlertasTable({ onEdit }: Props) {
         <div className="overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="bg-white/5 text-left text-xs uppercase tracking-wide text-white/60">
+              <tr className="bg-white/[0.04] text-left text-[11px] uppercase tracking-[0.12em] text-white/55">
                 <Th>
                   <SortBtn
                     onClick={() => toggleSort("titulo")}
@@ -532,10 +547,7 @@ export default function AlertasTable({ onEdit }: Props) {
             <tbody className="divide-y divide-white/10">
               {loading && rows.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-8 text-center text-white/60"
-                  >
+                  <td colSpan={6} className="px-4 py-10 text-center text-white/60">
                     Cargando…
                   </td>
                 </tr>
@@ -543,54 +555,39 @@ export default function AlertasTable({ onEdit }: Props) {
 
               {!loading && rows.length === 0 && (
                 <tr>
-                  <td
-                    colSpan={6}
-                    className="px-4 py-8 text-center text-white/60"
-                  >
+                  <td colSpan={6} className="px-4 py-10 text-center text-white/60">
                     No hay resultados para los filtros aplicados.
                   </td>
                 </tr>
               )}
 
               {rows.map((r) => {
-                const isBusy =
-                  busyRow === r.documentoVencimientoID;
+                const isBusy = busyRow === r.documentoVencimientoID;
+
                 return (
                   <tr
                     key={r.documentoVencimientoID}
-                    className={`hover:bg-white/5 ${
-                      r.estado === "PROXIMO"
-                        ? "bg-yellow-500/5"
-                        : ""
+                    className={`transition hover:bg-white/[0.05] ${
+                      r.estado === "PROXIMO" ? "bg-yellow-500/[0.04]" : ""
                     }`}
                   >
-                    <Td className="font-medium text-white">
-                      {r.titulo}
-                    </Td>
+                    <Td className="font-medium text-white">{r.titulo}</Td>
                     <Td>{fmtISO(r.fechaVencimiento)}</Td>
                     <Td>
                       {r.daysToDue < 0
-                        ? `-${Math.abs(
-                            r.daysToDue
-                          )} días`
+                        ? `-${Math.abs(r.daysToDue)} días`
                         : `${r.daysToDue} días`}
                     </Td>
                     <Td>
-                      <EstadoBadge
-                        estado={r.estado as EstadoVto}
-                      />
+                      <EstadoBadge estado={r.estado as EstadoVto} />
                     </Td>
                     <Td>{r.tipoNombre}</Td>
                     <Td className="text-right">
-                      <div className="inline-flex gap-2">
+                      <div className="inline-flex flex-wrap justify-end gap-2">
                         <button
                           type="button"
-                          onClick={() =>
-                            doPreview(
-                              r.documentoVencimientoID
-                            )
-                          }
-                          className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20"
+                          onClick={() => doPreview(r.documentoVencimientoID)}
+                          className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20"
                           title="Ver detalle"
                           style={{ borderColor: `${WINE}40` }}
                         >
@@ -599,49 +596,33 @@ export default function AlertasTable({ onEdit }: Props) {
 
                         <button
                           type="button"
-                          onClick={() =>
-                            doEdit(
-                              r.documentoVencimientoID
-                            )
-                          }
-                          className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-50"
+                          onClick={() => doEdit(r.documentoVencimientoID)}
+                          className="rounded-xl border border-white/10 bg-white/5 px-3 py-1.5 text-xs text-white transition hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/20 disabled:opacity-50"
                           disabled={isBusy}
                           title="Editar"
                           style={{ borderColor: `${WINE}40` }}
                         >
                           Editar
                         </button>
+
                         <button
                           type="button"
-                          onClick={() =>
-                            doDone(
-                              r.documentoVencimientoID,
-                              r.titulo
-                            )
-                          }
-                          className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-xs text-emerald-200 hover:bg-emerald-400/20 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 disabled:opacity-50"
+                          onClick={() => doDone(r.documentoVencimientoID, r.titulo)}
+                          className="rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-xs text-emerald-200 transition hover:bg-emerald-400/20 focus:outline-none focus:ring-2 focus:ring-emerald-400/30 disabled:opacity-50"
                           disabled={isBusy}
                           title="Marcar como hecha"
                         >
-                          {isBusy
-                            ? "Aplicando…"
-                            : "Hecha"}
+                          {isBusy ? "Aplicando…" : "Hecha"}
                         </button>
+
                         <button
                           type="button"
-                          onClick={() =>
-                            doDelete(
-                              r.documentoVencimientoID,
-                              r.titulo
-                            )
-                          }
-                          className="rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-1.5 text-xs text-rose-200 hover:bg-rose-400/20 focus:outline-none focus:ring-2 focus:ring-rose-400/30 disabled:opacity-50"
+                          onClick={() => doDelete(r.documentoVencimientoID, r.titulo)}
+                          className="rounded-xl border border-rose-400/30 bg-rose-400/10 px-3 py-1.5 text-xs text-rose-200 transition hover:bg-rose-400/20 focus:outline-none focus:ring-2 focus:ring-rose-400/30 disabled:opacity-50"
                           disabled={isBusy}
                           title="Eliminar"
                         >
-                          {isBusy
-                            ? "Eliminando…"
-                            : "Eliminar"}
+                          {isBusy ? "Eliminando…" : "Eliminar"}
                         </button>
                       </div>
                     </Td>
@@ -652,14 +633,14 @@ export default function AlertasTable({ onEdit }: Props) {
           </table>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 px-4 py-3 text-xs">
-          <span className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 ring-1 bg-emerald-400/20 text-emerald-300 ring-emerald-400/30">
+        <div className="flex flex-wrap items-center gap-3 border-t border-white/10 px-5 py-4 text-xs">
+          <span className="inline-flex items-center gap-2 rounded-full bg-emerald-400/20 px-2.5 py-1 ring-1 ring-emerald-400/30 text-emerald-300">
             Vigente
           </span>
-          <span className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 ring-1 bg-yellow-400/20 text-yellow-300 ring-yellow-400/30">
+          <span className="inline-flex items-center gap-2 rounded-full bg-yellow-400/20 px-2.5 py-1 ring-1 ring-yellow-400/30 text-yellow-300">
             Próximo (según “Notificar días antes”)
           </span>
-          <span className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 ring-1 bg-red-400/20 text-red-300 ring-red-400/30">
+          <span className="inline-flex items-center gap-2 rounded-full bg-red-400/20 px-2.5 py-1 ring-1 ring-red-400/30 text-red-300">
             Vencido
           </span>
         </div>
@@ -667,34 +648,26 @@ export default function AlertasTable({ onEdit }: Props) {
 
       {preview.open && (
         <div
-          className="fixed inset-0 z-[1300] flex items-end md:items-center justify-center bg-black/60"
+          className="fixed inset-0 z-[1300] flex items-end justify-center bg-black/70 backdrop-blur-[2px] md:items-center"
           onMouseDown={(e) => {
-            if (e.target === e.currentTarget)
-              closePreview();
+            if (e.target === e.currentTarget) closePreview();
           }}
         >
           <div
-            className="
-              w-[calc(100%-2rem)]
-              max-w-lg
-              rounded-2xl
-              border border-white/10
-              bg-[#0f1214]
-              p-4
-              text-white
-              shadow-2xl
-              max-h-[85vh]
-              overflow-auto
-            "
+            className="w-[calc(100%-2rem)] max-w-xl max-h-[85vh] overflow-auto rounded-3xl border border-white/10 bg-[#0f1214] p-5 text-white shadow-[0_18px_60px_rgba(0,0,0,.45)]"
             role="dialog"
             aria-modal="true"
           >
-            <div className="mb-2 flex items-center justify-between">
-              <div className="text-sm font-semibold">
-                Detalle del documento
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <div className="text-base font-semibold">Detalle del documento</div>
+                <div className="mt-1 text-xs text-white/55">
+                  Consulta la información registrada del vencimiento.
+                </div>
               </div>
+
               <button
-                className="rounded-full px-2 text-white/80 hover:bg-white/10"
+                className="rounded-full px-2 text-white/80 transition hover:bg-white/10"
                 onClick={closePreview}
                 aria-label="Cerrar"
               >
@@ -703,130 +676,110 @@ export default function AlertasTable({ onEdit }: Props) {
             </div>
 
             {preview.loading && (
-              <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-3 text-sm text-white/80">
                 Cargando…
               </div>
             )}
 
             {preview.error && (
-              <div className="rounded-xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-200">
+              <div className="rounded-2xl border border-rose-400/30 bg-rose-400/10 p-3 text-sm text-rose-200">
                 {preview.error}
               </div>
             )}
 
-            {!preview.loading &&
-              !preview.error &&
-              preview.item && (
-                <div className="space-y-3">
-                  <div>
-                    <div className="text-xs text-white/60">
-                      Documento
-                    </div>
-                    <div className="text-sm font-medium">
-                      {preview.item.titulo}
-                    </div>
+            {!preview.loading && !preview.error && preview.item && (
+              <div className="space-y-4">
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                  <div className="text-xs uppercase tracking-wide text-white/50">
+                    Documento
                   </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <div className="text-xs text-white/60">
-                        Tipo
-                      </div>
-                      <div className="text-sm">
-                        {preview.item.tipoNombre}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text_WHITE/60">
-                        Vence
-                      </div>
-                      <div className="text-sm">
-                        {fmtISO(
-                          preview.item.fechaVencimiento
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {preview.item.referencia && (
-                    <div>
-                      <div className="text-xs text_WHITE/60">
-                        Referencia
-                      </div>
-                      <div
-                        className="text-sm break-words"
-                        style={{
-                          overflowWrap: "anywhere",
-                          wordBreak: "break-word",
-                        }}
-                      >
-                        {preview.item.referencia}
-                      </div>
-                    </div>
-                  )}
-
-                  {preview.item.descripcion && (
-                    <div>
-                      <div className="text-xs text_WHITE/60">
-                        Descripción
-                      </div>
-                      <div
-                        className="whitespace-pre-wrap text-sm text_WHITE/80 break-words"
-                        style={{
-                          overflowWrap: "anywhere",
-                          wordBreak: "break-word",
-                        }}
-                      >
-                        {preview.item.descripcion}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-3">
-                    {preview.item.fechaEmision && (
-                      <div>
-                        <div className="text-xs text_WHITE/60">
-                          Emisión
-                        </div>
-                        <div className="text-sm">
-                          {fmtISO(
-                            preview.item.fechaEmision
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    <div>
-                      <div className="text-xs text_WHITE/60">
-                        Notificar días antes
-                      </div>
-                      <div className="text-sm">
-                        {preview.item.notificarDiasAntes}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="pt-2 text-right">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onEdit(
-                          preview.item!
-                            .documentoVencimientoID
-                        );
-                        closePreview();
-                      }}
-                      className="rounded-xl border border_WHITE/15 bg_WHITE/5 px-4 py-2 text-sm hover:bg_WHITE/10"
-                      style={{ borderColor: `${WINE}66` }}
-                    >
-                      Editar
-                    </button>
+                  <div className="mt-1 text-sm font-semibold">
+                    {preview.item.titulo}
                   </div>
                 </div>
-              )}
+
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <InfoCard label="Tipo" value={preview.item.tipoNombre} />
+                  <InfoCard label="Vence" value={fmtISO(preview.item.fechaVencimiento)} />
+                </div>
+
+                {preview.item.referencia && (
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                    <div className="text-xs uppercase tracking-wide text-white/50">
+                      Referencia
+                    </div>
+                    <div
+                      className="mt-1 break-words text-sm text-white/85"
+                      style={{
+                        overflowWrap: "anywhere",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {preview.item.referencia}
+                    </div>
+                  </div>
+                )}
+
+                {preview.item.descripcion && (
+                  <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+                    <div className="text-xs uppercase tracking-wide text-white/50">
+                      Descripción
+                    </div>
+                    <div
+                      className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-white/80"
+                      style={{
+                        overflowWrap: "anywhere",
+                        wordBreak: "break-word",
+                      }}
+                    >
+                      {preview.item.descripcion}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {preview.item.fechaEmision && (
+                    <InfoCard label="Emisión" value={fmtISO(preview.item.fechaEmision)} />
+                  )}
+
+                  <InfoCard
+                    label="Notificar días antes"
+                    value={
+                      typeof preview.item.notificarDiasAntes === "number"
+                        ? String(preview.item.notificarDiasAntes)
+                        : "Umbral por defecto"
+                    }
+                  />
+                </div>
+
+                <div className="pt-1 text-right">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onEdit(preview.item!.documentoVencimientoID);
+                      closePreview();
+                    }}
+                    className="rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm transition hover:bg-white/10"
+                    style={{ borderColor: `${WINE}66` }}
+                  >
+                    Editar
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
     </>
+  );
+}
+
+function InfoCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+      <div className="text-xs uppercase tracking-wide text-white/50">{label}</div>
+      <div className="mt-1 text-sm text-white/90">{value}</div>
+    </div>
   );
 }
 
@@ -860,7 +813,7 @@ function SortBtn({
 
 function chipCls(active: boolean) {
   return [
-    "rounded-full px-2.5 py-1 text-xs ring-1 transition",
+    "rounded-full px-2.5 py-1.5 text-xs ring-1 transition",
     active
       ? "bg-white/20 ring-white/30 text-white"
       : "bg-white/5 ring-white/15 text-white/80 hover:bg-white/10",
@@ -881,10 +834,10 @@ function TipoPill({
       type="button"
       onClick={onClick}
       className={[
-        "whitespace-nowrap rounded-full px-3 py-1 text-xs ring-1 transition",
+        "whitespace-nowrap rounded-full px-3 py-1.5 text-xs ring-1 transition",
         active
-          ? "text-white bg-[#A30862]/20 ring-[#A30862]/40"
-          : "text-white/80 bg-white/5 ring-white/15 hover:bg-white/10",
+          ? "bg-[#A30862]/20 text-white ring-[#A30862]/40"
+          : "bg-white/5 text-white/80 ring-white/15 hover:bg-white/10",
       ].join(" ")}
       title={`Filtrar: ${label}`}
     >

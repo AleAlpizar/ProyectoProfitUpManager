@@ -112,6 +112,7 @@ export default function Accounts() {
     correo: string;
     telefono?: string | null;
     rol: Role;
+    isCurrentUser: boolean;
   }>(null);
 
   const pageSize = 8;
@@ -235,6 +236,11 @@ export default function Accounts() {
   const onChangeStatus = async (u: UserRow, status: Status) => {
     if (!u.usuarioId || status === u.status) return;
 
+    if (u.usuarioId === currentUserId) {
+      setError("No puedes cambiar tu propio estado mientras estás autenticado.");
+      return;
+    }
+
     const human =
       status === "ACTIVE"
         ? "Activo"
@@ -275,6 +281,7 @@ export default function Accounts() {
       correo: u.email,
       telefono: u.telefono ?? "",
       rol: (u.role as Role) ?? "Empleado",
+      isCurrentUser: u.usuarioId === currentUserId,
     });
   };
 
@@ -513,12 +520,17 @@ export default function Accounts() {
 
                           {isAuthenticated && hasRole("Administrador") && (
                             <select
-                              className={`${SELECT_CLS} min-w-[145px] rounded-xl border-white/10 bg-[#0C1011] text-white`}
+                              className={`${SELECT_CLS} min-w-[145px] rounded-xl border-white/10 bg-[#0C1011] text-white disabled:cursor-not-allowed disabled:opacity-50`}
                               value={u.status}
                               onChange={(e) =>
                                 onChangeStatus(u, e.target.value as Status)
                               }
-                              title="Cambiar estado"
+                              title={
+                                isCurrentUser
+                                  ? "No puedes cambiar tu propio estado"
+                                  : "Cambiar estado"
+                              }
+                              disabled={isCurrentUser}
                             >
                               <option value="ACTIVE">Activo</option>
                               <option value="PAUSED">Inactivo</option>

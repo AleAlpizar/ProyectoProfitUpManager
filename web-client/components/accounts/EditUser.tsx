@@ -13,6 +13,7 @@ type Props = {
     correo: string;
     telefono?: string | null;
     rol: Role;
+    isCurrentUser?: boolean;
   };
   onSaved?: () => void | Promise<void>;
   onClose?: () => void;
@@ -136,7 +137,7 @@ export const EditUser: React.FC<Props> = ({ user, onSaved, onClose }) => {
       apellido: normalizeSpaces(form.apellido || ""),
       correo: (form.correo || "").trim().toLowerCase(),
       telefono: sanitizePhone(form.telefono || ""),
-      rol: form.rol,
+      rol: user.isCurrentUser ? undefined : form.rol,
     };
 
     const validationError = validateForm(normalized);
@@ -247,9 +248,15 @@ export const EditUser: React.FC<Props> = ({ user, onSaved, onClose }) => {
               Rol
             </span>
             <select
-              className="w-full rounded-2xl border border-white/10 bg-[#0F1315] px-4 py-3 text-sm text-white outline-none transition focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40"
+              className="w-full rounded-2xl border border-white/10 bg-[#0F1315] px-4 py-3 text-sm text-white outline-none transition focus:border-transparent focus:ring-2 focus:ring-[#A30862]/40 disabled:cursor-not-allowed disabled:opacity-50"
               value={form.rol ?? "Empleado"}
               onChange={onChange("rol")}
+              disabled={!!user.isCurrentUser}
+              title={
+                user.isCurrentUser
+                  ? "No puedes cambiar tu propio rol"
+                  : "Cambiar rol"
+              }
             >
               <option value="Empleado">Empleado</option>
               <option value="Administrador">Administrador</option>

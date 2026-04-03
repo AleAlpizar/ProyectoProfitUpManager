@@ -59,6 +59,13 @@ function parseDecimalInput(value: string): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
+function toIsoFromInputDate(value: string) {
+  if (!value) return new Date().toISOString();
+
+  const date = new Date(`${value}T12:00:00`);
+  return Number.isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+}
+
 export default function RegistrarVentaPage() {
   const { call } = useApi();
   const router = useRouter();
@@ -72,6 +79,7 @@ export default function RegistrarVentaPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [pageLoading, setPageLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [fechaVenta, setFechaVenta] = useState(getFormattedDate(new Date()));
 
   const clienteDescuentoPct = Number(
     (clientSelected as any)?.descuentoPorcentaje ?? 0
@@ -130,7 +138,20 @@ export default function RegistrarVentaPage() {
   };
 
   useEffect(() => {
-    fetchPageData().catch(console.error);
+    let alive = true;
+
+    (async () => {
+      try {
+        if (!alive) return;
+        await fetchPageData();
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
   }, []);
 
   const recalculateLineSubtotal = (
@@ -299,6 +320,7 @@ export default function RegistrarVentaPage() {
 
   function validateBeforePost() {
     if (!clientSelected?.codigoCliente?.trim()) return "Selecciona un cliente.";
+    if (!fechaVenta?.trim()) return "Selecciona la fecha de la venta.";
     if (lines.length === 0) return "Agrega al menos un producto.";
 
     for (let i = 0; i < lines.length; i++) {
@@ -341,7 +363,7 @@ export default function RegistrarVentaPage() {
 
     const payload = {
       clienteCodigo: clientSelected!.codigoCliente!.trim(),
-      fecha: new Date().toISOString(),
+      fecha: toIsoFromInputDate(fechaVenta),
       observaciones: notes.trim() || undefined,
       lineas: lines.map((l) => ({
         sku: l.producto!.sku!.trim(),
@@ -363,6 +385,7 @@ export default function RegistrarVentaPage() {
       setLines([]);
       setNotes("");
       setClientSelected(undefined);
+      setFechaVenta(getFormattedDate(new Date()));
 
       router.replace(`/ventas/${res.ventaID}?created=1`);
     } catch (e: any) {
@@ -454,10 +477,11 @@ export default function RegistrarVentaPage() {
           <div>
             <Label>Fecha</Label>
             <input
-              value={getFormattedDate(new Date())}
+              value={fechaVenta}
               type="date"
-              readOnly
-              className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none"
+              onChange={(e) => setFechaVenta(e.target.value)}
+              disabled={saving}
+              className="h-12 w-full rounded-2xl border border-white/10 bg-white/5 px-4 text-sm text-white outline-none transition focus:border-white/20 focus:ring-2 focus:ring-white/15"
             />
           </div>
 

@@ -416,6 +416,15 @@ public class AuthController : ControllerBase
         if (usuarioId <= 0)
             return BadRequest(new { message = "Usuario inválido." });
 
+        var currentUserId = GetUserId();
+        if (currentUserId.HasValue && currentUserId.Value == usuarioId)
+        {
+            return BadRequest(new
+            {
+                message = "No puedes cambiar tu propio estado mientras estás autenticado."
+            });
+        }
+
         if (string.IsNullOrWhiteSpace(estado))
             return BadRequest(new { message = "Estado inválido." });
 
@@ -448,6 +457,15 @@ public class AuthController : ControllerBase
 
         if (dto is null)
             return BadRequest(new { message = "Datos inválidos." });
+
+        var currentUserId = GetUserId();
+        if (currentUserId.HasValue && currentUserId.Value == usuarioId && !string.IsNullOrWhiteSpace(dto.Rol))
+        {
+            return BadRequest(new
+            {
+                message = "No puedes cambiar tu propio rol mientras estás autenticado."
+            });
+        }
 
         try
         {

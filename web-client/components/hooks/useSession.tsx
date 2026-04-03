@@ -136,8 +136,12 @@ function useProvideSession(): SessionContextValue {
           headers: { Authorization: `Bearer ${token}` },
         });
 
+        if (res.status === 401 || res.status === 403) {
+          throw new Error("UNAUTHORIZED");
+        }
+
         if (!res.ok) {
-          throw new Error("No autorizado");
+          throw new Error(`VALIDATION_FAILED_${res.status}`);
         }
 
         const data: Me = await res.json();
@@ -146,10 +150,19 @@ function useProvideSession(): SessionContextValue {
           setMe(data);
           setReady(true);
         }
-      } catch {
-        if (!abort) {
+      } catch (error: any) {
+        if (abort) return;
+
+        const isUnauthorized =
+          error?.message === "UNAUTHORIZED" ||
+          error?.message === "No autorizado";
+
+        if (isUnauthorized) {
           clearSession();
+          return;
         }
+
+        setReady(true);
       }
     };
 
@@ -208,6 +221,10 @@ function useProvideSession(): SessionContextValue {
           headers: { Authorization: `Bearer ${data.token}` },
         });
 
+        if (meRes.status === 401 || meRes.status === 403) {
+          throw new Error("UNAUTHORIZED");
+        }
+
         if (!meRes.ok) {
           throw new Error("No se pudo validar la sesión.");
         }
@@ -215,10 +232,18 @@ function useProvideSession(): SessionContextValue {
         const meData: Me = await meRes.json();
         setMe(meData);
         setReady(true);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Error cargando /auth/me después de login", err);
-        clearSession();
-        throw new Error("No se pudo validar la sesión del usuario.");
+
+        if (err?.message === "UNAUTHORIZED") {
+          clearSession();
+          throw new Error("No se pudo validar la sesión del usuario.");
+        }
+
+        setReady(true);
+        throw new Error(
+          "La sesión se creó, pero no se pudo validar temporalmente el usuario. Intenta recargar la página."
+        );
       }
 
       return true;

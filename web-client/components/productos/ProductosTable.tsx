@@ -616,162 +616,208 @@ export default function ProductosTable({ filtroId }: Props) {
       : null;
 
   const detalleOverlay =
-    typeof document !== "undefined" && detalleId !== null
-      ? createPortal(
+  typeof document !== "undefined" && detalleId !== null
+    ? createPortal(
+        <div
+          className="fixed inset-0 z-[9500] flex items-start justify-center overflow-y-auto bg-black/80 backdrop-blur-md px-3 py-4 sm:px-4 sm:py-6"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) closeDetalle();
+          }}
+        >
           <div
-            className="fixed inset-0 z-[9500] flex items-start justify-center bg-black/70 backdrop-blur-sm px-4 pt-20 pb-8 sm:px-8"
-            onMouseDown={(e) => {
-              if (e.target === e.currentTarget) closeDetalle();
-            }}
+            className="relative my-auto w-full max-w-4xl overflow-hidden rounded-[26px] bg-[#0C1013] shadow-[0_25px_80px_rgba(0,0,0,.55)]"
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{ maxHeight: "calc(100vh - 32px)" }}
           >
-            <div className="relative mx-auto w-full max-w-4xl overflow-hidden rounded-[28px] border border-white/10 bg-[linear-gradient(180deg,#111417_0%,#0B0E10_100%)] shadow-[0_25px_80px_rgba(0,0,0,.45)]">
-              <div
-                className="flex items-center justify-between gap-4 px-6 py-5"
-                style={{
-                  background:
-                    "linear-gradient(90deg, rgba(163,8,98,0.24) 0%, rgba(163,8,98,0.08) 100%)",
-                  borderBottom: "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                {(() => {
-                  const currentRow = rows.find((r) => r.productoID === detalleId);
-                  const d = (detalle as any) ?? {};
-                  const merged = {
-                    nombre: currentRow?.nombre ?? d.nombre,
-                    sku: currentRow?.sku ?? d.sku,
-                    descripcion: currentRow?.descripcion ?? d.descripcion,
-                    descuento: currentRow?.descuento ?? d.descuento ?? 0,
-                    precioVenta: d.precioVenta ?? currentRow?.precioVenta,
-                    codigoInterno: d.codigoInterno,
-                    precioCosto: d.precioCosto,
-                    peso: d.peso,
-                    largo: d.largo,
-                    alto: d.alto,
-                    ancho: d.ancho,
-                    unidadAlmacenamientoID:
-                      d.unidadAlmacenamientoID as number | undefined,
-                    activo: currentRow?.isActive ?? true,
-                  };
+            {(() => {
+              const currentRow = rows.find((r) => r.productoID === detalleId);
+              const d = (detalle as any) ?? {};
 
-                  const unidadNombreDetalle =
-                    unidadNombre(merged.unidadAlmacenamientoID) ?? "—";
+              const merged = {
+                nombre: currentRow?.nombre ?? d.nombre,
+                sku: currentRow?.sku ?? d.sku,
+                descripcion: currentRow?.descripcion ?? d.descripcion,
+                descuento: currentRow?.descuento ?? d.descuento ?? 0,
+                precioVenta: d.precioVenta ?? currentRow?.precioVenta,
+                codigoInterno: d.codigoInterno,
+                precioCosto: d.precioCosto,
+                peso: d.peso,
+                largo: d.largo,
+                alto: d.alto,
+                ancho: d.ancho,
+                unidadAlmacenamientoID:
+                  d.unidadAlmacenamientoID as number | undefined,
+                activo: currentRow?.isActive ?? true,
+              };
 
-                  return (
-                    <>
+              const unidadNombreDetalle =
+                unidadNombre(merged.unidadAlmacenamientoID) ?? "Sin unidad";
+
+              return (
+                <>
+                  <div className="relative overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(163,8,98,0.22),transparent_35%),linear-gradient(135deg,#151A1E_0%,#0E1215_100%)] px-5 py-5 sm:px-6 sm:py-6">
+                    <div className="absolute inset-0 opacity-20 pointer-events-none">
+                      <div className="absolute -top-10 -right-10 h-32 w-32 rounded-full bg-[#A30862] blur-3xl" />
+                      <div className="absolute bottom-0 left-0 h-24 w-24 rounded-full bg-cyan-400/10 blur-3xl" />
+                    </div>
+
+                    <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                       <div className="min-w-0">
-                        <h3 className="truncate text-xl font-semibold text-white">
+                        <div className="mb-3 flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center rounded-full bg-white/[0.04] px-3 py-1 text-[11px] font-medium text-white/75">
+                            Producto
+                          </span>
+
+                          <span
+                            className={
+                              "inline-flex items-center rounded-full px-3 py-1 text-[11px] font-semibold " +
+                              (merged.activo
+                                ? "bg-emerald-400/10 text-emerald-200"
+                                : "bg-rose-400/10 text-rose-200")
+                            }
+                          >
+                            {merged.activo ? "Activo" : "Inactivo"}
+                          </span>
+                        </div>
+
+                        <h3 className="max-w-[760px] break-words text-2xl font-semibold tracking-tight text-white sm:text-[28px]">
                           {merged.nombre ?? "Detalle del producto"}
                         </h3>
-                        <p className="mt-1 text-sm text-white/70">
-                          SKU: {merged.sku ?? "—"} · Unidad:{" "}
-                          {unidadNombreDetalle}
+
+                        <p className="mt-2 max-w-2xl text-sm leading-6 text-white/60">
+                          Visualización completa de la información del producto,
+                          incluyendo datos básicos, precios, dimensiones y unidad
+                          de almacenamiento.
                         </p>
-                      </div>
 
-                      <div className="flex shrink-0 items-center gap-2">
-                        {merged.precioVenta != null && (
-                          <span className="rounded-full border border-white/15 bg-white/7 px-3 py-1 text-sm text-white">
-                            Precio: ₡
-                            {Number(merged.precioVenta).toLocaleString()}
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <span className="inline-flex items-center rounded-full bg-white/[0.04] px-3 py-1.5 text-sm text-white/85">
+                            <span className="mr-2 text-white/45">SKU</span>
+                            <span className="font-medium">{merged.sku ?? "—"}</span>
                           </span>
-                        )}
-                        <span
-                          className={
-                            "rounded-full px-3 py-1 text-sm font-medium " +
-                            (merged.activo
-                              ? "border border-emerald-400/30 bg-emerald-400/10 text-emerald-200"
-                              : "border border-rose-400/30 bg-rose-400/10 text-rose-200")
-                          }
-                        >
-                          {merged.activo ? "Activo" : "Inactivo"}
-                        </span>
 
-                        <button
-                          onClick={closeDetalle}
-                          className="rounded-full px-2 py-1 text-lg leading-none text-white/80 transition hover:bg-white/10"
-                          aria-label="Cerrar"
-                        >
-                          ×
-                        </button>
+                          <span className="inline-flex items-center rounded-full bg-white/[0.04] px-3 py-1.5 text-sm text-white/85">
+                            <span className="mr-2 text-white/45">Unidad</span>
+                            <span className="font-medium">{unidadNombreDetalle}</span>
+                          </span>
+
+                          <span className="inline-flex items-center rounded-full bg-[#A30862]/12 px-3 py-1.5 text-sm font-semibold text-white">
+                            <span className="mr-2 text-white/55">Precio</span>₡
+                            {merged.precioVenta != null
+                              ? Number(merged.precioVenta).toLocaleString()
+                              : "—"}
+                          </span>
+                        </div>
                       </div>
-                    </>
-                  );
-                })()}
-              </div>
 
-              <div className="grid gap-4 p-5 md:grid-cols-2 md:p-6">
-                <div className="rounded-2xl border border-white/10 bg-[#0F1315] p-5 shadow-sm">
-                  <h4 className="mb-4 text-sm font-semibold uppercase tracking-wide text-white/85">
-                    Información básica
-                  </h4>
-                  {(() => {
-                    const currentRow = rows.find((r) => r.productoID === detalleId);
-                    const d = (detalle as any) ?? {};
-                    const merged = {
-                      descripcion: currentRow?.descripcion ?? d.descripcion,
-                      codigoInterno: d.codigoInterno,
-                    };
-                    return (
-                      <>
-                        <Info label="Código interno" value={merged.codigoInterno} />
-                        <Info
-                          label="Descripción"
-                          value={merged.descripcion ?? "—"}
-                          full
-                        />
-                      </>
-                    );
-                  })()}
-                </div>
+                      <button
+                        onClick={closeDetalle}
+                        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/[0.05] text-lg text-white/75 transition hover:bg-white/[0.08] hover:text-white"
+                        aria-label="Cerrar"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  </div>
 
-                <div className="rounded-2xl border border-white/10 bg-[#0F1315] p-5 shadow-sm">
-                  <h4 className="mb-4 text-sm font-semibold uppercase tracking-wide text-white/85">
-                    Precios
-                  </h4>
-                  {(() => {
-                    const currentRow = rows.find((r) => r.productoID === detalleId);
-                    const d = (detalle as any) ?? {};
-                    const merged = {
-                      precioCosto: d.precioCosto,
-                      precioVenta: d.precioVenta ?? currentRow?.precioVenta,
-                      descuento: currentRow?.descuento ?? d.descuento ?? 0,
-                    };
-                    return (
-                      <>
-                        <Info label="Precio costo" value={merged.precioCosto} />
-                        <Info label="Precio venta" value={merged.precioVenta} />
-                        <Info label="Descuento (%)" value={merged.descuento} />
-                      </>
-                    );
-                  })()}
-                </div>
+                  <div
+                    className="overflow-y-auto px-4 py-4 sm:px-5 sm:py-5"
+                    style={{ maxHeight: "calc(100vh - 220px)" }}
+                  >
+                    <div className="grid gap-3 lg:grid-cols-2">
+                      <SectionCard
+                        title="Información básica"
+                        subtitle="Datos descriptivos del producto"
+                      >
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <DetailItem
+                            label="Código interno"
+                            value={merged.codigoInterno}
+                          />
+                          <DetailItem
+                            label="SKU"
+                            value={merged.sku}
+                          />
+                          <DetailItem
+                            label="Unidad"
+                            value={unidadNombreDetalle}
+                          />
+                          <DetailItem
+                            label="Estado"
+                            value={merged.activo ? "Activo" : "Inactivo"}
+                            accent={merged.activo ? "success" : "danger"}
+                          />
+                        </div>
 
-                <div className="rounded-2xl border border-white/10 bg-[#0F1315] p-5 shadow-sm">
-                  <h4 className="mb-4 text-sm font-semibold uppercase tracking-wide text-white/85">
-                    Dimensiones &amp; peso
-                  </h4>
-                  <Info label="Peso (kg)" value={(detalle as any)?.peso} />
-                  <Info label="Largo (cm)" value={(detalle as any)?.largo} />
-                  <Info label="Alto (cm)" value={(detalle as any)?.alto} />
-                  <Info label="Ancho (cm)" value={(detalle as any)?.ancho} />
-                </div>
+                        <div className="mt-4 rounded-2xl bg-white/[0.03] p-4">
+                          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8B9AA0]">
+                            Descripción
+                          </p>
+                          <p className="text-sm leading-7 text-white/88">
+                            {merged.descripcion?.trim() || "—"}
+                          </p>
+                        </div>
+                      </SectionCard>
 
-                <div className="rounded-2xl border border-white/10 bg-[#0F1315] p-5 shadow-sm">
-                  <h4 className="mb-4 text-sm font-semibold uppercase tracking-wide text-white/85">
-                    Almacenamiento
-                  </h4>
-                  {(() => {
-                    const d = (detalle as any) ?? {};
-                    const name = unidadNombre(d.unidadAlmacenamientoID) ?? "—";
-                    return <Info label="Unidad" value={name} />;
-                  })()}
-                </div>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )
-      : null;
+                      <SectionCard
+                        title="Precios"
+                        subtitle="Valores comerciales registrados"
+                      >
+                        <div className="grid gap-3 sm:grid-cols-3">
+                          <HighlightStat
+                            label="Precio costo"
+                            value={merged.precioCosto}
+                          />
+                          <HighlightStat
+                            label="Precio venta"
+                            value={merged.precioVenta}
+                            featured
+                          />
+                          <HighlightStat
+                            label="Descuento"
+                            value={
+                              merged.descuento != null
+                                ? `${merged.descuento}%`
+                                : "0%"
+                            }
+                          />
+                        </div>
+                      </SectionCard>
+
+                      <SectionCard
+                        title="Dimensiones y peso"
+                        subtitle="Medidas físicas del producto"
+                      >
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                          <DetailItem label="Peso (kg)" value={merged.peso} />
+                          <DetailItem label="Largo (cm)" value={merged.largo} />
+                          <DetailItem label="Alto (cm)" value={merged.alto} />
+                          <DetailItem label="Ancho (cm)" value={merged.ancho} />
+                        </div>
+                      </SectionCard>
+
+                      <SectionCard
+                        title="Almacenamiento"
+                        subtitle="Unidad configurada para el producto"
+                      >
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <DetailItem label="Unidad" value={unidadNombreDetalle} />
+                          <DetailItem
+                            label="Presentación"
+                            value={`Producto en ${unidadNombreDetalle.toLowerCase?.() || "unidad"}`}
+                          />
+                        </div>
+                      </SectionCard>
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>,
+        document.body
+      )
+    : null;
 
   return (
     <div className="mt-1">
@@ -1091,6 +1137,70 @@ const Info: React.FC<{ label: string; value: any; full?: boolean }> = ({
       {label}
     </p>
     <p className="text-sm leading-6 text-white">{value ?? "—"}</p>
+  </div>
+);
+
+const DetailItem: React.FC<{
+  label: string;
+  value: any;
+  accent?: "default" | "success" | "danger";
+}> = ({ label, value, accent = "default" }) => {
+  const accentMap = {
+    default: "bg-white/[0.03] text-white",
+    success: "bg-emerald-400/[0.07] text-emerald-200",
+    danger: "bg-rose-400/[0.07] text-rose-200",
+  };
+
+  return (
+    <div className={`rounded-2xl p-4 ${accentMap[accent]}`}>
+      <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8B9AA0]">
+        {label}
+      </p>
+      <p className="text-sm font-medium leading-6">{value ?? "—"}</p>
+    </div>
+  );
+};
+
+const HighlightStat: React.FC<{
+  label: string;
+  value: any;
+  featured?: boolean;
+}> = ({ label, value, featured = false }) => (
+  <div
+    className={[
+      "rounded-2xl p-4",
+      featured
+        ? "bg-[linear-gradient(180deg,rgba(163,8,98,0.16)_0%,rgba(163,8,98,0.05)_100%)] shadow-[0_10px_24px_rgba(163,8,98,0.10)]"
+        : "bg-white/[0.03]",
+    ].join(" ")}
+  >
+    <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#8B9AA0]">
+      {label}
+    </p>
+    <p
+      className={[
+        "truncate font-semibold",
+        featured ? "text-2xl text-white" : "text-xl text-white/92",
+      ].join(" ")}
+    >
+      {typeof value === "number" ? value.toLocaleString() : value ?? "—"}
+    </p>
+  </div>
+);
+
+const SectionCard: React.FC<
+  React.PropsWithChildren<{ title: string; subtitle?: string }>
+> = ({ title, subtitle, children }) => (
+  <div className="rounded-[22px] bg-[linear-gradient(180deg,#10151A_0%,#0C1014_100%)] p-4 sm:p-5">
+    <div className="mb-4">
+      <h4 className="text-base font-semibold tracking-tight text-white">
+        {title}
+      </h4>
+      {subtitle ? (
+        <p className="mt-1 text-sm text-white/50">{subtitle}</p>
+      ) : null}
+    </div>
+    {children}
   </div>
 );
 
